@@ -3,4 +3,4 @@
 	url = https://github.com/lokesh/lightbox2.git
 [submodule "lib/wp-settings"]
 	path = lib/wp-settings
-	url = git@github.com:weldstudio/wp-settings.git
+	url = https://github.com/weldstudio/wp-settings.git
