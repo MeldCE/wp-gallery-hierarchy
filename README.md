@@ -3,38 +3,44 @@ wp-gallery-hierarchy
 
 ## Introduction
 
-Being super tired of the short-comings of all the gallery plugins in Wordpress that I have tried and looked at, I have decided to create my own that suit my needs and maybe it will yours as well.
+Being super tired of the short-comings of all the gallery plugins in Wordpress
+that I have tried and looked at, I have decided to create my own that suit my
+needs and maybe it will yours as well.
 
-Images are stored in hierarchical folders. The plugin will scan the directory (given in an option) and add the photos, including all EXIF data to it's database and create a thumbmail (optional). It can also turn the folder names into keywords to be added to the photo (see Options below)
+Images are stored in hierarchical folders, as you normally would. To add new
+images, you can either put them directly into the folders or upload them 
+through the web interface (Todo). If loaded directly into the folder, an
+rescan must be initiated to find the new images.
 
-Once loaded, images can be search through by dates, keywords, folders, or search terms. You can then insert thumbnail, single images, or fancier albums into posts and pages either using your search query, or a single or a list of id(s).
+When new images are loaded, the plugin can rotate and resize according to the
+EXIF gallery. An image title, comment and tags will also be extracted from the
+EXIF data. The folders can also be added to the tags of the images, useful for
+if you are organising the images into locations.
 
-This plugin contains no styling itself, so it is up to your or your theme to do it.
+Once loaded, images can be search through by dates, keywords, folders, or
+search terms. You can then insert thumbnail, single images, or fancier albums
+into posts and pages either using your search query, or a single or a list of
+id(s).
 
-## Shortcodes
+This plugin contains no styling for the inserted images, so it is up to you or
+your theme to style them how you want.
 
-The plugin has the following shortcodes and options:
-- `album` - for fancy albums
- - `type` - of album
- - `images` - list of photos (some sort of query or list)
- - `group` - id for linking photos to scroll through with lightbox
-- `thumbnail` - for single or multiple thumbnails
- - `images` list of photos (some sort of query or list)
- - `class` - additional classes to put on thumbnails
- - `caption` - show caption
- - `group` - id for linking photos to scroll through with lightbox
-- `picture` - for a single picture
- - `image` - which image to show
- - `size` - size of image
- - `class` - additional classes to put on thumbnails
- - `caption` - show caption
- - `group` - id for linking photos to scroll through with lightbox
+## Features
+- Hierarchical storage of images
+- Ability to rescan the folders for new images or upload through a web
+  interface
+- Automatic resizing and rotating of images on addition to the database
+- Auto tagging based on folder hierarchy
+- AJAX-based image gallery/search
 
-## Options
+### Auto Image Tagging
+If enabled, when an image is added to the database, the name of each folder
+that the image is in will be added to the tags of the image in the database.
+Folders can be excluded by adding a '-' to the start of the name.
 
-The following plugin options are avaiable:
- - Folder - folder where the images are kept
- - Cache Folder - folder where the thumbnails and cached photos are kept
- - Thumbnail Size - thumbnail size
- - Crop Thumbnails - whether or not to make thumbnails the exact thumbnail size
- - Concatenate - Concatenate the image title onto the image description
+### Shortcodes
+The plugin has the following shortcodes:
+- `ghalbum` - for fancy albums
+- `ghthumbnail` - for single or multiple thumbnails
+- `ghimage` - for a single image
+
