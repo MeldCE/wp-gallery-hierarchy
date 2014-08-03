@@ -2,6 +2,7 @@ wp-gallery-hierarchy
 ====================
 
 By [Meld Computer Engineering](http://www.meldce.com)
+
 [Support opensource development](https://pledgie.com/campaigns/17426)
 
 ## Introduction
@@ -38,6 +39,7 @@ your theme to style them how you want.
 - AJAX-based image gallery/search
   - Easy image selection
     - Selection based on either manually selecting images or filtering
+    - Images can be manually selected across multiple pages
   - One interface for browsing/inserting images
 - Lightbox for larger image popup
 
