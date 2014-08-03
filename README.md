@@ -1,6 +1,9 @@
 wp-gallery-hierarchy
 ====================
 
+By [Meld Computer Engineering](http://www.meldce.com)
+[Support opensource development](https://pledgie.com/campaigns/17426)
+
 ## Introduction
 
 Being super tired of the short-comings of all the gallery plugins in Wordpress
@@ -31,7 +34,12 @@ your theme to style them how you want.
   interface
 - Automatic resizing and rotating of images on addition to the database
 - Auto tagging based on folder hierarchy
+- Cached thumbnails and different sized versions of an image
 - AJAX-based image gallery/search
+  - Easy image selection
+    - Selection based on either manually selecting images or filtering
+  - One interface for browsing/inserting images
+- Lightbox for larger image popup
 
 ### Auto Image Tagging
 If enabled, when an image is added to the database, the name of each folder
@@ -43,4 +51,20 @@ The plugin has the following shortcodes:
 - `ghalbum` - for fancy albums
 - `ghthumbnail` - for single or multiple thumbnails
 - `ghimage` - for a single image
+
+### Options
+- Location of image folder
+- Location of cache image folder
+- Folders to image tags
+- Enable resizing of images
+- Number of images to display per page in the image gallery/search
+- Add the title to the start of the comment
+- What is displayed by default below the images (per type)
+
+## Future Features (Todos)
+- Upload interface
+- Google Drive syncing
+
+## Changelog
+
 
