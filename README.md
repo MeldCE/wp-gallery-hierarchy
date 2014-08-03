@@ -63,6 +63,13 @@ The plugin has the following shortcodes:
 - Add the title to the start of the comment
 - What is displayed by default below the images (per type)
 
+## Installation
+This project uses [Lightbox](https://github.com/lokesh/lightbox2.git) and
+[wp-settings](https://github.com/weldstudio/wp-settings) as a Git submodules.
+To initialise them, you will need to run the command
+`git submodule update --init`
+from the cloned directory.
+
 ## Future Features (Todos)
 https://github.com/weldstudio/wp-gallery-hierarchy/issues
 
