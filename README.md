@@ -64,9 +64,7 @@ The plugin has the following shortcodes:
 - What is displayed by default below the images (per type)
 
 ## Future Features (Todos)
-- Upload interface
-- Google Drive syncing
+https://github.com/weldstudio/wp-gallery-hierarchy/issues
 
 ## Changelog
-
-
+https://github.com/weldstudio/wp-gallery-hierarchy/releases
