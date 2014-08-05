@@ -19,7 +19,7 @@ if (!class_exists('GHierarchy')) {
 
 		if (is_admin()) {
 			// Initialise
-			add_action('init', array('GHierarchy', 'init'));
+			add_action('init', array('GHierarchy', 'adminInit'));
 			
 			// Handle AJAX requests (from image browser)
 			add_action('wp_ajax_gHierarchy', array('GHierarchy', 'ajax'));
