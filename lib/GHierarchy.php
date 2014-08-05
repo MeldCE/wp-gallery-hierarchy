@@ -195,7 +195,7 @@ class GHierarchy {
 	/**
 	 * Function to initialise the plugin when in the dashboard
 	 */
-	static function init() {
+	static function adminInit() {
 		if (!$instance) {
 			static::$instance = new self();
 
