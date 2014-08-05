@@ -56,12 +56,12 @@ The plugin has the following shortcodes:
 
 #### Shortcode Options
 The following shortcode options are available for the included shortcodes
-- `id` - list of photos (some sort of query or list) (`ghalbum` `ghthumbnail` `ghimage`)
-- `group` - id for linking photos to scroll through with lightbox (`ghthumbnail` `ghimage`)
-- `class` - additional classes to put on the images (`ghthumbnail` `ghimage`)
-- `caption` - show caption (`ghalbum` `ghthumbnail` `ghimage`)
-- `size` - size of image (`ghimage`)
-- `type` - of album (`ghalbum`)
+- `id="id1,id2,..."` - list of photos (some sort of query or list) (`ghalbum` `ghthumbnail` `ghimage`)
+- `group="group1"` - id for linking photos to scroll through with lightbox (`ghthumbnail` `ghimage`)
+- `class="class1 class2 ...` - additional classes to put on the images (`ghthumbnail` `ghimage`)
+- `caption="(none|title|caption)` - show caption (`ghalbum` `ghthumbnail` `ghimage`)
+- `size="(widthxheight)"` - size of image (`ghimage`)
+- `type="type1"` - of album (`ghalbum`)
 
 ### Options
 - Location of image folder
