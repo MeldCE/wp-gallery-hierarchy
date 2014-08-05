@@ -9,7 +9,7 @@
  * Version: 0.1
  */
 
-if (!function_exists('gHierarchySetup')) {
+if (!class_exists('GHierarchy')) {
 	require_once('lib/GHierarchy.php');
 
 	function gHierarchySetup() {
@@ -27,10 +27,8 @@ if (!function_exists('gHierarchySetup')) {
 		}
 	}
 
-	function testgh() {
-		set_transient('gHScanTran', 'HELO', 60);
-	}
-
 	add_action('gh_rescan', array('GHierarchy', 'scan'));
 	add_action('plugins_loaded', gHierarchySetup);
+
+	register_activation_hook(__FILE__, array('GHierarchy', 'install'));
 }
