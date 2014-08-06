@@ -52,16 +52,37 @@ Folders can be excluded by adding a '-' to the start of the name.
 The plugin has the following shortcodes:
 - `ghalbum` - for fancy albums
 - `ghthumbnail` - for single or multiple thumbnails
+  (shortcut for `ghalbum type="thumbnail"`)
 - `ghimage` - for a single image
 
 #### Shortcode Options
 The following shortcode options are available for the included shortcodes
-- `id="id1,id2,..."` - list of photos (some sort of query or list) (`ghalbum` `ghthumbnail` `ghimage`)
-- `group="group1"` - id for linking photos to scroll through with lightbox (`ghthumbnail` `ghimage`)
-- `class="class1 class2 ...` - additional classes to put on the images (`ghthumbnail` `ghimage`)
-- `caption="(none|title|caption)` - show caption (`ghalbum` `ghthumbnail` `ghimage`)
-- `size="(widthxheight)"` - size of image (`ghimage`)
-- `type="type1"` - of album (`ghalbum`)
+- `id="<id1>,<id2>,..."` - list of photos (some sort of query or list)
+  (`ghalbum` `ghthumbnail` `ghimage`)
+- `group="<group1>"` - id for linking photos to scroll through with lightbox
+  (`ghthumbnail` `ghimage`)
+- `class="<class1> <class2> ...` - additional classes to put on the images
+  (`ghthumbnail` `ghimage`)
+- `caption="(none|title|comment)"` - Type of caption to show. Default set in
+  options (`ghalbum` `ghthumbnail` `ghimage`)
+- popup="(none|title|comment)"` - Type of caption to show on popup. Default
+  set in options (`ghalbum` `ghthumbnail` `ghimage`)
+- `link="(none|popup|<url>)"` - URL link on image, by default it will be the
+  image url and will cause a lightbox popup
+- `size="(<width>x<height>)"` - size of image (`ghimage`)
+- `type="<type1>"` - of album (`ghalbum`)
+
+Examples:
+
+`[ghalbum id="123,145" group="1" caption="comment" link="http://www.example.com"]`
+
+Will produce a album showing two images, 123 & 145, with the comment below.
+When the user clicks on the images, they will be taken to www.example.com.
+
+`[ghimage id="123" class="float-left" link="none"]`
+
+Will produce a full-sized image with the float-left class on it and no url
+link.
 
 ### Options
 - Location of image folder
