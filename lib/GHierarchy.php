@@ -99,10 +99,10 @@ class GHierarchy {
 												'default' => array(1100, 1100)
 										),
 										'gh_folder_keywords' => array(
-												'title' => __('Folders to Keywords', 'gallery_hierarchy'),
+												'title' => __('Folders to Tags', 'gallery_hierarchy'),
 												'description' => __('If this option is selected, each '
 														. 'folder name the image is inside will be added as a'
-														. 'keyword to the image information in the database. '
+														. 'tag to the image information in the database. '
 														. 'Folder names can be ignored by adding a \'-\' to '
 														. 'the front of the name.',
 														'gallery_hierarchy'),
@@ -484,7 +484,7 @@ class GHierarchy {
 					. count($dirs) . __(' removed. ', 'gallery_hierarchy')
 					. __('Added ', 'gallery_hierarchy') . count($files['i'])
 					. __(' images, deleted ', 'gallery_hierarchy')
-					. count($images) . __(' removed.', 'gallery_hierarchy') . print_r($files, 1));
+					. count($images) . __(' removed.', 'gallery_hierarchy'));
 		} catch (Exception $e) {
 			static::setScanTransients('scan', __('Error: ',
 					'gallery_hierarchy') . $e->getMessage());
@@ -832,7 +832,7 @@ class GHierarchy {
 		$imagick->readImage($iPath);
 
 		// Read metadata from the database
-		if ($meta = exif_read_data($iPath, 0)) {
+		if ($exif = exif_read_data($iPath, 0)) {
 			$changed = false;
 
 			if (!$id || ($id && !$forced)) {
@@ -929,16 +929,13 @@ class GHierarchy {
 		// Created Date
 		$taken = '';
 		if (isset($exif['DateTimeOriginal'])) {
-			$taken = $exif['DateTimeOriginal'];
-			if ($taken) {
-				$taken = strptime($taken, '%Y:%m:%d %H:%M:%S');
-			}
+			$taken = mysqlDate($exif['DateTimeOriginal'], '%Y:%m:%d %H:%M:%S');
+		}
+		if (isset($exif['DateTime'])) {
+			$taken = mysqlDate($exif['DateTime'], '%Y:%m:%d %H:%M:%S');
 		}
 		if (!$taken && isset($xmp['Creation Date'])) {
-			$taken = $xmp['Creation Date'];
-			if ($taken) {
-				$taken = strptime($taken, '%Y-%m-%dT%H:%M:%S');
-			}
+			$taken = mysqlDate($xmp['Creation Date'], '%Y-%m-%dT%H:%M:%S');
 		} 
 		if (!$taken) {
 			$taken = '';
