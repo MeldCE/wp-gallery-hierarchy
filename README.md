@@ -76,13 +76,13 @@ Examples:
 
 `[ghalbum id="123,145" group="1" caption="comment" link="http://www.example.com"]`
 
-> Will produce a album showing two images, 123 & 145, with the comment below.
-> When the user clicks on the images, they will be taken to www.example.com.
+Will produce a album showing two images, 123 & 145, with the comment below.
+When the user clicks on the images, they will be taken to www.example.com.
 
 `[ghimage id="123" class="float-left" link="none"]`
 
-> Will produce a full-sized image with the float-left class on it and no url
-> link.
+Will produce a full-sized image with the float-left class on it and no url
+link.
 
 ### Options
 - Location of image folder
