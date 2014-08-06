@@ -700,12 +700,24 @@ class GHierarchy {
 		$name = str_replace(DIRECTORY_SEPARATOR, '_', $image);
 
 		if ($size) {
-			$name .= '-' . $size[0] . 'x' . $size[1];
+			$name .= '-' . $size['width'] . 'x' . $size['height'];
 		}
 
 		$name .= '.' . $ext;
 
 		return $name;
+	}
+
+	static function getImageURL($image) {
+		$me = static::instance();
+
+
+	}
+
+	static function getCImageURL($image, $size = null) {
+		$me = static::instance();
+
+
 	}
 
 	/**
