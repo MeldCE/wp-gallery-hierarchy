@@ -912,11 +912,11 @@ class GHierarchy {
 		}
 
 		// Comment
-		if (isset($exif['ImageDescription'])) {
+		if (isset($exif['ImageDescription']) && $exif['ImageDescription']) {
 			$comment = $exif['ImageDescription'];
-		} else if (isset($exif['Comments'])) { // "windows" information
+		} else if (isset($exif['Comments']) && $exif['Comments']) { // "windows" information
 			$comment = $exif['Comments'];
-		} else if (isset($xmp['Description'])) {
+		} else if (isset($xmp['Description']) && $xmp['Description']) {
 			$comment = $xmp['Description'];
 		} else {
 			$comment = '';
@@ -928,13 +928,13 @@ class GHierarchy {
 
 		// Created Date
 		$taken = '';
-		if (isset($exif['DateTimeOriginal'])) {
+		if (isset($exif['DateTimeOriginal']) && $exif['DateTimeOriginal']) {
 			$taken = mysqlDate($exif['DateTimeOriginal'], '%Y:%m:%d %H:%M:%S');
 		}
-		if (isset($exif['DateTime'])) {
+		if (isset($exif['DateTime']) && $exif['DateTime']) {
 			$taken = mysqlDate($exif['DateTime'], '%Y:%m:%d %H:%M:%S');
 		}
-		if (!$taken && isset($xmp['Creation Date'])) {
+		if (!$taken && isset($xmp['Creation Date']) && $xmp['Creation Date']) {
 			$taken = mysqlDate($xmp['Creation Date'], '%Y-%m-%dT%H:%M:%S');
 		} 
 		if (!$taken) {
@@ -942,11 +942,11 @@ class GHierarchy {
 		}
 
 		// Author
-		if (isset($exif['Artist'])) {
+		if (isset($exif['Artist']) && $exif['Artist']) {
 			$author = $exif['Artist'];
-		} else if (isset($exif['Author'])) { // "windows" information
+		} else if (isset($exif['Author']) && $exif['Author']) { // "windows" information
 			$author = $exif['Author'];
-		} else if (isset($xmp['Creator'])) {
+		} else if (isset($xmp['Creator']) && $xmp['Creator']) {
 			$author = $xmp['Creator'];
 		} else {
 			$author = '';
@@ -957,9 +957,9 @@ class GHierarchy {
 		// apature
 
 		// Build Tags
-		if (isset($exif['Keywords'])) {
+		if (isset($exif['Keywords']) && $exif['Keywords']) {
 			$tags = $exif['Keywords'];
-		} else if (isset($xmp['Keywords'])) {
+		} else if (isset($xmp['Keywords']) && $xmp['Keywords']) {
 			$tags = $xmp['Keywords'];
 		} else {
 			$tags = array();
