@@ -15,8 +15,12 @@ function gHpath() {
  * @param $path string Path to remove trailing directory separators from
  * @return string Path with separators removed
  */
-function gHptrim($path) {
-	return rtrim($path, DIRECTORY_SEPARATOR);
+function gHptrim($path, $ltrim = false) {
+	if ($ltrim) {
+		return trim($path, DIRECTORY_SEPARATOR);
+	} else {
+		return rtrim($path, DIRECTORY_SEPARATOR);
+	}
 }
 
 ?>

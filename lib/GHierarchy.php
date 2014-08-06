@@ -12,12 +12,13 @@ class GHierarchy {
 	protected static $settings;
 	protected static $scanTransient = 'gHScanTran';
 	protected static $statusTransient = 'gHStatusTran';
-	protected $disabled = false;
+	protected $disabled = array();
 	protected static $scanTransientTime = 60;
 	protected static $statusTransientTime = DAY_IN_SECONDS;
+	protected static $runAdminInit = false;
 
 	/// Rescan variables
-	protected $nextSet;
+	protected static $nextSet = 0;
 	protected $baseDir;
 
 	protected function  __construct() {
@@ -53,17 +54,6 @@ class GHierarchy {
 												'type' => 'folder',
 												'default' => 'gHCache'
 										),
-										'gh_folder_keywords' => array(
-												'title' => __('Folders to Keywords', 'gallery_hierarchy'),
-												'description' => __('If this option is selected, each '
-														. 'folder name the image is inside will be added as a'
-														. 'keyword to the image information in the database. '
-														. 'Folder names can be ignored by adding a \'-\' to '
-														. 'the front of the name.',
-														'gallery_hierarchy'),
-												'type' => 'boolean',
-												'default' => true
-										)
 								)
 						),
 						'gHThumbnails' => array(
@@ -108,6 +98,17 @@ class GHierarchy {
 												'type' => 'dimensions',
 												'default' => array(1100, 1100)
 										),
+										'gh_folder_keywords' => array(
+												'title' => __('Folders to Keywords', 'gallery_hierarchy'),
+												'description' => __('If this option is selected, each '
+														. 'folder name the image is inside will be added as a'
+														. 'keyword to the image information in the database. '
+														. 'Folder names can be ignored by adding a \'-\' to '
+														. 'the front of the name.',
+														'gallery_hierarchy'),
+												'type' => 'boolean',
+												'default' => true
+										)
 								)
 						),
 						'gHOther' => array(
@@ -187,20 +188,30 @@ class GHierarchy {
 		);
 		static::$settings = new WPSettings($options);
 
-		$this->baseDir = gHpath(WP_CONTENT_DIR, static::$settings->get_option('gh_folder'));
+		// Create path to image Directory
+		$this->imageDir = gHpath(WP_CONTENT_DIR,
+				static::$settings->get_option('gh_folder'));
 		// Remove trailing slash
-		$this->baseDir = gHptrim($this->baseDir);
+		$this->imageDir = gHptrim($this->imageDir);
+		// Create path to cache directory
+		$this->cacheDir = gHpath(WP_CONTENT_DIR,
+				static::$settings->get_option('gh_cache_folder'));
+		// Remove trailing slash
+		$this->cacheDir = gHptrim($this->cacheDir);
+
 	}
 
 	/**
 	 * Function to initialise the plugin when in the dashboard
 	 */
 	static function adminInit() {
-		if (!$instance) {
-			static::$instance = new self();
+		if (!static::$runAdminInit) {
+			$me = static::instance();
 
-			add_action('admin_enqueue_scripts', array(&static::$instance, 'adminEnqueue'));
-			add_action('admin_menu', array(&static::$instance, 'adminMenuInit'));
+			add_action('admin_enqueue_scripts', array(&$me, 'adminEnqueue'));
+			add_action('admin_menu', array(&$me, 'adminMenuInit'));
+
+			static::$runAdminInit = true;
 		}
 	}
 
@@ -238,12 +249,41 @@ class GHierarchy {
 				array(static::$settings, 'printOptions'));
 	}
 
-	function checkFunctions() {
+	protected function echoError($message) {
+		echo '<div id="message" class="error">' . $message . '</div>';
+	}
+
+	protected function checkFunctions() {
 		if (!function_exists('finfo_file')) {
-			echo '<div id="message" class="error">'
-					. __('The required Fileinfo Extension is not installed. Please install it',
-					'gallery_hierarchy') . '</div>';
+			$this->echoError(__('The required Fileinfo Extension is not installed. Please install it',
+					'gallery_hierarchy'));
 			$this->disable = true;
+		}
+		if (!class_exists('Imagick')) {
+			$this->echoError(__('Require the Imagick PHP extension to run.',
+					'gallery_hierarchy'));
+			$this->disable = true;
+		}
+		if (!function_exists('exif_read_data')) {
+			$this->echoError(__('Require the EXIF data PHP extension to run.',
+					'gallery_hierarchy'));
+			$this->disable = true;
+		}
+		if (!is_dir($this->imageDir)) {
+			// Try and create the image directory
+			if (!mkdir($this->imageDir, 0755, true)) {
+				$this->echoError(__('Could not create image directory: ',
+						'gallery_hierarchy') . $this->imageDir);
+				$this->disable = true;
+			}
+		}
+		if (!is_dir($this->cacheDir)) {
+			// Try and create the image directory
+			if (!mkdir($this->cacheDir, 0755, true)) {
+				$this->echoError(__('Could not create cache directory: ',
+						'gallery_hierarchy') . $this->cacheDir);
+				$this->disable = true;
+			}
 		}
 	}
 
@@ -265,8 +305,9 @@ class GHierarchy {
 		echo '<h1>' . __('Load Images into Gallery Hierarchy', 'gallery_hierarchy')
 				. '</h1>';
 		
-		if ($this->disable) {
-			echo '<p>Loading disabled as something is missing. Please fix it.</p>';
+		if ($this->disabled) {
+			echo '<p>' . __(' Loading disabled. Please fix it.', 'gallery_hierarchy')
+					. '</p>';
 			return;
 		}
 
@@ -304,7 +345,7 @@ class GHierarchy {
 			//		'gallery_hierarchy') . '</a>';
 		} else {
 			echo '<p>' . __('Use the buttons below to rescan the folder.',
-					'gallery_hierarchy') . gHPath(WP_CONTENT_DIR, static::$settings->get_option('gh_folder')) . '</p>';
+					'gallery_hierarchy') . '</p>';
 			echo '<a href="' . add_query_arg('start', 'rescan') . '" class="button">'
 					. __('Rescan Directory', 'gallery_hierarchy') . '</a> <a href="'
 					. add_query_arg('start', 'full') . '" class="button button-cancel">'
@@ -330,7 +371,7 @@ class GHierarchy {
 				static::$statusTransientTime);
 		set_transient(static::$scanTransient, $scan,
 				static::$scanTransientTime);
-		$me->nextSet = time() + 30;
+		static::$nextSet = time() + 30;
 	}
 
 	/**
@@ -346,108 +387,109 @@ class GHierarchy {
 	static function scan($fullScan = false) {
 		global $wpdb;
 
-		$me = static::instance();
+		try {
+			$me = static::instance();
 
-		// Check folder exists
-		if (!is_dir($me->baseDir)) {
-			if (!mkdir($me->baseDir, 0755, true)) {
-				throw new InvalidArgumentException(__('Could not create directory '
-						. $me->baseDir, 'gallery_hierarchy'));
+			static::setScanTransients('scan', __('Scanning Folder',
+					'gallery_hierarchy'));
+
+			// Find all the folders and images
+			$files = $me->scanFolder();
+
+			static::setScanTransients('scan', 
+					__('Found ', 'gallery_hierarchy') . count($files['d']) 
+					. __(' folders and ', 'gallery_hierarchy') . count($files['i'])
+					.__(' images.', 'gallery_hierarchy'));
+
+			// Add directories
+			// Get the current directories
+			$dirs = $wpdb->get_results('SELECT dir,id FROM '
+					. $me->dirTable, OBJECT_K);
+			
+			$i = 0;
+			while ($i < count($files['d'])) {
+				static::setScanTransients('scan', 'here');
+				$dir =& $files['d'][$i];
+				if (!isset($dirs[$dir])) {
+					$me->registerDirectory($dir);
+					$i++;
+				} else {
+					array_splice($files['d'], $i, 1);
+					unset($dirs[$dir]);
+				}
+
+				// Report status
+				if (static::$nextSet < time()) {
+					static::setScanTransients('scan',  
+							__('Adding folders... Processing ',
+							'gallery_hierarchy') . ($i+1) . '/' . count($files['d'])); 
+				}
 			}
 
-			delete_transient(static::$scanTransient);
+			/// @todo Remove any deleted directories
+			//if (count($dirs)) {
+			//	$wpdb->query($wpdb->prepare('DELETE FROM ' . $me->dirTable
+			//			. 'WHERE id IN (' . . ')'));
+			//}
 
-			return;
+			static::setScanTransients('scan',  __('Added ', 'gallery_hierarchy')
+					. count($files['d']) . __(' folders, deleted ', 'gallery_hierarchy')
+					. count($dirs) . __(' removed folders. Now adding ',
+					'gallery_hierarchy') . count($files['i']) . __(' images.',
+					'gallery_hierarchy'));
+
+
+			// Add images
+			
+			//Get current images
+			$images = $wpdb->get_results('SELECT image,id,added FROM '
+					. $me->imageTable, OBJECT_K);
+
+			$i = 0;
+			while ($i < count($files['i'])) {
+				$image =& $files['i'][$i];
+				$iPath = gHpath($me->imageDir, $image);
+				
+				if (isset($images[$image])) {
+					if (filemtime($iPath) > $images[$image]->added) {
+						$me->registerImage($image, $images[$image]->id);
+						$i++;
+					} else if ($fullScan) {
+						$me->registerImage($image, $images[$image]->id, true);
+						$i++;
+					} else {
+						array_splice($files['i'], $i, 1);
+						unset($images[$image]);
+					}
+				} else {
+					$me->registerImage($image);
+					$i++;
+				}
+
+				// Report status
+				if (static::$nextSet < time()) {
+					static::setScanTransients('scan',  
+							__('Adding images... Processing ',
+							'gallery_hierarchy') . ($i+1) . '/' . count($files['i'])); 
+				}
+			}
+			
+			//if (count($dirs)) {
+			//	$wpdb->query($wpdb->prepare('DELETE FROM ' . $me->dirTable
+			//			. 'WHERE id IN (' . . ')'));
+			//}
+			
+			static::setScanTransients('scan',  __('Added ', 'gallery_hierarchy')
+					. count($files['d']) . __(' folders, deleted ', 'gallery_hierarchy')
+					. count($dirs) . __(' removed. ', 'gallery_hierarchy')
+					. __('Added ', 'gallery_hierarchy') . count($files['i'])
+					. __(' images, deleted ', 'gallery_hierarchy')
+					. count($images) . __(' removed.', 'gallery_hierarchy') . print_r($files, 1));
+		} catch (Exception $e) {
+			static::setScanTransients('scan', __('Error: ',
+					'gallery_hierarchy') . $e->getMessage());
 		}
 
-		static::setScanTransients('scan', __('Scanning Folder',
-				'gallery_hierarchy'));
-		$me->nextSet = time() + 30;
-
-		// Find all the folders and images
-		$files = $me->scanFolder();
-
-		static::setScanTransients('scan', 
-				__('Found ', 'gallery_hierarchy') . count($files['d']) 
-				. __(' folders and ', 'gallery_hierarchy') . count($files['i'])
-				.__(' images.', 'gallery_hierarchy'));
-
-		// Add directories
-		// Get the current directories
-		$dirs = $wpdb->get_results('SELECT dir,id FROM '
-				. $me->dirTable, OBJECT_K);
-		
-		$i = 0;
-		while ($i < count($files['d'])) {
-			static::setScanTransients('scan', 'here');
-			$dir =& $files['d'][$i];
-			if (!isset($dirs[$dir])) {
-				$me->registerDirectory($dir);
-				$i++;
-			} else {
-				array_splice($files['d'], $i, 1);
-				unset($dirs[$dir]);
-			}
-
-			// Report status
-			if ($me->nextSet < time()) {
-				static::setScanTransients('scan',  __('Adding folders...',
-						'gallery_hierarchy') . $added . '/' . $count . 
-						__(' new (', 'gallery_hierarchy') . count($files['d']) . 
-						__(') total.', 'gallery_hierarchy'));
-			}
-		}
-
-		/// @todo Remove any deleted directories
-		//if (count($dirs)) {
-		//	$wpdb->query($wpdb->prepare('DELETE FROM ' . $me->dirTable
-		//			. 'WHERE id IN (' . . ')'));
-		//}
-
-		static::setScanTransients('scan',  __('Added ', 'gallery_hierarchy')
-				. count($files['d']) . __(' folders, deleted ', 'gallery_hierarchy')
-				. count($dirs) . __(' removed folders.', 'gallery_hierarchy'));
-
-
-		// Add images
-		
-		//Get current images
-		$images = $wpdb->get_results('SELECT image,id FROM '
-				. $me->imageTable, OBJECT_K);
-
-		$i = 0;
-		while ($i < count($files['i'])) {
-			$image =& $files['i'][$i];
-
-			if ($fullScan || !isset($images[$image])) {
-				$me->registerImage($fp, $fullScan);
-				$i++;
-			} else {
-				array_splice($files['i'], $i, 1);
-				unset($images[$image]);
-			}
-
-			// Report status
-			if ($me->nextSet < time()) {
-				set_transient(static::$scanTransient, __('Adding folders...',
-						'gallery_hierarchy') . $added . '/' . $count . 
-						__(' new (', 'gallery_hierarchy') . count($files['d']) . 
-						__(') total.', 'gallery_hierarchy'), 60);
-				$me->nextSet = time() + 30;
-			}
-		}
-		
-		//if (count($dirs)) {
-		//	$wpdb->query($wpdb->prepare('DELETE FROM ' . $me->dirTable
-		//			. 'WHERE id IN (' . . ')'));
-		//}
-		
-		static::setScanTransients('scan',  __('Added ', 'gallery_hierarchy')
-				. count($files['d']) . __(' folders, deleted ', 'gallery_hierarchy')
-				. count($dirs) . __(' removed. ', 'gallery_hierarchy')
-				. __('Added ', 'gallery_hierarchy') . count($files['i'])
-				. __(' images, deleted ', 'gallery_hierarchy')
-				. count($images) . __(' removed.', 'gallery_hierarchy'));
 
 		// Delete transient
 		delete_transient(static::$scanTransient);
@@ -467,14 +509,14 @@ class GHierarchy {
 	protected function scanFolder($dir = '', array &$files = null) {
 		// Initialise count array
 		if (is_null($files)) {
-			$files = array('d' => array(), 'i' => array());
+			$files = array('r' => array(), 'd' => array(), 'i' => array());
 		}
 
 		//
 		if ($dir) {
-			$path = gHpath($this->baseDir, $dir);
+			$path = gHpath($this->imageDir, $dir);
 		} else {
-			$path = $this->baseDir;
+			$path = $this->imageDir;
 		}
 
 		$files['path'] = $path;
@@ -491,13 +533,16 @@ class GHierarchy {
 		}
 
 		while (($file = readdir($res)) !== false) {
+			$files['r'][] = $file;
 			// Ignore dot files and directories
 			if (substr($file, 0, 1) === '.') {
 				continue;
 			}
 
 			$fpath = gHpath($path, $file);
-			$file = gHpath($dir, $file);
+			if ($dir) {
+				$file = gHpath($dir, $file);
+			}
 
 			if (is_dir($fpath)) {
 				$files['d'][] = $file;
@@ -508,12 +553,11 @@ class GHierarchy {
 			}
 
 			// Report status
-			if ($this->nextSet < time()) {
-				set_transient(static::$statusTransient, __('Scanning Folder...',
+			if (static::$nextSet < time()) {
+				static::setScanTransients('scanning', __('Scanning Folder...',
 						'gallery_hierarchy') . count($files['d']) . __(' folders found,',
 						'gallery_hierarchy') . count($files['i']) . __(' images found.',
-						'gallery_hierarchy'), 60);
-				$this->nextSet = time() + 30;
+						'gallery_hierarchy'));
 			}
 		}
 
@@ -536,7 +580,7 @@ class GHierarchy {
 		static::setScanTransients('scan', 'registering ' . $dir);
 
 		// Check is a directory
-		if (!is_dir(gHpath($this->baseDir, $dir))) {
+		if (!is_dir(gHpath($this->imageDir, $dir))) {
 			throw new InvalidArgumentException($dir . ' is not a valid directory');
 		}
 
@@ -552,7 +596,7 @@ class GHierarchy {
 	 *
 	 * Thanks to Bryan Geraghty for the parsing
 	 */
-	protected getXMP($file) {
+	protected function getXMP($file) {
 		$buffer = '';
 		$startTag = '<x:xmpmeta';
 		$endTag = '</x:xmpmeta>';
@@ -621,7 +665,7 @@ class GHierarchy {
 			) as $key => $regex ) {
 												 
 			// get a single text string
-			$xmp[$key] = preg_match( "/$regex/is", $xmp_raw, $match ) ? $match[1] : '';
+			$xmp[$key] = preg_match( "/$regex/is", $buffer, $match ) ? $match[1] : '';
 
 			// if string contains a list, then re-assign the variable as an array with the list elements
 			$xmp[$key] = preg_match_all( "/<rdf:li[^>]*>([^>]*)<\/rdf:li>/is", $xmp[$key], $match ) ? $match[1] : $xmp[$key];
@@ -634,7 +678,126 @@ class GHierarchy {
 			}
 
 			return $xmp;
+		}
 
+		return null;
+	}
+
+	/**
+	 * Returns the path to the cached image for a specific image and
+	 * width and height
+	 *
+	 * @param $image string Image path relative to the base directory
+	 * @param $size array Array containing the new width ([0]) and height ([1])
+	 * @return string Path to cached image relative to the cache base directory
+	 */
+	protected function getCImagePath($image, $size = null) {
+		/// @todo Find a better way to do this
+		$image = explode('.', $image);
+		$ext = array_pop($image);
+		$image = join('.', $image);
+
+		$name = str_replace(DIRECTORY_SEPARATOR, '_', $image);
+
+		if ($size) {
+			$name .= '-' . $size[0] . 'x' . $size[1];
+		}
+
+		$name .= '.' . $ext;
+
+		return $name;
+	}
+
+	/**
+	 * Creates a thumbnail image of a given image.
+	 *
+	 * @param $image string Path to the image relative to the base directory
+	 * @param $imagick Imagick Imagick object already containing the image
+	 * @note The Imagick object will be modified
+	 */
+	protected function createThumbnail($image, &$imagick = null) {
+		$thumbnailSize = static::$settings->get_option('gh_thumbnail_size');
+		$crop = static::$settings->get_option('gh_crop_thumbnails');
+
+		$this->resizeImage($image, $imagick, $thumbnailSize, $crop);
+
+		// Write thumbnail
+		$tName = $this->getCImagePath($image);
+
+		$tPath = gHpath($this->cacheDir, $tName);
+
+		$imagick->writeImage($tPath);
+	}
+
+	/**
+	 * Creates a thumbnail image of a given image.
+	 *
+	 * @param $image string Path to the image relative to the base directory
+	 * @param $imagick Imagick Imagick object already containing the image.
+	 *                         If not given, the image will be overwritten.
+	 *                         If given, the image will not be written.
+	 * @param $newSize Array Array containing the new width ([0]) and height
+	 *                       ([1])
+	 * @param $crop Boolean If true, the image will be resized and cropped to
+	 *                      fit the exact given dimensions. If false, the
+	 *                      image will be resized to fit inside the given
+	 *                      dimensions.
+	 * @retval true If the image was written to.
+	 * @retval false If the image was not written to.
+	 * @note If given, the Imagick object will be modified!
+	 */
+	protected function resizeImage($image, &$imagick, $newSize, $crop = false) {
+		$write = false;
+		if (!$imagick) {
+			$write = true;
+			$iPath = gHpath($this->imageDir, $img);
+
+			// Check we have a valid image
+			if (!is_file($iPath) || !in_array(finfo_file($this->finfo,
+					$iPath), $this->imageMimes)) {
+				return; /// @todo Do something worse
+			}
+
+			// Create an image (for resizing, rotating and thumbnail)
+			$imagick = new Imagick();
+			$imagick->readImage($iPath);
+		}
+
+		$cw = $imagick->getImageWidth();
+		$ch = $imagick->getImageHeight();
+
+		// First check if we need to do anything
+		if ($cw <= $newSize['width'] && $ch <= $newSize['height']) {
+			return;
+		}
+
+		if ($crop) {
+			$cRatio = $cw/$ch;
+			$nRatio = $newSize['width']/$newSize['height'];
+			if ($cRatio > $nRatio) { // Need to crop width
+				$nWidth = $ch * $nRatio;
+				$nx = ($cw - $nWidth) / 2;
+				$imagick->cropImage($nWidth, $ch, $nx, 0);
+				//$imagick->setImagePage(0, 0, 0, 0);
+			} else if ($cRatio < $nRatio) { // Need to crop height
+				$nHeight = $cw / $nRatio;
+				$ny = ($ch - $nHeight) / 2;
+				$imagick->cropImage($cw, $nHeight, 0, $ny);
+				//$imagick->setImagePage(0, 0, 0, 0);
+			}
+		}
+
+		// Resize the image
+		$imagick->resizeImage($newSize['width'], $newSize['height'],
+				imagick::FILTER_CATROM, 1, true);
+
+		if ($write) {
+			$imagick->writeImage($iPath);
+			unset($imagick);
+			return true;
+		}
+
+		return false;
 	}
 
 	/** 
@@ -642,77 +805,85 @@ class GHierarchy {
 	 * database, the metadata will be extracted from the image, the image will
 	 * be rotated and resized if required (according to the orientation metadata),
 	 * a thumbnail will be created and the metadata will be stored in the
-	 * database.
+	 * database. If the image is already in the database, if not forced, we will
+	 * assume that the image has been updated and rotate the image as per its
+	 * orientation. If we are forced, we will not (we will assume that we just
+	 * want to reread the metadata and recreate the thumbnail.
+	 *
 	 * @param $img string Image to add to the database
-	 * @return true If the directory is new
-	 * @return false If the directory is already in the database
+	 * @param $id number Id of image if it is already in the database
+	 * @param $forced boolean If true, it will not try and rotate the image
+	 * @retval true If the directory is new
+	 * @retval false If the directory is already in the database
 	 */
-	protected function registerImage($img, $force = false) {
+	protected function registerImage($img, $id = null, $forced = false) {
 		global $wpdb;
 
-		// Check we have a valid image
-		if (!is_file($img) || !in_array(file_info($finfo, $img), $imageMimes)) {
-		}
+		$iPath = gHpath($this->imageDir, $img);
 
-		// Break if image is already in the database
-		if (!$force && ($wpdb->get_var($wpdb->prepare('SELECT COUNT(image) FROM \'%s\' '
-				. 'WHERE image=\'%s\'', $this->imageTable, $img)))) {
-			return false;
+		// Check we have a valid image
+		if (!is_file($iPath) || !in_array(finfo_file($this->finfo,
+				$iPath), $this->imageMimes)) {
+			return; /// @todo Do something worse
 		}
 
 		// Create an image (for resizing, rotating and thumbnail)
 		$imagick = new Imagick();
-		$imagick->readImage($img);
+		$imagick->readImage($iPath);
 
 		// Read metadata from the database
-		if (function_exists(exif_read_data) && $meta = exif_read_data($img, 'IFD0,COMMENT,EXIF')) {
-			// Check the orientation
-			if (isset($exif['Orientation'])) {
-				$rotate = 0;
-				$flip = '';
+		if ($meta = exif_read_data($iPath, 0)) {
+			$changed = false;
 
-				switch ($exif['Orientation']) {
-					case 5 : // vertical flip + 90 rotate right
-						$flip = 'V';
-					case 6 : // 90 rotate right
-						$rotate = 90;
-						break;
-					case 7 : // horizontal flip + 90 rotate right
-						$flip = 'H';
-					case 8 : // 90 rotate left
-						$rotate = -90;
-						break;
-					case 4 : // vertical flip
-						$flip = 'V';
-						break;
-					case 3 : // 180 rotate left
-						$rotate = 180;
-						break;
-					case 2 : // horizontal flip
-						$flip = 'H';
-						break;						
-					case 1 : // no action in the case it doesn't need a rotation
-					default:
-						break; 
-				}
-				/// @todo Remove orientation from image?
+			if (!$id || ($id && !$forced)) {
+				// Check the orientation
+				if (isset($exif['Orientation'])) {
+					$rotate = 0;
+					$flip = '';
 
-				$changed = false;
-				// Flip / rototate the image
-				if ($rotate || $flip) {
-					rotateImage($rotate, $flip, null, $imagick);
-					$changed = true;
+					switch ($exif['Orientation']) {
+						case 5 : // vertical flip + 90 rotate right
+							$flip = 'V';
+						case 6 : // 90 rotate right
+							$rotate = 90;
+							break;
+						case 7 : // horizontal flip + 90 rotate right
+							$flip = 'H';
+						case 8 : // 90 rotate left
+							$rotate = -90;
+							break;
+						case 4 : // vertical flip
+							$flip = 'V';
+							break;
+						case 3 : // 180 rotate left
+							$rotate = 180;
+							break;
+						case 2 : // horizontal flip
+							$flip = 'H';
+							break;						
+						case 1 : // no action in the case it doesn't need a rotation
+						default:
+							break; 
+					}
+
+					// Flip / rototate the image
+					if ($rotate || $flip) {
+						rotateImage($rotate, $flip, null, $imagick);
+						$changed = true;
+					}
+					/// @todo Remove orientation from image?
 				}
 
 				// Resize the image if required
-				if (get_option()) {
-					resizeToLimit(null, $imagick);
+				if (static::$settings->get_option('gh_resize_images')) {
+					$this->resizeImage(null, $imagick,
+							static::$settings->get_option('gh_image_size'));
 					$changed = true;
 				}
 
 				// Write changed image to file
 				if ($changed) {
-					$imagick->writeImage($img);
+					$imagick->writeImage($iPath);
 				}
 			}
 		}
@@ -721,16 +892,86 @@ class GHierarchy {
 		$height = $imagick->getImageHeight();
 
 		// Create thumbnail
-		createThumbnail(null, $imagick);
+		$this->createThumbnail($img, $imagick);
+
+		// Build metadata information
+		// Try and get XMP data
+		$xmp = $this->getXMP($iPath);
+
+		// Title
+		if (isset($exif['Title'])) { // "windows" information
+			$title = $exif['Title'];
+		} else if (isset($xmp['Title'])) {
+			$title = $xmp['Title'];
+		} else {
+			$title = '';
+		}
+		// Just grab the first title if it is an array
+		if (is_array($title)) {
+			$title = $title[0];
+		}
+
+		// Comment
+		if (isset($exif['ImageDescription'])) {
+			$comment = $exif['ImageDescription'];
+		} else if (isset($exif['Comments'])) { // "windows" information
+			$comment = $exif['Comments'];
+		} else if (isset($xmp['Description'])) {
+			$comment = $xmp['Description'];
+		} else {
+			$comment = '';
+		}
+		// Just grab the first comment if it is an array
+		if (is_array($comment)) {
+			$comment = $comment[0];
+		}
+
+		// Created Date
+		$taken = '';
+		if (isset($exif['DateTimeOriginal'])) {
+			$taken = $exif['DateTimeOriginal'];
+			if ($taken) {
+				$taken = strptime($taken, '%Y:%m:%d %H:%M:%S');
+			}
+		}
+		if (!$taken && isset($xmp['Creation Date'])) {
+			$taken = $xmp['Creation Date'];
+			if ($taken) {
+				$taken = strptime($taken, '%Y-%m-%dT%H:%M:%S');
+			}
+		} 
+		if (!$taken) {
+			$taken = '';
+		}
+
+		// Author
+		if (isset($exif['Artist'])) {
+			$author = $exif['Artist'];
+		} else if (isset($exif['Author'])) { // "windows" information
+			$author = $exif['Author'];
+		} else if (isset($xmp['Creator'])) {
+			$author = $xmp['Creator'];
+		} else {
+			$author = '';
+		}
+
+		// Other metadata
+		// Author (or whatever it is), focal length, camera model, iso,
+		// apature
 
 		// Build Tags
 		if (isset($exif['Keywords'])) {
-			$tags = preg_split(' *, *', $exif['Keywords']);
+			$tags = $exif['Keywords'];
+		} else if (isset($xmp['Keywords'])) {
+			$tags = $xmp['Keywords'];
 		} else {
 			$tags = array();
 		}
+		if (is_string($tags)) {
+			$tags = preg_split(' *, *', $tags);
+		}
 
-		if ($this->options['folderKeywords']) {	
+		if (static::$settings->get_option('gh_folder_keywords')) {	
 			$dir = dirname($img);
 
 			$dir = explode(DIRECTORY_SEPARATOR, $dir);
@@ -747,19 +988,22 @@ class GHierarchy {
 		}
 
 		// Write image to database
-		$wpdb->query($wpdb->prepare('INSERT %s (image, width, height, taken, '
-				. 'title, comment, tags) VALUE (\'%s\', %d, %d, %d, \'%s\', '
-				. ' \'%s\', \'%s\') ON DUPLICATE '
-				. 'KEY UPDATE width=%d, height=%d'
-				. ($taken ? $wpdb->prepare(', taken=%d', $taken) : '')
-				. ($title ? $wpdb->prepare(', title=\'%s\'', $title) : '')
-				. ($comment ? $wpdb->prepare(', comment=\'%s\'', $comment) : '')
-				. ($tags ? $wpdb->prepare(', tags=\'%s\'', $tags) : ''),
-				$this->imageTable, $img, $width, $height, $taken, $title, $comment,
-				$tags, $width, $height
-		));
+		$data = array(
+				'image' => $img,
+				'width' => $width,
+				'height' => $height
+		);
+		if ($taken) $data['taken'] = $taken;
+		if ($title) $data['title'] = $title;
+		if ($comment) $data['comment'] = $comment;
+		if ($tags) $data['tags'] = $tags;
+		//if ($) $data[''] = $;
 
-		return true;
+		if ($id) {
+			$wpdb->update($this->imageTable, $data, array('id' => $id));
+		} else {
+			$wpdb->insert($this->imageTable, $data);
+		}
 	}
 
 	/**
@@ -807,13 +1051,12 @@ class GHierarchy {
 				. "image text NOT NULL, \n"
 				. "width smallint(5) unsigned NOT NULL, \n"
 				. "height smallint(5) unsigned NOT NULL, \n"
-			  . "added timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE "
-				. "CURRENT_TIMESTAMP, \n"
-			  . "taken timestamp NOT NULL DEFAULT '0000-00-00 00:00:00', \n"
-				. "title text NOT NULL DEFAULT '', \n"
-				. "comment text NOT NULL DEFAULT '', \n"
-				. "tags text NOT NULL DEFAULT '', \n"
-				. "metadata text NOT NULL DEFAULT '', \n"
+			  . "added timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, \n"
+			  . "taken timestamp, \n"
+				. "title text, \n"
+				. "comment text, \n"
+				. "tags text, \n"
+				. "metadata text, \n"
 			  . "PRIMARY KEY (id) \n"
 				. ") $charset_collate;";
 

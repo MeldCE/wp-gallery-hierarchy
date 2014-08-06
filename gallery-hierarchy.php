@@ -28,7 +28,8 @@ if (!class_exists('GHierarchy')) {
 	}
 
 	add_action('gh_rescan', array('GHierarchy', 'scan'));
-	add_action('plugins_loaded', gHierarchySetup);
+	add_action('plugins_loaded', 'gHierarchySetup');
 
+	/// @todo Add a hook for plugin deletion
 	register_activation_hook(__FILE__, array('GHierarchy', 'install'));
 }
