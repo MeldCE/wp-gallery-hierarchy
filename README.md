@@ -7,24 +7,23 @@ By [Meld Computer Engineering](http://www.meldce.com)
 
 ## Introduction
 
-Being super tired of the short-comings of all the gallery plugins in Wordpress
-that I have tried and looked at, I have decided to create my own that suit my
+Being super tired of the limitations of the gallery plugins in Wordpress
+that I have tried and looked at, I decided to create my own that suits my
 needs and maybe it will yours as well.
 
 Images are stored in hierarchical folders, as you normally would. To add new
 images, you can either put them directly into the folders or upload them 
-through the web interface (Todo). If loaded directly into the folder, an
+through the web interface (Todo). If loaded directly into the folder, a
 rescan must be initiated to find the new images.
 
 When new images are loaded, the plugin can rotate and resize according to the
-EXIF gallery. An image title, comment and tags will also be extracted from the
-EXIF data. The folders can also be added to the tags of the images, useful for
+EXIF data. An image title, comment and tags will also be extracted from the image's
+EXIF and XMP data. The folder names can also be added as tags to the images, useful for
 if you are organising the images into locations.
 
-Once loaded, images can be search through by dates, keywords, folders, or
-search terms. You can then insert thumbnail, single images, or fancier albums
-into posts and pages either using your search query, or a single or a list of
-id(s).
+Once loaded, images can be searched by dates, tags, folders, or
+search terms. You can then insert thumbnails, single images, or fancier albums
+into posts and pages either using your search query, a single id or a list of ids.
 
 This plugin contains no styling for the inserted images, so it is up to you or
 your theme to style them how you want.
@@ -35,7 +34,7 @@ your theme to style them how you want.
   interface
 - Automatic resizing and rotating of images on addition to the database
 - Auto tagging based on folder hierarchy
-- Cached thumbnails and different sized versions of an image
+- Caches thumbnails and different sized versions of an image
 - AJAX-based image gallery/search
   - Easy image selection
     - Selection based on either manually selecting images or filtering
@@ -58,9 +57,9 @@ The plugin has the following shortcodes:
 #### Shortcode Attributes
 
 The following shortcode attributes are available for the included shortcodes
-- `id="<id1>,<id2>,..."` - list of photos (some sort of query or list - see
+- `id="<id1>,<id2>,..."` - list of images (some sort of query or list - see
   Image Selection below (`ghalbum` `ghthumbnail` `ghimage`)
-- `group="<group1>"` - id for linking photos to scroll through with lightbox
+- `group="<group1>"` - id for linking images to scroll through with lightbox
   (`ghthumbnail` `ghimage`)
 - `class="<class1> <class2> ...` - additional classes to put on the images
   (`ghthumbnail` `ghimage`)
@@ -77,7 +76,7 @@ Examples:
 
 `[ghalbum id="123,145" group="1" caption="comment" link="http://www.example.com"]`
 
-Will produce a album showing two images, 123 & 145, with the comment below.
+Will produce an album showing two images, 123 & 145, with the images' comments below.
 When the user clicks on the images, they will be taken to www.example.com.
 
 `[ghimage id="123" class="float-left" link="none"]`
@@ -87,7 +86,7 @@ link.
 
 ### Image Selection
 
-Gallery Hierarchy allows you to select individual and/or use filters to select
+Gallery Hierarchy allows you to select individual images and/or use filters to select
 the images you want to include. The image selection string (the id attribute)
 should be a comma-separated list of image ids and filters.
 
@@ -99,13 +98,13 @@ The following filters are available:
 - `taken:<date1>-<date2>` - Specifies when the image was taken/created.
   `<date1>` specifies after what date the photo should have been taken.
   `<date1>` specifies before what date the photo should have been taken.
-  Either date can be ommited. The dates must be in the format
-  `YYYY-MM-DD HH:MM:SS`. The time can be ommited.
+  Either date can be omitted. The dates must be in the format
+  `YYYY-MM-DD HH:MM:SS`. The time can be omitted.
 - `tags:` - Specifies what tags the images should have (see below)
 - `title:` - Specifies what words should be in the image titles (see below)
 - `comment:` - Specifies what words should be in the image comments (see below)
 
-The `tags:`, `title:` and `date` can contain logic and grouping of tags/words.
+The `tags:`, `title:` and `comment` can contain logic and grouping of tags/words.
 `|` specifies OR, `&` specifies AND, and `(` `)` can be used to group logic.
 For example:
 
@@ -113,9 +112,9 @@ For example:
 tag or both the `travel` and `new zealand` tags.
 
 ### Options
-- Location of image folder
-- Location of cache image folder
-- Folders to image tags
+- Location of images folder
+- Location of cached images folder
+- Enable folder names to be added to image tags
 - Enable resizing of images
 - Number of images to display per page in the image gallery/search
 - Add the title to the start of the comment
