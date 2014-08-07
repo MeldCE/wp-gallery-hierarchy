@@ -19,7 +19,10 @@ class GHierarchy {
 
 	/// Rescan variables
 	protected static $nextSet = 0;
-	protected $baseDir;
+	protected $imageDir;
+	protected $imageUrl;
+	protected $cacheDir;
+	protected $cacheUrl;
 
 	protected function  __construct() {
 		global $wpdb;
@@ -111,18 +114,9 @@ class GHierarchy {
 										)
 								)
 						),
-						'gHOther' => array(
-								'title' => __('Other Options', 'gallery_hierarchy'),
+						'gHDisplay' => array(
+								'title' => __('Display Options', 'gallery_hierarchy'),
 								'fields' => array(
-										'gh_num_images' => array(
-												'title' => __('Images per Page', 'gallery_hierarchy'),
-												'description' => __('Default number of images per '
-														. 'page to show in the gallery view. Set to 0 '
-														. 'for all of the images (could be really '
-														. 'slow).', 'gallery_hierarchy'),
-												'type' => 'number',
-												'default' => 100
-										),
 										'gh_add_title' => array(
 												'title' => __('Add Title', 'gallery_hierarchy'),
 												'description' => __('If this option is selected, the '
@@ -131,6 +125,34 @@ class GHierarchy {
 														'gallery_hierarchy'),
 												'type' => 'boolean',
 												'default' => true
+										),
+										'gh_group' => array(
+												'title' => __('Group Images by Default',
+														'gallery_hierarchy'),
+												'description' => __('If this option is selected, '
+														. 'images will be grouped by default into the '
+														. 'group "group".',
+														'gallery_hierarchy'),
+												'type' => 'boolean',
+												'default' => true
+										),
+										'gh_thumb_class' => array(
+												'title' => __('Default Thumbnail Class', 'gallery_hierarchy'),
+												'description' => __('The classes to set on a '
+														. 'thumbnail by default (space separated).'
+														'gallery_hierarchy'),
+												'type' => 'text',
+												'default' => '',
+										),
+										'gh_thumb_class_append' => array(
+												'title' => __('Append Specified Thumbnail Classes',
+														'gallery_hierarchy'),
+												'description' => __('If true, any classes given in '
+														. 'the shortcode will be appended to the default '
+														. ' classes given above.'
+														'gallery_hierarchy'),
+												'type' => 'boolean',
+												'default' => false
 										),
 										'gh_thumb_description' => array(
 												'title' => __('Thumbnail Description',
@@ -145,6 +167,24 @@ class GHierarchy {
 												),
 												'default' => ''
 										),
+										'gh_album_class' => array(
+												'title' => __('Default Album Class', 'gallery_hierarchy'),
+												'description' => __('The classes to set on a '
+														. 'album by default (space separated).'
+														'gallery_hierarchy'),
+												'type' => 'text',
+												'default' => '',
+										),
+										'gh_album_class_append' => array(
+												'title' => __('Append Specified Album Classes',
+														'gallery_hierarchy'),
+												'description' => __('If true, any classes given in '
+														. 'the shortcode will be appended to the default '
+														. ' classes given above.'
+														'gallery_hierarchy'),
+												'type' => 'boolean',
+												'default' => false
+										),
 										'gh_album_description' => array(
 												'title' => __('Album Description', 'gallery_hierarchy'),
 												'description' => __('What is shown by default underneath '
@@ -156,6 +196,23 @@ class GHierarchy {
 														 'comment' => __('Image Comment', 'gallery_hierarchy')
 												),
 												'default' => 'comment'
+										),
+										'gh_image_class' => array(
+												'title' => __('Default Image Class', 'gallery_hierarchy'),
+												'description' => __('The classes to set on a '
+														. 'image by default (space separated).'
+														'gallery_hierarchy'),
+												'type' => 'text',
+												'default' => '',
+										),
+										'gh_image_class_append' => array(
+												'title' => __('Append Specified Image Classes', 'gallery_hierarchy'),
+												'description' => __('If true, any classes given in '
+														. 'the shortcode will be appended to the default '
+														. ' classes given above.'
+														'gallery_hierarchy'),
+												'type' => 'boolean',
+												'default' => false
 										),
 										'gh_image_description' => array(
 												'title' => __('Image Description', 'gallery_hierarchy'),
@@ -182,6 +239,19 @@ class GHierarchy {
 												),
 												'default' => 'title'
 										)
+						),
+						'gHOther' => array(
+								'title' => __('Other Options', 'gallery_hierarchy'),
+								'fields' => array(
+										'gh_num_images' => array(
+												'title' => __('Images per Page', 'gallery_hierarchy'),
+												'description' => __('Default number of images per '
+														. 'page to show in the gallery view. Set to 0 '
+														. 'for all of the images (could be really '
+														. 'slow).', 'gallery_hierarchy'),
+												'type' => 'number',
+												'default' => 100
+										),
 								)
 						)
 				)
@@ -189,13 +259,15 @@ class GHierarchy {
 		static::$settings = new WPSettings($options);
 
 		// Create path to image Directory
-		$this->imageDir = gHpath(WP_CONTENT_DIR,
-				static::$settings->get_option('gh_folder'));
+		$imageDir = static::$settings->get_option('gh_folder');
+		$this->imageDir = gHpath(WP_CONTENT_DIR, $imageDir);
 		// Remove trailing slash
 		$this->imageDir = gHptrim($this->imageDir);
+		$this->imageUrl = content_url($imageDir);
 		// Create path to cache directory
-		$this->cacheDir = gHpath(WP_CONTENT_DIR,
-				static::$settings->get_option('gh_cache_folder'));
+		$cacheDir = static::$settings->get_option('gh_cache_folder');
+		$this->cacheDir = gHpath(WP_CONTENT_DIR, $cacheDir);
+		$this->cacheUrl = content_url($cacheDir);
 		// Remove trailing slash
 		$this->cacheDir = gHptrim($this->cacheDir);
 
@@ -215,7 +287,7 @@ class GHierarchy {
 		}
 	}
 
-	protected static function instance() {
+	protected static function &instance() {
 		if (!static::$instance) {
 			static::$instance = new self();
 		}
@@ -284,6 +356,12 @@ class GHierarchy {
 						'gallery_hierarchy') . $this->cacheDir);
 				$this->disable = true;
 			}
+		}
+		// Check cache dir is writable
+		if (!is_writable($this->cacheDir)) {
+			$this->echoError(__('Need to be able to write to the cache directory',
+					'gallery_hierarchy'));
+			$this->disable = true;
 		}
 	}
 
@@ -360,6 +438,123 @@ class GHierarchy {
 		echo '<p>' . __('Choose where you want to upload them and upload them '
 				. 'using the form below.', 'gallery_hierarchy') . '</p>';
 	}
+
+	/**
+	 * Controls the generation of HTML for the shortcode replacement.
+	 * This function will also fill out the attributes with the default
+	 * values from the plugin options (does not use the Wordpress function to do
+	 * this to save unnessecary calls to get_option).
+	 *
+	 * @param $atts Array Associative array containing the attriutes specified in
+	 *              the shortcode
+	 * @param $content string Content inside of the shortcode (shouldn't be any)
+	 * @param $tag string Tag of the shortcode.
+	 */
+	static function doShortcode($atts, $content, $tag) {
+		global $wpdb;
+
+		$me = static::instance();
+
+		// Fill out the attributes with the default
+		switch ($tag) {
+			case 'ghimage':
+				$classO = 'gh_image_class';
+				$classAO = 'gh_image_class_append';
+				$caption = 'gh_image_description';
+				break;
+			case 'ghthumb':
+				$classO = 'gh_thumb_class';
+				$classAO = 'gh_thumb_class_append';
+				$caption = 'gh_thumb_description';
+				break;
+			case 'ghalbum':
+				$classO = 'gh_album_class';
+				$classAO = 'gh_album_class_append';
+				$caption = 'gh_album_description';
+				break;
+		}
+
+		// `id="<id1>,<id2>,..."` - list of photos (some sort of query or list)
+		// (`ghalbum` `ghthumbnail` `ghimage`)
+		$parts = explode(',', $atts['id']);
+		$ids = array();
+
+		foreach ($parts as &$part) {
+			if (strpos($part, ':') !== false) {
+				$like = false;
+				$part = explode(':',$part);
+				if (isset($part[1]) && $part[1]) {
+					switch($part[0]) {
+						case 'rfolder':
+							$like = true;
+						case 'folder':
+							$fids = explode('|', $part[1]);
+							$folders = $wpdb->get_col('SELECT dir FROM ' . $me->imageTable
+									. ' WHERE id IN (
+						case 'taken':
+						case 'tags':
+						case 'title':
+						case 'comment':
+						default:
+							// Ignore as not valid
+							continue;
+					}
+				} else {
+					continue;
+				}
+			} else {
+				if (is_numeric($part)) {
+					$ids[] = $part;
+				}
+			}
+
+		// `group="<group1>"` - id for linking photos to scroll through with
+		// lightbox (`ghthumbnail` `ghimage`)
+		if (!isset($atts['group'])
+				&& static::$settings->get_option('gh_group')) {
+			$atts['group'] = 'group';
+		}
+
+		// `class="<class1> <class2> ...` - additional classes to put on the images
+		// (`ghthumbnail` `ghimage`)
+		if (!isset($atts['class'])
+				|| static::$settings->get_option($classAO)) {
+			if (!isset($atts['class'])) {
+				$atts['class'] = '';
+			}
+
+			$atts['class'] =. static::$settings->get_option($classO);
+		}
+
+		// `caption="(none|title|comment)"` - Type of caption to show. Default set
+		// in plugin options (`ghalbum` `ghthumbnail` `ghimage`)
+		if (!isset($atts['caption'])) {
+			$atts['caption'] = static::$settings->get_option($caption);
+		}
+
+		// `popup_caption="(none|title|comment)"` - Type of caption to show on
+		//	popup. Default set in plugin options (`ghalbum` `ghthumbnail`
+		// `ghimage`)
+		if (!isset($atts['popup_caption'])) {
+			$atts['popup_caption'] =
+					static::$settings->get_option('gh_popup_description');
+		}
+		
+		// `link="(none|popup|<url>)"` - URL link on image, by default it will be
+		// the image url and will cause a lightbox popup
+		/// @todo Make it a setting?
+		if (!isset($atts['link'])) {
+			$atts['link'] = 'popup';
+		}
+
+		switch ($tag) {
+			case 'ghimage':
+				
+			case 'ghthumb':
+				$atts['type'] = 'thumbnail';
+			case 'ghalbum':
+				// `type="<type1>"` - of album (`ghalbum`)
+				// Go through all the albums to see if we have a type that matches
 
 	/**
 	 * Sets the two transients involved with scanning folders
@@ -708,16 +903,45 @@ class GHierarchy {
 		return $name;
 	}
 
-	static function getImageURL($image) {
+	/**
+	 * Returns the URL to the image in the object given
+	 *
+	 * @param $image Object Row object containing information on image
+	 * @return string URL to image
+	 */
+	static function getImageURL(Object $image) {
 		$me = static::instance();
 
-
+		return gHurl($me->imageUrl, $image->image);
 	}
 
+	/**
+	 * Returns the URL to a cached image of the image in the object
+	 * given. This function will also ensure that the cached image file exists.
+	 * If it does not, it will be created before returning the URL.
+	 *
+	 * @param $image Object Row object containing information on image
+	 * @param $size Array Size of cached image to return. If null, will return
+	 *              the thumbnail image.
+	 * @return string URL to image
+	 */
 	static function getCImageURL($image, $size = null) {
 		$me = static::instance();
 
+		$iName = $me->getCImagePath($image->image, $size);
 
+		$iPath = gHpath($me->cachePath, $iName);
+
+		// Ensure the cached image exists
+		if (!is_file($iPath)) {
+			if (!$size) {
+				$me->createThumbnail($iName);
+			} else {
+				$me->resizeImage($image->image, null, $size, false, $iPath);
+			}
+		}
+
+		return gHurl($me->cacheUrl, $iName);
 	}
 
 	/**
@@ -754,12 +978,17 @@ class GHierarchy {
 	 *                      fit the exact given dimensions. If false, the
 	 *                      image will be resized to fit inside the given
 	 *                      dimensions.
+	 * @param $newImagePath string Path to image to write to.
 	 * @retval true If the image was written to.
 	 * @retval false If the image was not written to.
 	 * @note If given, the Imagick object will be modified!
 	 */
-	protected function resizeImage($image, &$imagick, $newSize, $crop = false) {
+	protected function resizeImage($image, &$imagick, $newSize, $crop = false, $newImagePath = false) {
 		$write = false;
+		if ($newImagePath) {
+			$write = true;
+		}
+
 		if (!$imagick) {
 			$write = true;
 			$iPath = gHpath($this->imageDir, $img);
@@ -804,7 +1033,11 @@ class GHierarchy {
 				imagick::FILTER_CATROM, 1, true);
 
 		if ($write) {
-			$imagick->writeImage($iPath);
+			if ($newImagePath) {
+				$imagick->writeImage($newImagePath);
+			} else {
+				$imagick->writeImage($iPath);
+			}
 			unset($imagick);
 			return true;
 		}
@@ -1023,9 +1256,7 @@ class GHierarchy {
 	static function install() {
 		global $wpdb;
 
-		if (!$instance) {
-			static::$instance = new self();
-		}
+		$me = static::instance();
 
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
@@ -1045,7 +1276,7 @@ class GHierarchy {
 		}
 
 		// Check that the directory table is there
-		$sql = "CREATE TABLE " . static::$instance->dirTable . " ( \n"
+		$sql = "CREATE TABLE " . $me->dirTable . " ( \n"
 				. "id smallint(5) NOT NULL AUTO_INCREMENT, \n"
 				. "dir varchar(350) NOT NULL, \n"
 			  . "added timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, \n"
@@ -1055,9 +1286,9 @@ class GHierarchy {
 		dbDelta( $sql );
 
 		// Check that the image table is there
-		$sql = "CREATE TABLE " . static::$instance->imageTable . " ( \n"
+		$sql = "CREATE TABLE " . $me->imageTable . " ( \n"
 				. "id smallint(5) NOT NULL AUTO_INCREMENT, \n"
-				. "image text NOT NULL, \n"
+TODO FIX in code				. "name text NOT NULL, \n"
 				. "width smallint(5) unsigned NOT NULL, \n"
 				. "height smallint(5) unsigned NOT NULL, \n"
 			  . "added timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, \n"
