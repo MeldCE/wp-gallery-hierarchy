@@ -17,13 +17,14 @@ through the web interface (Todo). If loaded directly into the folder, a
 rescan must be initiated to find the new images.
 
 When new images are loaded, the plugin can rotate and resize according to the
-EXIF data. An image title, comment and tags will also be extracted from the image's
-EXIF and XMP data. The folder names can also be added as tags to the images, useful for
-if you are organising the images into locations.
+EXIF data. An image title, comment and tags will also be extracted from the
+image's EXIF and XMP data. The folder names can also be added as tags to the
+images - useful, for example, if you are organising the images into locations.
 
 Once loaded, images can be searched by dates, tags, folders, or
 search terms. You can then insert thumbnails, single images, or fancier albums
-into posts and pages either using your search query, a single id or a list of ids.
+into posts and pages either using your search query, a single id or a list of
+ids.
 
 This plugin contains no styling for the inserted images, so it is up to you or
 your theme to style them how you want.
