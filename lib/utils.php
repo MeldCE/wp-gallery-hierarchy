@@ -11,6 +11,19 @@ function gHpath() {
 }
 
 /**
+ * Builds a URL.
+ * @param $segments,... string Unlimited number of path segments
+ * @return string URL
+ */
+function gHurl() {
+	if (DIRECTORY_SEPARATOR === '/') {
+		return join(DIRECTORY_SEPARATOR, func_get_args());
+	} else {
+		$url = join(DIRECTORY_SEPARATOR, func_get_args());
+		return str_replace(DIRECTORY_SEPARATOR, '/', $url);
+}
+
+/**
  * Removes any trailing directory separator from a path
  * @param $path string Path to remove trailing directory separators from
  * @return string Path with separators removed
