@@ -55,10 +55,11 @@ The plugin has the following shortcodes:
   (shortcut for `ghalbum type="thumbnail"`)
 - `ghimage` - for a single image
 
-#### Shortcode Options
-The following shortcode options are available for the included shortcodes
-- `id="<id1>,<id2>,..."` - list of photos (some sort of query or list)
-  (`ghalbum` `ghthumbnail` `ghimage`)
+#### Shortcode Attributes
+
+The following shortcode attributes are available for the included shortcodes
+- `id="<id1>,<id2>,..."` - list of photos (some sort of query or list - see
+  Image Selection below (`ghalbum` `ghthumbnail` `ghimage`)
 - `group="<group1>"` - id for linking photos to scroll through with lightbox
   (`ghthumbnail` `ghimage`)
 - `class="<class1> <class2> ...` - additional classes to put on the images
@@ -83,6 +84,33 @@ When the user clicks on the images, they will be taken to www.example.com.
 
 Will produce a full-sized image with the float-left class on it and no url
 link.
+
+### Image Selection
+
+Gallery Hierarchy allows you to select individual and/or use filters to select
+the images you want to include. The image selection string (the id attribute)
+should be a comma-separated list of image ids and filters.
+
+The following filters are available:
+- `folder:<id1>|<id2>` - Specifies what folders to look in by their ids,
+  separated with `|`
+- `rfolder:<id1>|<id2>` - Specifies what folders and their sub-directories to
+  look in by their ids, separated with `|`
+- `taken:<date1>-<date2>` - Specifies when the image was taken/created.
+  `<date1>` specifies after what date the photo should have been taken.
+  `<date1>` specifies before what date the photo should have been taken.
+  Either date can be ommited. The dates must be in the format
+  `YYYY-MM-DD HH:MM:SS`. The time can be ommited.
+- `tags:` - Specifies what tags the images should have (see below)
+- `title:` - Specifies what words should be in the image titles (see below)
+- `comment:` - Specifies what words should be in the image comments (see below)
+
+The `tags:`, `title:` and `date` can contain logic and grouping of tags/words.
+`|` specifies OR, `&` specifies AND, and `(` `)` can be used to group logic.
+For example:
+
+`tags:home|(travel&new zealand)` will select images that have either the `home`
+tag or both the `travel` and `new zealand` tags.
 
 ### Options
 - Location of image folder
