@@ -32,4 +32,9 @@ if (!class_exists('GHierarchy')) {
 
 	/// @todo Add a hook for plugin deletion
 	register_activation_hook(__FILE__, array('GHierarchy', 'install'));
+
+	// Shortcodes
+	add_shortcode('ghalbum', array('GHierarchy', 'doShortcode'));
+	add_shortcode('ghthumb', array('GHierarchy', 'doShortcode'));
+	add_shortcode('ghimage', array('GHierarchy', 'doShortcode'));
 }
