@@ -17,7 +17,7 @@ class GHThumbnails implements GHAlbum {
 	static function enqueue() {
 	}
 
-	static function print($images, $options) {
+	static function print(&$images, &$options) {
 		if ($images) {
 			echo '<div' . ($options['class'] ? ' class="' . $options['class'] . '"'
 					: '') . '>';
@@ -38,8 +38,20 @@ class GHThumbnails implements GHAlbum {
 				echo '><img src="' . GHierarcy::getCImageURL($image) . '">';
 				
 				// Add comment
-				switch ($options['
-
+				switch ($options['caption']) {
+					case 'none':
+						break;
+					case 'title':
+						echo '<span>' . $image->title . '</span>';
+						break;
+					case 'caption':
+						echo '<span>' . $image->caption . '</span>';
+						break;
+				}
+						
 				echo '</a>';
+			}
+
+			echo '</div>';
 	}
 }
