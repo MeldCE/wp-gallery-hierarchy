@@ -120,10 +120,15 @@ tag or both the `travel` and `new zealand` tags.
 - Add the title to the start of the comment
 - What is displayed by default below the images (per type)
 
+## Installation
+This project uses [Lightbox](https://github.com/lokesh/lightbox2.git) and
+[wp-settings](https://github.com/weldstudio/wp-settings) as a Git submodules.
+To initialise them, you will need to run the command
+`git submodule update --init`
+from the cloned directory.
+
 ## Future Features (Todos)
-- Upload interface
-- Google Drive syncing
+https://github.com/weldstudio/wp-gallery-hierarchy/issues
 
 ## Changelog
-
-
+https://github.com/weldstudio/wp-gallery-hierarchy/releases
