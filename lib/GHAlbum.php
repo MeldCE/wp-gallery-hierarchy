@@ -47,5 +47,5 @@ interface GHAlbum {
 	 *                      images are placed
 	 * @param $options array Array containing the options built for the shortcode
 	 */
-	 static function print();
+	 static function printAlbum(&$images, &$options);
 }
