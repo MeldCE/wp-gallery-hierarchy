@@ -21,6 +21,7 @@ function gHurl() {
 	} else {
 		$url = join(DIRECTORY_SEPARATOR, func_get_args());
 		return str_replace(DIRECTORY_SEPARATOR, '/', $url);
+	}
 }
 
 /**
@@ -34,6 +35,17 @@ function gHptrim($path, $ltrim = false) {
 	} else {
 		return rtrim($path, DIRECTORY_SEPARATOR);
 	}
+}
+
+/**
+ * Checks if a string contains only numbers (0-9)
+ *
+ * @param $text string Text to check if it contains only numbers
+ * @retval 1 Contains only numbers
+ * @retval 0 Does not contain only numbers
+ */
+function GHisInt($text) {
+	return preg_match('/^[0-9]+$/', $text);
 }
 
 /**
@@ -63,4 +75,5 @@ function mysqlDate($date, $format) {
 function phpDate($date) {
 	return strtotime($time);
 }
+
 ?>
