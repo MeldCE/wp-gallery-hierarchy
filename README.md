@@ -60,6 +60,7 @@ The plugin has the following shortcodes:
 The following shortcode attributes are available for the included shortcodes
 - `id="<id1>,<id2>,..."` - list of images (some sort of query or list - see
   Image Selection below (`ghalbum` `ghthumbnail` `ghimage`)
+- `sort=""` - way the images should be sorted
 - `group="<group1>"` - id for linking images to scroll through with lightbox
   (`ghthumbnail` `ghimage`)
 - `class="<class1> <class2> ...` - additional classes to put on the images
@@ -92,24 +93,29 @@ the images you want to include. The image selection string (the id attribute)
 should be a comma-separated list of image ids and filters.
 
 The following filters are available:
-- `folder:<id1>|<id2>` - Specifies what folders to look in by their ids,
+- `folder=<id1>|<id2>` - Specifies what folders to look in by their ids,
   separated with `|`
-- `rfolder:<id1>|<id2>` - Specifies what folders and their sub-directories to
+- `rfolder=<id1>|<id2>` - Specifies what folders and their sub-directories to
   look in by their ids, separated with `|`
-- `taken:<date1>-<date2>` - Specifies when the image was taken/created.
+- `taken=<date1>|<date2>` - Specifies when the image was taken/created.
   `<date1>` specifies after what date the photo should have been taken.
   `<date1>` specifies before what date the photo should have been taken.
   Either date can be omitted. The dates must be in the format
-  `YYYY-MM-DD HH:MM:SS`. The time can be omitted.
-- `tags:` - Specifies what tags the images should have (see below)
-- `title:` - Specifies what words should be in the image titles (see below)
-- `comment:` - Specifies what words should be in the image comments (see below)
+  `YYYY-MM-DD HH:MM:SS`. The time can be omitted. If only a date is given, only
+  images taken/created on that day will be selected. For example,
+  `taken=|2012-03-12` will match all images taken/created before the 12th of
+  March, 2012.	`taken=2012-03-12 12:00:00|` will match all images
+  taken/created after midday on that day. `taken=2012-03-12|2012-03-17` will
+  match all images taken between the 12th and the 17th of March, 2012.
+- `tags=` - Specifies what tags the images should have (see below)
+- `title=` - Specifies what words should be in the image titles (see below)
+- `comment=` - Specifies what words should be in the image comments (see below)
 
-The `tags:`, `title:` and `comment` can contain logic and grouping of tags/words.
+The `tags=`, `title=` and `comment=` can contain logic and grouping of tags/words.
 `|` specifies OR, `&` specifies AND, and `(` `)` can be used to group logic.
 For example:
 
-`tags:home|(travel&new zealand)` will select images that have either the `home`
+`tags=home|(travel&new zealand)` will select images that have either the `home`
 tag or both the `travel` and `new zealand` tags.
 
 ### Options
