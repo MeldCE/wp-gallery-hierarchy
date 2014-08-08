@@ -17,7 +17,7 @@ class GHThumbnails implements GHAlbum {
 	static function enqueue() {
 	}
 
-	static function print(&$images, &$options) {
+	static function printAlbum(&$images, &$options) {
 		if ($images) {
 			echo '<div' . ($options['class'] ? ' class="' . $options['class'] . '"'
 					: '') . '>';
@@ -53,5 +53,6 @@ class GHThumbnails implements GHAlbum {
 			}
 
 			echo '</div>';
+		}
 	}
 }
