@@ -1324,7 +1324,9 @@ class GHierarchy {
 
 				// Write changed image to file
 				if ($changed) {
-					$imagick->writeImage($iPath);
+					// Write to a temporary file first
+					$imagick->writeImage($iPath . '.new');
+					rename($iPath . '.new', $iPath);
 				}
 			}
 		}
