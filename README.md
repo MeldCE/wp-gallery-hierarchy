@@ -73,6 +73,8 @@ The following shortcode attributes are available for the included shortcodes
   image url and will cause a lightbox popup
 - `size="(<width>x<height>)"` - size of image (`ghimage`)
 - `type="<type1>"` - of album (`ghalbum`)
+- `include_excluded="(0|1)" - include excluded images in the query result.
+  Default is to not (`ghalbum` `ghthumbnail` `ghimage`)
 
 Examples:
 

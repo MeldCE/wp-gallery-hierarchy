@@ -639,7 +639,11 @@ class GHierarchy {
 			$query['folders'] = join(' OR ', $q);
 		}
 
-		$w[] = '(' . join(') AND (', array_values($query)) . ')';
+		if ($query) {
+			$w[] = '((' . join(') AND (', array_values($query)) . ')' 
+			. (isset($atts['include_excluded']) && $atts['include_excluded']
+			? ' AND excluded=0' : '') . ')';
+		}
 		$q = 'SELECT * FROM ' . $me->imageTable 
 				. ($w ? ' WHERE ' . join(' OR ', $w) : '');
 		$images = $wpdb->get_results($q, OBJECT_K);
@@ -1495,6 +1499,7 @@ class GHierarchy {
 				. "comment text, \n"
 				. "tags text, \n"
 				. "metadata text, \n"
+				. "exclude tinyint(1) unsigned NOT NULL DEFAULT 0, \n"
 			  . "PRIMARY KEY (id) \n"
 				. ") $charset_collate;";
 
