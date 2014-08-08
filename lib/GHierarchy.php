@@ -12,9 +12,11 @@ class GHierarchy {
 	protected static $settings;
 	protected static $scanTransient = 'gHScanTran';
 	protected static $statusTransient = 'gHStatusTran';
+	protected static $filesTransient = 'gHFilesTran';
 	protected $disabled = array();
 	protected static $scanTransientTime = 60;
 	protected static $statusTransientTime = DAY_IN_SECONDS;
+	protected static $filesTransientTime = DAY_IN_SECONDS;
 	protected static $runAdminInit = false;
 
 	/// Rescan variables
@@ -139,7 +141,7 @@ class GHierarchy {
 										'gh_thumb_class' => array(
 												'title' => __('Default Thumbnail Class', 'gallery_hierarchy'),
 												'description' => __('The classes to set on a '
-														. 'thumbnail by default (space separated).'
+														. 'thumbnail by default (space separated).',
 														'gallery_hierarchy'),
 												'type' => 'text',
 												'default' => '',
@@ -149,7 +151,7 @@ class GHierarchy {
 														'gallery_hierarchy'),
 												'description' => __('If true, any classes given in '
 														. 'the shortcode will be appended to the default '
-														. ' classes given above.'
+														. ' classes given above.',
 														'gallery_hierarchy'),
 												'type' => 'boolean',
 												'default' => false
@@ -170,7 +172,7 @@ class GHierarchy {
 										'gh_album_class' => array(
 												'title' => __('Default Album Class', 'gallery_hierarchy'),
 												'description' => __('The classes to set on a '
-														. 'album by default (space separated).'
+														. 'album by default (space separated).',
 														'gallery_hierarchy'),
 												'type' => 'text',
 												'default' => '',
@@ -180,7 +182,7 @@ class GHierarchy {
 														'gallery_hierarchy'),
 												'description' => __('If true, any classes given in '
 														. 'the shortcode will be appended to the default '
-														. ' classes given above.'
+														. ' classes given above.',
 														'gallery_hierarchy'),
 												'type' => 'boolean',
 												'default' => false
@@ -200,7 +202,7 @@ class GHierarchy {
 										'gh_image_class' => array(
 												'title' => __('Default Image Class', 'gallery_hierarchy'),
 												'description' => __('The classes to set on a '
-														. 'image by default (space separated).'
+														. 'image by default (space separated).',
 														'gallery_hierarchy'),
 												'type' => 'text',
 												'default' => '',
@@ -209,7 +211,7 @@ class GHierarchy {
 												'title' => __('Append Specified Image Classes', 'gallery_hierarchy'),
 												'description' => __('If true, any classes given in '
 														. 'the shortcode will be appended to the default '
-														. ' classes given above.'
+														. ' classes given above.',
 														'gallery_hierarchy'),
 												'type' => 'boolean',
 												'default' => false
@@ -239,6 +241,7 @@ class GHierarchy {
 												),
 												'default' => 'title'
 										)
+								)
 						),
 						'gHOther' => array(
 								'title' => __('Other Options', 'gallery_hierarchy'),
@@ -380,6 +383,13 @@ class GHierarchy {
 	function gHLoadPage() {
 		$this->checkFunctions();
 
+		/** @todo Remove
+		$this->doShortcode(array(
+			//'id' => 'folder=70',
+			'id' => '1349,folder=70,tags=Wildlife&sarah,990',
+			), '', 'ghimage');
+		*/
+
 		echo '<h1>' . __('Load Images into Gallery Hierarchy', 'gallery_hierarchy')
 				. '</h1>';
 		
@@ -429,14 +439,87 @@ class GHierarchy {
 					. add_query_arg('start', 'full') . '" class="button button-cancel">'
 					. __('Force Rescan of All Images', 'gallery_hierarchy') . '</a>';
 			if (($status = get_transient(static::$statusTransient)) !== false) {
+				if (get_transient(static::$filesTransient) !== false) {
+				echo '<p><em>' . __('It seems there is an unfinished scan. '
+						. 'It might have exceeded the maximum running time set '
+						. 'by the server configuration. ', 'gallery_hierarchy')
+						. '<a href="' . add_query_arg('start', 'rescan') . '">'
+						. __('Please resume the scan', 'gallery_hierarchy')
+						. '.</a></em></p>';
+				}
 				echo '<p>' . __('Last status from last scan: ', 'gallery_hierarchy')
-					. $status . '</p>';
+						. $status . '</p>';
 			}
 		}
 		echo '<h2>' . __('Have images you want to upload now?',
 				'gallery_hierarchy') . '</h2>';
 		echo '<p>' . __('Choose where you want to upload them and upload them '
 				. 'using the form below.', 'gallery_hierarchy') . '</p>';
+	}
+
+	/**
+	 * Handles the parsing of the logic part of the image selection.
+	 * 
+	 * @param $logic string String containing the logic to parse.
+	 * @param $query string sprintf MySQL string to insert the values into
+	 *               once parsed.
+	 * @param $regex boolean If true, will escape the values as if they were
+	 *               going into a regular expression
+	 * @return string A string containing the MySQL statements of the parsed
+	 *                logic.
+	 */
+	protected function parseLogic($logic, $query, $regex = false) {
+		global $wpdb;
+		
+		// Split up the string into it's groups
+		$logic = preg_split('/([&|]?)([()])([&|]?)/', $logic, -1,
+				PREG_SPLIT_DELIM_CAPTURE);
+		// Go through and parse each group
+		foreach ($logic as $i => &$p) {
+			switch ($p) {
+				case '|':
+					$logic[$i] = ' OR ';
+					break;
+				case '&':
+					$logic[$i] = ' AND ';
+				case '(':
+				case ')':
+				case '':
+					break;
+				default:
+					$qPart = '';
+					$logic[$i] = preg_split('/([&|])/', $p, -1,
+							PREG_SPLIT_DELIM_CAPTURE);
+					foreach ($p as $j => &$q) {
+						switch ($q) {
+							case '&':
+								// Ensure we are not at the start or the end
+								if ($j != 0 && $j != (count($p) - 1)) {
+									$qPart .= ' AND ';
+								}
+								break;
+							case '|':
+								// Ensure we are not at the start or the end
+								if ($j != 0 && $j != (count($p) - 1)) {
+									$qPart .= ' OR ';
+								}
+								break;
+							default:
+								if ($regex) {
+									$qPart .= sprintf($query, preg_quote($q, '\''));
+								} else {
+									$qPart .= sprintf($query, str_replace('\'', '\\\'', $q));
+								}
+								break;
+						}
+					}
+
+					$logic[$i] = $qPart;
+					break;
+			}
+		}
+
+		return join('', $logic);
 	}
 
 	/**
@@ -478,23 +561,52 @@ class GHierarchy {
 		// (`ghalbum` `ghthumbnail` `ghimage`)
 		$parts = explode(',', $atts['id']);
 		$ids = array();
+		$idP = array();
+		$folders = array();
+		$taken = array();
+		$query = array();
 
-		foreach ($parts as &$part) {
-			if (strpos($part, ':') !== false) {
+		foreach ($parts as $p => &$part) {
+			if (strpos($part, '=') !== false) {
 				$like = false;
-				$part = explode(':',$part);
+				$part = explode('=',$part);
 				if (isset($part[1]) && $part[1]) {
 					switch($part[0]) {
 						case 'rfolder':
 							$like = true;
 						case 'folder':
 							$fids = explode('|', $part[1]);
-							$folders = $wpdb->get_col('SELECT dir FROM ' . $me->imageTable
-									. ' WHERE id IN (
+							// Make sure fids are only numbers
+							$f = 0;
+							while ($f < count($fids)) {
+								if (!gHisInt($fids[$f])) {
+									array_splice($fids, $f, 1);
+								} else {
+									$f++;
+								}
+							}
+							if ($fids && ($result = $wpdb->get_col('SELECT dir FROM '
+									. $me->dirTable . ' WHERE id IN (' . join(',', $fids)
+									. ')'))) {
+								$folders = array_merge($folders, $result);
+							}
+							break;
 						case 'taken':
+							if (strpos($part[1], '|') !== false) {
+								$part[1] = explode('|', $part[1]);
+
+							// Check the dates are valid
+							}
+							break;
 						case 'tags':
+							$query[$part[0]] = $me->parseLogic($part[1], $part[0]
+									. ' REGEXP \'(,|^)%s(,|$)\'', true);
+							break;
 						case 'title':
 						case 'comment':
+							$query[$part[0]] = $me->parseLogic($part[1], $part[0]
+									. ' = \'%s\'');
+							break;
 						default:
 							// Ignore as not valid
 							continue;
@@ -505,8 +617,69 @@ class GHierarchy {
 			} else {
 				if (is_numeric($part)) {
 					$ids[] = $part;
+					$idP[] = $p + 1;
 				}
 			}
+		}
+
+		$w = array();
+
+		// Build Ids
+		if ($ids) {
+			$w[] = 'id IN (' . join(', ', $ids) . ')';
+		}
+
+		// Build Folders
+		if ($folders) {
+			$q = array();
+			foreach ($folders as &$f) {
+				$q[] = 'file LIKE (\'' . preg_replace('/([%\\\'])/', '\\\1', $f)
+						. DIRECTORY_SEPARATOR . '%\')';
+			}
+			$query['folders'] = join(' OR ', $q);
+		}
+
+		$w[] = '(' . join(') AND (', array_values($query)) . ')';
+		$q = 'SELECT * FROM ' . $me->imageTable 
+				. ($w ? ' WHERE ' . join(' OR ', $w) : '');
+		$images = $wpdb->get_results($q, OBJECT_K);
+
+		// Rebuild array if based on ids @todo Implement attribute for this
+		// Determine position of specified images based on positional weighting
+		$weight = 0;
+		foreach ($idP as $i) {
+			$weight += $i;
+		}
+
+		$weight = $weight/count($ids);
+
+		$idImages = array();
+
+		foreach ($ids as $i) {
+			$idImages[$i] = $images[$i];
+			unset($images[$i]);
+		}
+
+		$newImages = array();
+		if ($weight <= (count($parts)/2)) {
+			$images = array_merge($idImages, $images);
+			/** @todo Remove
+			foreach ($idImages as &$i) {
+				$newImages[] = $i;
+			}
+			foreach ($images as &$i) {
+				$newImages[] = $i;
+			}*/
+		} else {
+			$images = array_merge($images, $idImages);
+			/** @todo Remove
+			foreach ($images as &$i) {
+				$newImages[] = $i;
+			}
+			foreach ($idImages as &$i) {
+				$newImages[] = $i;
+			}*/
+		}
 
 		// `group="<group1>"` - id for linking photos to scroll through with
 		// lightbox (`ghthumbnail` `ghimage`)
@@ -523,7 +696,7 @@ class GHierarchy {
 				$atts['class'] = '';
 			}
 
-			$atts['class'] =. static::$settings->get_option($classO);
+			$atts['class'] .= ' ' . static::$settings->get_option($classO);
 		}
 
 		// `caption="(none|title|comment)"` - Type of caption to show. Default set
@@ -549,24 +722,37 @@ class GHierarchy {
 
 		switch ($tag) {
 			case 'ghimage':
-				
+				$me->printImage($images, $atts);
+				break;
 			case 'ghthumb':
 				$atts['type'] = 'thumbnail';
 			case 'ghalbum':
 				// `type="<type1>"` - of album (`ghalbum`)
 				// Go through all the albums to see if we have a type that matches
+		}
+	}
+
+	protected function printImage(&$images, &$options) {
+		foreach ($images as &$i) {
+			echo '<img src="' . gHurl($this->imageUrl, $i->file) . '">';
+		}
+	}
 
 	/**
 	 * Sets the two transients involved with scanning folders
 	 * @param $scan string String to set scan transient to
 	 * @param $status string String to set the status transient to
 	 */
-	static function setScanTransients($scan, $status) {
+	static function setScanTransients($scan, $status, &$files = null) {
+		if ($files) {
+			set_transient(static::$filesTransient, json_encode($files),
+					static::$filesTransientTime);
+		}
 		set_transient(static::$statusTransient, $status,
 				static::$statusTransientTime);
 		set_transient(static::$scanTransient, $scan,
 				static::$scanTransientTime);
-		static::$nextSet = time() + 30;
+		static::$nextSet = time() + 10;
 	}
 
 	/**
@@ -585,16 +771,19 @@ class GHierarchy {
 		try {
 			$me = static::instance();
 
-			static::setScanTransients('scan', __('Scanning Folder',
-					'gallery_hierarchy'));
+			if ($fullScan ||
+					!($files = json_decode(get_transient(static::$filesTransient), true))) {
+				static::setScanTransients('scan', __('Scanning Folder',
+						'gallery_hierarchy'));
 
-			// Find all the folders and images
-			$files = $me->scanFolder();
+				// Find all the folders and images
+				$files = $me->scanFolder();
+			}
 
 			static::setScanTransients('scan', 
-					__('Found ', 'gallery_hierarchy') . count($files['d']) 
-					. __(' folders and ', 'gallery_hierarchy') . count($files['i'])
-					.__(' images.', 'gallery_hierarchy'));
+					__('Found ', 'gallery_hierarchy') . $files['totalDirs']
+					. __(' folders and ', 'gallery_hierarchy') . $files['totalImages']
+					.__(' images.', 'gallery_hierarchy'), $files);
 
 			// Add directories
 			// Get the current directories
@@ -602,22 +791,20 @@ class GHierarchy {
 					. $me->dirTable, OBJECT_K);
 			
 			$i = 0;
-			while ($i < count($files['d'])) {
-				static::setScanTransients('scan', 'here');
-				$dir =& $files['d'][$i];
+			while (($dir = array_shift($files['dirs'])) !== null) {
 				if (!isset($dirs[$dir])) {
 					$me->registerDirectory($dir);
-					$i++;
+					$files['newDirs']++;
 				} else {
-					array_splice($files['d'], $i, 1);
 					unset($dirs[$dir]);
 				}
 
 				// Report status
 				if (static::$nextSet < time()) {
 					static::setScanTransients('scan',  
-							__('Adding folders... Processing ',
-							'gallery_hierarchy') . ($i+1) . '/' . count($files['d'])); 
+							__("Added $files[newDirs] new folders. ", 'gallery_hierarchy')
+							. count($files['dirs']) . __(' to check.', 'gallery_hierarchy'),
+							$files); 
 				}
 			}
 
@@ -627,45 +814,44 @@ class GHierarchy {
 			//			. 'WHERE id IN (' . . ')'));
 			//}
 
-			static::setScanTransients('scan',  __('Added ', 'gallery_hierarchy')
-					. count($files['d']) . __(' folders, deleted ', 'gallery_hierarchy')
+			static::setScanTransients('scan',  __('Added ',
+					'gallery_hierarchy') . $files['newDirs']
+					. __(' folders, deleted ', 'gallery_hierarchy')
 					. count($dirs) . __(' removed folders. Now adding ',
-					'gallery_hierarchy') . count($files['i']) . __(' images.',
-					'gallery_hierarchy'));
+					'gallery_hierarchy') . $files['totalImages'] . __(' images.',
+					'gallery_hierarchy'), $files);
 
 
 			// Add images
 			
 			//Get current images
-			$images = $wpdb->get_results('SELECT image,id,added FROM '
+			$images = $wpdb->get_results('SELECT file,id,added FROM '
 					. $me->imageTable, OBJECT_K);
 
-			$i = 0;
-			while ($i < count($files['i'])) {
-				$image =& $files['i'][$i];
+			while(($image = array_shift($files['images'])) !== null) {
 				$iPath = gHpath($me->imageDir, $image);
 				
 				if (isset($images[$image])) {
 					if (filemtime($iPath) > $images[$image]->added) {
 						$me->registerImage($image, $images[$image]->id);
-						$i++;
+						$files['newImages']++;
 					} else if ($fullScan) {
 						$me->registerImage($image, $images[$image]->id, true);
-						$i++;
+						$files['newImages']++;
 					} else {
-						array_splice($files['i'], $i, 1);
 						unset($images[$image]);
 					}
 				} else {
 					$me->registerImage($image);
-					$i++;
+					$files['newImages']++;
 				}
 
 				// Report status
 				if (static::$nextSet < time()) {
 					static::setScanTransients('scan',  
-							__('Adding images... Processing ',
-							'gallery_hierarchy') . ($i+1) . '/' . count($files['i'])); 
+							__("Added $files[newImages] new images. ", 'gallery_hierarchy')
+							. count($files['images']) . __(' to check.', 'gallery_hierarchy'),
+							$files);
 				}
 			}
 			
@@ -675,11 +861,12 @@ class GHierarchy {
 			//}
 			
 			static::setScanTransients('scan',  __('Added ', 'gallery_hierarchy')
-					. count($files['d']) . __(' folders, deleted ', 'gallery_hierarchy')
+					. $files['newDirs'] . __(' folders, deleted ', 'gallery_hierarchy')
 					. count($dirs) . __(' removed. ', 'gallery_hierarchy')
-					. __('Added ', 'gallery_hierarchy') . count($files['i'])
+					. __('Added ', 'gallery_hierarchy') . $files['newImages']
 					. __(' images, deleted ', 'gallery_hierarchy')
 					. count($images) . __(' removed.', 'gallery_hierarchy'));
+			delete_transient(static::$filesTransient);
 		} catch (Exception $e) {
 			static::setScanTransients('scan', __('Error: ',
 					'gallery_hierarchy') . $e->getMessage());
@@ -690,6 +877,8 @@ class GHierarchy {
 		delete_transient(static::$scanTransient);
 	}
 
+
+	protected $scanData = null;
 	/** 
 	 * Scans a directory recursively for images. Any images or directories it
 	 * finds will be registered in the database.
@@ -697,14 +886,20 @@ class GHierarchy {
 	 * the directories and images are processed.
 	 *
 	 * @param $dir string Path of directory to scan.
-	 * @param $count array Array containing current count
 	 * @return array An array containing the number of images and directories
 	 *               found.
 	 */
 	protected function scanFolder($dir = '', array &$files = null) {
 		// Initialise count array
 		if (is_null($files)) {
-			$files = array('r' => array(), 'd' => array(), 'i' => array());
+			$files = array(
+					'dirs' => array(),
+					'totalDirs' => 0,
+					'newDirs' => 0,
+					'images' => array(),
+					'totalImages' => 0,
+					'newImages' => 0,
+			);
 		}
 
 		//
@@ -740,20 +935,22 @@ class GHierarchy {
 			}
 
 			if (is_dir($fpath)) {
-				$files['d'][] = $file;
+				$files['dirs'][] = $file;
+				$files['totalDirs']++;
 				$this->scanFolder($file, $files);
 			} else if (in_array(finfo_file($this->finfo, $fpath),
 					$this->imageMimes)) {
-				$files['i'][] = $file;
+				$files['images'][] = $file;
+				$files['totalImages']++;
 			}
 
 			// Report status
 			if (static::$nextSet < time()) {
 				static::setScanTransients('scanning', __('Scanning Folder...',
-						'gallery_hierarchy') . count($files['d']) . __(' folders found,',
-						'gallery_hierarchy') . count($files['i']) . __(' images found.',
+						'gallery_hierarchy') . $files['totalDirs'] . __(' folders found, ',
+						'gallery_hierarchy') . $files['totalImages'] . __(' images found.',
 						'gallery_hierarchy'));
-			}
+				}
 		}
 
 		return $files;
@@ -771,8 +968,6 @@ class GHierarchy {
 
 		// Remove trailing slash
 		gHptrim($dir);
-
-		static::setScanTransients('scan', 'registering ' . $dir);
 
 		// Check is a directory
 		if (!is_dir(gHpath($this->imageDir, $dir))) {
@@ -912,7 +1107,7 @@ class GHierarchy {
 	static function getImageURL(Object $image) {
 		$me = static::instance();
 
-		return gHurl($me->imageUrl, $image->image);
+		return gHurl($me->imageUrl, $image->file);
 	}
 
 	/**
@@ -928,7 +1123,7 @@ class GHierarchy {
 	static function getCImageURL($image, $size = null) {
 		$me = static::instance();
 
-		$iName = $me->getCImagePath($image->image, $size);
+		$iName = $me->getCImagePath($image->file, $size);
 
 		$iPath = gHpath($me->cachePath, $iName);
 
@@ -937,7 +1132,7 @@ class GHierarchy {
 			if (!$size) {
 				$me->createThumbnail($iName);
 			} else {
-				$me->resizeImage($image->image, null, $size, false, $iPath);
+				$me->resizeImage($image->file, null, $size, false, $iPath);
 			}
 		}
 
@@ -1009,7 +1204,7 @@ class GHierarchy {
 
 		// First check if we need to do anything
 		if ($cw <= $newSize['width'] && $ch <= $newSize['height']) {
-			return;
+			return null;
 		}
 
 		if ($crop) {
@@ -1121,9 +1316,10 @@ class GHierarchy {
 
 				// Resize the image if required
 				if (static::$settings->get_option('gh_resize_images')) {
-					$this->resizeImage(null, $imagick,
-							static::$settings->get_option('gh_image_size'));
-					$changed = true;
+					if ($this->resizeImage(null, $imagick,
+							static::$settings->get_option('gh_image_size')) !== null) {
+						$changed = true;
+					}
 				}
 
 				// Write changed image to file
@@ -1231,7 +1427,7 @@ class GHierarchy {
 
 		// Write image to database
 		$data = array(
-				'image' => $img,
+				'file' => $img,
 				'width' => $width,
 				'height' => $height
 		);
@@ -1288,7 +1484,7 @@ class GHierarchy {
 		// Check that the image table is there
 		$sql = "CREATE TABLE " . $me->imageTable . " ( \n"
 				. "id smallint(5) NOT NULL AUTO_INCREMENT, \n"
-TODO FIX in code				. "name text NOT NULL, \n"
+				. "file text NOT NULL, \n"
 				. "width smallint(5) unsigned NOT NULL, \n"
 				. "height smallint(5) unsigned NOT NULL, \n"
 			  . "added timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, \n"
