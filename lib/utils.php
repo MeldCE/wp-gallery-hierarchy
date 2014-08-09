@@ -44,7 +44,7 @@ function gHptrim($path, $ltrim = false) {
  * @retval 1 Contains only numbers
  * @retval 0 Does not contain only numbers
  */
-function GHisInt($text) {
+function gHisInt($text) {
 	return preg_match('/^[0-9]+$/', $text);
 }
 
