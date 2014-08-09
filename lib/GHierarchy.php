@@ -19,6 +19,8 @@ class GHierarchy {
 	protected static $filesTransientTime = DAY_IN_SECONDS;
 	protected static $runAdminInit = false;
 
+	protected static $albums = null;
+
 	/// Rescan variables
 	protected static $nextSet = 0;
 	protected $imageDir;
@@ -33,7 +35,15 @@ class GHierarchy {
 		/// @todo finfo_close($finfo);
 		$this->dirTable = $wpdb->prefix . 'gHierarchyDirs';
 		$this->imageTable = $wpdb->prefix . 'gHierarchyImages';
-			
+		
+		// Make the array of albums
+		$albums = array();
+		$albumDescription = '';
+		foreach (static::getAlbums() as $a => &$album) {
+			$albumDescription .= $album['name'] . ' - ' . $album['description'] . '<br>';
+			$albums[$a] = $album['name'];
+		}
+
 		$options = array(
 				'title' => __('Gallery Hierarchy Options', 'gallery_hierarchy'),
 				'id' => 'gHOptions',
@@ -138,6 +148,16 @@ class GHierarchy {
 												'type' => 'boolean',
 												'default' => true
 										),
+										'gh_thumb_album' => array(
+												'title' => __('Album For Thumbnail Shortcut',
+														'gallery_hierarchy'),
+												'description' => __('What album type to use for the '
+														. 'thumbnail shortcode.', 'gallery_hierarchy')
+														. '<br>' . $albumDescription,
+												'type' => 'select',
+												'values' => $albums,
+												'default' => 'thumbnail'
+										),
 										'gh_thumb_class' => array(
 												'title' => __('Default Thumbnail Class', 'gallery_hierarchy'),
 												'description' => __('The classes to set on a '
@@ -228,7 +248,7 @@ class GHierarchy {
 												),
 												'default' => 'title'
 										),
-										'ghpopup_description' => array(
+										'gh_popup_description' => array(
 												'title' => __('Image Popup Description',
 														'gallery_hierarchy'),
 												'description' => __('What is shown by default underneath '
@@ -253,7 +273,7 @@ class GHierarchy {
 														. 'for all of the images (could be really '
 														. 'slow).', 'gallery_hierarchy'),
 												'type' => 'number',
-												'default' => 100
+												'default' => 50
 										),
 								)
 						)
@@ -273,7 +293,6 @@ class GHierarchy {
 		$this->cacheUrl = content_url($cacheDir);
 		// Remove trailing slash
 		$this->cacheDir = gHptrim($this->cacheDir);
-
 	}
 
 	/**
@@ -302,7 +321,23 @@ class GHierarchy {
 	 * Enqueues scripts and stylesheets used by Gallery Hierarchy in the admin
 	 * pages.
 	 */
-	function adminEnqueue() {
+	static function adminEnqueue() {
+		static::enqueue();
+		wp_enqueue_script('ghierarchy', 
+				plugins_url('/js/ghierarchy.js', dirname(__FILE__)));
+		wp_enqueue_style('ghierarchy',
+				plugins_url('/css/ghierarchy.css', dirname(__FILE__)));
+	}
+
+	/**
+	 * Enqueues scripts and stylesheets used by Gallery Hierarchy.
+	 */
+	static function enqueue() {
+		// Enqueue lightbox script
+		wp_enqueue_script('lightbox', 
+				plugins_url('/lib/lightbox2/js/lightbox.min.js', dirname(__FILE__)));
+		wp_enqueue_style('lightbox',
+				plugins_url('/lib/lightbox2/css/lightbox.css', dirname(__FILE__)));
 	}
 
 	/**
@@ -368,27 +403,62 @@ class GHierarchy {
 		}
 	}
 
+	protected function printGallery() {
+		global $wpdb;
+		$id = uniqid();
+		// @todo Check if a scan has been run...? Check if we have images?
+		echo '<form id="' . $id . '">';
+		// Print folders
+		$folders = $wpdb->get_results('SELECT id, dir FROM ' . $this->dirTable
+				. ' ORDER BY dir');
+		echo '<label for="' . $id . 'folders">' . __('Folders:',
+				'gallery_hierarchy') . '</label><select name="' . $id . 'folders[]" '
+				. 'multiple="multiple">';
+		if ($folders) {
+			foreach ($folders as &$f) {
+				echo '<option value="' . $f->id . '">' . $f->dir . '</option>';
+			}
+		}
+		echo '</select>';
+		echo '<div id="' . $id . 'pad"></div>';
+		echo '<script>gH.gallery(\'' . $id . '\');</script>';
+	}
+
+	/**
+	 * Prints the main Gallery Hierarchy page.
+	 */
 	function gHgalleryPage() {
 		$this->checkFunctions();
 
-		$id = uniqid();
 		echo '<h1>' . __('Gallery Hierarchy', 'gallery_hierarchy')
 				. ' <a href="' . admin_url('admin.php?page=gHOptions')
 				. '" class="add-new-h1">'
 				. __('Add New', 'gallery_hierarchy') . '</a></h1>';
-		echo '<div id="' . $id . '"></div>';
-		echo '<script src="' . '"></script>';
-	}
 
-	function gHLoadPage() {
-		$this->checkFunctions();
+		$this->printGallery();
 
 		/** @todo Remove
 		$this->doShortcode(array(
 			//'id' => 'folder=70',
 			'id' => '1349,folder=70,tags=Wildlife&sarah,990',
 			), '', 'ghimage');
+		
+		$this->doShortcode(array(
+			//'id' => 'folder=70',
+			'id' => '1349,folder=70,tags=Wildlife&sarah,990',
+			), '', 'ghimage');
+		$this->doShortcode(array(
+			//'id' => 'folder=70',
+			'id' => 'folder=70,tags=Wildlife&sarah',
+			), '', 'ghthumb');
 		*/
+	}
+
+	/**
+	 * Prints the Load Images page
+	 */
+	function gHLoadPage() {
+		$this->checkFunctions();
 
 		echo '<h1>' . __('Load Images into Gallery Hierarchy', 'gallery_hierarchy')
 				. '</h1>';
@@ -458,6 +528,35 @@ class GHierarchy {
 	}
 
 	/**
+	 * Returns an array containing information on the albums loaded and
+	 * available.
+	 *
+	 * @return array Associative array containing the information on the albums.
+	 *         The key to the array is the album label, and the information
+	 *         contains the album name, description and class.
+	 */
+	static function &getAlbums() {
+		if (!static::$albums) {
+			static::$albums = array();
+			foreach(get_declared_classes() as $className) {
+				if( in_array('GHAlbum', class_implements($className)) ) {
+					if (array_key_exists($className, static::$albums)) {
+						/// @todo Need a warning message in here...
+					} else {
+						static::$albums[$className::label()] = array(
+								'name' => $className::name(),
+								'description' => $className::description(),
+								'class' => $className
+						);
+					}
+				}
+			}
+		}
+		
+		return static::$albums;
+	}
+
+	/**
 	 * Handles the parsing of the logic part of the image selection.
 	 * 
 	 * @param $logic string String containing the logic to parse.
@@ -520,6 +619,27 @@ class GHierarchy {
 		}
 
 		return join('', $logic);
+	}
+
+	/**
+	 * Generates the require parameters to be included in the <a> tag of the
+	 * image for lightbox to work on the image.
+	 *
+	 * @param $image stdClass Object containing the image to generate the
+	 *               parameters for.
+	 * @param $group string Lightbox group to add the image to.
+	 * @return string String to be added to the <a> tag containing the
+	 *                parameters.
+	 */
+	static function lightboxData(stdClass &$image, $group = null,
+			$caption = null) {
+		$html = ' data-lightbox="' . ($group ? $group : uniqid()) . '"';
+		
+		if ($caption) {
+			$html .= ' data-title="' . $caption . '"';
+		}
+		
+		return $html;
 	}
 
 	/**
@@ -650,39 +770,41 @@ class GHierarchy {
 
 		// Rebuild array if based on ids @todo Implement attribute for this
 		// Determine position of specified images based on positional weighting
-		$weight = 0;
-		foreach ($idP as $i) {
-			$weight += $i;
-		}
-
-		$weight = $weight/count($ids);
-
-		$idImages = array();
-
-		foreach ($ids as $i) {
-			$idImages[$i] = $images[$i];
-			unset($images[$i]);
-		}
-
-		$newImages = array();
-		if ($weight <= (count($parts)/2)) {
-			$images = array_merge($idImages, $images);
-			/** @todo Remove
-			foreach ($idImages as &$i) {
-				$newImages[] = $i;
+		if ($ids) {
+			$weight = 0;
+			foreach ($idP as $i) {
+				$weight += $i;
 			}
-			foreach ($images as &$i) {
-				$newImages[] = $i;
-			}*/
-		} else {
-			$images = array_merge($images, $idImages);
-			/** @todo Remove
-			foreach ($images as &$i) {
-				$newImages[] = $i;
+
+			$weight = $weight/count($ids);
+
+			$idImages = array();
+
+			foreach ($ids as $i) {
+				$idImages[$i] = $images[$i];
+				unset($images[$i]);
 			}
-			foreach ($idImages as &$i) {
-				$newImages[] = $i;
-			}*/
+
+			$newImages = array();
+			if ($weight <= (count($parts)/2)) {
+				$images = array_merge($idImages, $images);
+				/** @todo Remove
+				foreach ($idImages as &$i) {
+					$newImages[] = $i;
+				}
+				foreach ($images as &$i) {
+					$newImages[] = $i;
+				}*/
+			} else {
+				$images = array_merge($images, $idImages);
+				/** @todo Remove
+				foreach ($images as &$i) {
+					$newImages[] = $i;
+				}
+				foreach ($idImages as &$i) {
+					$newImages[] = $i;
+				}*/
+			}
 		}
 
 		// `group="<group1>"` - id for linking photos to scroll through with
@@ -705,9 +827,17 @@ class GHierarchy {
 
 		// `caption="(none|title|comment)"` - Type of caption to show. Default set
 		// in plugin options (`ghalbum` `ghthumbnail` `ghimage`)
+		$captionMap = array(
+				'ghalbum' => 'gh_album_description',
+				'ghthumb' => 'gh_thumb_description',
+				'ghimage' => 'gh_image_description'
+		);
 		if (!isset($atts['caption'])) {
-			$atts['caption'] = static::$settings->get_option($caption);
+			$atts['caption'] = static::$settings->get_option($captionMap[$tag]);
 		}
+
+		// add_title
+		$atts['add_title'] = static::$settings->get_option('gh_add_title');
 
 		// `popup_caption="(none|title|comment)"` - Type of caption to show on
 		//	popup. Default set in plugin options (`ghalbum` `ghthumbnail`
@@ -726,19 +856,103 @@ class GHierarchy {
 
 		switch ($tag) {
 			case 'ghimage':
+				// `size="(<width>x<height>)"` - size of image (`ghimage`)
+				if (isset($atts['size']) && $atts['size']) {
+					$atts['size'] = explode('x', $atts['size']);
+					if (count($atts['size']) == 2 && gHisInt($atts['size'][0])
+							&& gHisInt($atts['size'][1])) {
+						$atts['size'] = array('width' => $atts['size'][0],
+								'height' => $atts['size'][1]);
+					} else {
+						$atts['size'] = false;
+					}
+				} else {
+					$atts['size'] = false;
+				}
+
 				$me->printImage($images, $atts);
 				break;
 			case 'ghthumb':
-				$atts['type'] = 'thumbnail';
+				$atts['type'] = static::$settings->get_option('gh_thumb_album');
 			case 'ghalbum':
 				// `type="<type1>"` - of album (`ghalbum`)
-				// Go through all the albums to see if we have a type that matches
+				// Check we have a valid album, if not, use the thumbnail one
+				$albums = static::getAlbums();
+				if (!isset($atts['type']) || !isset($albums[$atts['type']])) {
+					$atts['type'] = static::$settings->get_option('gh_thumb_album');
+				}
+
+				if (isset($atts['type']) && isset($albums[$atts['type']])) {
+					$albums[$atts['type']]['class']::printAlbum($images, $atts);
+				}
+				break;
 		}
 	}
 
+	/**
+	 * Prints galbum images.
+	 *
+	 * @param $images array Array containing stdClasses containing image
+	 *                information.
+	 * @param $options array Array containing shortcode attributes given to
+	 *                 shortcode.
+	 */
 	protected function printImage(&$images, &$options) {
-		foreach ($images as &$i) {
-			echo '<img src="' . gHurl($this->imageUrl, $i->file) . '">';
+		foreach ($images as &$image) {
+			// Create link
+			echo '<a';
+			switch ($options['link']) {
+				case 'none':
+					break;
+				case 'popup':
+					echo ' href="' . GHierarchy::getImageURL($image) . '"';
+					break;
+				default:
+					/// @todo Add the ability to have a link per thumbnail
+					echo ' href="' . $options['link'] . '"';
+					break;
+			}
+			
+			// Add comment
+			switch ($options['popup_caption']) {
+				case 'title':
+					$caption = $image->title;
+					break;
+				case 'comment':
+					$caption = '';
+					if ($options['add_title']) {
+						if (($caption = $image->title)) {
+							if (substr($caption, count($caption)-1,1) !== '.') {
+								$caption .=  '. ';
+							}
+						}
+					}
+					$caption .= $image->comment;
+					break;
+				case 'none':
+				default:
+					$caption = null;
+					break;
+			}
+
+			echo GHierarchy::lightboxData($image, $options['group'], $caption);
+
+			echo '><img src="' . GHierarchy::getCImageURL($image, $options['size'])
+				. '">';
+			
+			// Add comment
+			switch ($options['caption']) {
+				case 'none':
+					break;
+				case 'title':
+					echo '<span>' . $image->title . '</span>';
+					break;
+				case 'caption':
+					echo '<span>' . $image->caption . '</span>';
+					break;
+			}
+					
+			echo '</a>';
 		}
 	}
 
@@ -881,8 +1095,6 @@ class GHierarchy {
 		delete_transient(static::$scanTransient);
 	}
 
-
-	protected $scanData = null;
 	/** 
 	 * Scans a directory recursively for images. Any images or directories it
 	 * finds will be registered in the database.
@@ -1108,7 +1320,7 @@ class GHierarchy {
 	 * @param $image Object Row object containing information on image
 	 * @return string URL to image
 	 */
-	static function getImageURL(Object $image) {
+	static function getImageURL(stdClass &$image) {
 		$me = static::instance();
 
 		return gHurl($me->imageUrl, $image->file);
@@ -1121,15 +1333,19 @@ class GHierarchy {
 	 *
 	 * @param $image Object Row object containing information on image
 	 * @param $size Array Size of cached image to return. If null, will return
-	 *              the thumbnail image.
+	 *              the thumbnail image. If false, will return the fullsized
+	 *              image.
 	 * @return string URL to image
 	 */
-	static function getCImageURL($image, $size = null) {
+	static function getCImageURL(stdClass &$image, $size = null) {
 		$me = static::instance();
 
+		if ($size === false) {
+			return static::getImageURL($image);
+		}
 		$iName = $me->getCImagePath($image->file, $size);
 
-		$iPath = gHpath($me->cachePath, $iName);
+		$iPath = gHpath($me->cacheDir, $iName);
 
 		// Ensure the cached image exists
 		if (!is_file($iPath)) {
@@ -1190,7 +1406,7 @@ class GHierarchy {
 
 		if (!$imagick) {
 			$write = true;
-			$iPath = gHpath($this->imageDir, $img);
+			$iPath = gHpath($this->imageDir, $image);
 
 			// Check we have a valid image
 			if (!is_file($iPath) || !in_array(finfo_file($this->finfo,
@@ -1235,7 +1451,8 @@ class GHierarchy {
 			if ($newImagePath) {
 				$imagick->writeImage($newImagePath);
 			} else {
-				$imagick->writeImage($iPath);
+				$imagick->writeImage($iPath . '.new');
+				rename($iPath . '.new', $iPath);
 			}
 			unset($imagick);
 			return true;

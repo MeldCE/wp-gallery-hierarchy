@@ -1,4 +1,5 @@
 <?php
+//require_once('../lib/GHierarchy.php');
 
 class GHThumbnails implements GHAlbum {
 	static function label() {
@@ -28,24 +29,51 @@ class GHThumbnails implements GHAlbum {
 					case 'none':
 						break;
 					case 'popup':
-						echo ' href="' . GHierarcy::getImageURL($image) . '"';
+						echo ' href="' . GHierarchy::getImageURL($image) . '"';
 						break;
 					default:
 						/// @todo Add the ability to have a link per thumbnail
 						echo ' href="' . $options['link'] . '"';
 						break;
 				}
-				echo '><img src="' . GHierarcy::getCImageURL($image) . '">';
+				
+				// Add comment
+				switch ($options['popup_caption']) {
+					case 'title':
+						$caption = $image->title;
+						break;
+					case 'comment':
+						$caption = '';
+						if ($options['add_title']) {
+							if (($caption = $image->title)) {
+								if (substr($caption, count($caption)-1,1) !== '.') {
+									$caption .=  '. ';
+								}
+							}
+						}
+						$caption .= $image->comment;
+						break;
+					case 'none':
+					default:
+						$caption = null;
+						break;
+				}
+
+				echo GHierarchy::lightboxData($image, $options['group'], $caption);
+
+				echo '><img src="' . GHierarchy::getCImageURL($image) . '">';
 				
 				// Add comment
 				switch ($options['caption']) {
-					case 'none':
-						break;
 					case 'title':
-						echo '<span>' . $image->title . '</span>';
+						echo '<span>' . $image->title . '&nbsp;</span>';
 						break;
 					case 'caption':
-						echo '<span>' . $image->caption . '</span>';
+						echo '<span>' . $image->caption . '&nbsp;</span>';
+						break;
+					case 'none':
+					default:
+						echo '<span>&nbsp;</span>';
 						break;
 				}
 						
