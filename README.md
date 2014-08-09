@@ -60,7 +60,9 @@ The plugin has the following shortcodes:
 The following shortcode attributes are available for the included shortcodes
 - `id="<id1>,<id2>,..."` - list of images (some sort of query or list - see
   Image Selection below (`ghalbum` `ghthumbnail` `ghimage`)
-- `sort=""` - way the images should be sorted
+/* - `limit="<num>" - limit the number of images to <num>
+  (`ghalbum` `ghthumbnail` `ghimage`)
+- `sort=""` - way the images should be sorted*/
 - `group="<group1>"` - id for linking images to scroll through with lightbox
   (`ghthumbnail` `ghimage`)
 - `class="<class1> <class2> ...` - additional classes to put on the images
@@ -71,7 +73,7 @@ The following shortcode attributes are available for the included shortcodes
   Default set in plugin options (`ghalbum` `ghthumbnail` `ghimage`)
 - `link="(none|popup|<url>)"` - URL link on image, by default it will be the
   image url and will cause a lightbox popup
-- `size="(<width>x<height>)"` - size of image (`ghimage`)
+- `size="<width>x<height>"` - size of image (`ghimage`)
 - `type="<type1>"` - of album (`ghalbum`)
 - `include_excluded="(0|1)" - include excluded images in the query result.
   Default is to not (`ghalbum` `ghthumbnail` `ghimage`)
