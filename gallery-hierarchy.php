@@ -39,30 +39,39 @@ if (!class_exists('GHierarchy')) {
 	}
 
 	function gHierarchySetup() {
-		add_shortcode('ghalbum', array('GHierarchy', 'albumShortcode'));
-		add_shortcode('ghthumbnail', array('GHierarchy', 'thumbnailShortcode'));
-		add_shortcode('ghpicture', array('GHierarchy', 'pictureShortcode'));
+		// Include so we have access to is_plugin_active
+		//if (!is_admin()) {
+			require_once( ABSPATH . 'wp-admin/includes/plugin.php');
+		//}
 
-		if (is_admin()) {
-			// Initialise
-			add_action('init', array('GHierarchy', 'adminInit'));
+		if (is_plugin_active('gallery-hierarchy/gallery-hierarchy.php')) {
+			// Shortcodes
+			add_shortcode('ghalbum', array('GHierarchy', 'doShortcode'));
+			add_shortcode('ghthumb', array('GHierarchy', 'doShortcode'));
+			add_shortcode('ghimage', array('GHierarchy', 'doShortcode'));
 			
-			// Handle AJAX requests (from image browser)
-			add_action('wp_ajax_gHierarchy', array('GHierarchy', 'ajax'));
+			// Include album files
+			gHIncludeFiles(plugin_dir_path(__FILE__) . 'albums/');
 
+			// Action for rescan job
+			add_action('gh_rescan', array('GHierarchy', 'scan'));
+
+			add_action('wp_enqueue_scripts', array('GHierarchy', 'enqueue'));
+			add_action('admin_enqueue_scripts', array('GHierarchy', 'adminEnqueue'));
+
+			/// @todo Add a hook for plugin deletion
+			register_activation_hook(__FILE__, array('GHierarchy', 'install'));
+		
+			if (is_admin()) {
+				// Initialise
+				add_action('init', array('GHierarchy', 'adminInit'));
+				
+				// Handle AJAX requests (from image browser)
+				add_action('wp_ajax_gHierarchy', array('GHierarchy', 'ajax'));
+			}
 		}
+
 	}
 
-	gHIncludeFiles(plugin_dir_path(__FILE__) . 'albums/');
-
-	add_action('gh_rescan', array('GHierarchy', 'scan'));
 	add_action('plugins_loaded', 'gHierarchySetup');
-
-	/// @todo Add a hook for plugin deletion
-	register_activation_hook(__FILE__, array('GHierarchy', 'install'));
-
-	// Shortcodes
-	add_shortcode('ghalbum', array('GHierarchy', 'doShortcode'));
-	add_shortcode('ghthumb', array('GHierarchy', 'doShortcode'));
-	add_shortcode('ghimage', array('GHierarchy', 'doShortcode'));
 }
