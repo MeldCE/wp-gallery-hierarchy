@@ -47,6 +47,8 @@ class GHierarchy {
 		$options = array(
 				'title' => __('Gallery Hierarchy Options', 'gallery_hierarchy'),
 				'id' => 'gHOptions',
+				'useTabs' => true,
+				'prefix' => 'gh_',
 				'settings' => array(
 						'gHFolders' => array(
 								'title' => __('Folder Options', 'gallery_hierarchy'),
@@ -323,10 +325,34 @@ class GHierarchy {
 	 */
 	static function adminEnqueue() {
 		static::enqueue();
+		/// @todo @see http://codex.wordpress.org/I18n_for_WordPress_Developers
 		wp_enqueue_script('ghierarchy', 
 				plugins_url('/js/ghierarchy.js', dirname(__FILE__)));
+		//wp_enqueue_style( 'dashicons' );
 		wp_enqueue_style('ghierarchy',
-				plugins_url('/css/ghierarchy.css', dirname(__FILE__)));
+				plugins_url('/css/ghierarchy.css', dirname(__FILE__)), array('dashicons'));
+		wp_enqueue_script('jquery-ui-multiselect', 
+				plugins_url('/lib/jquery-ui-multiselect/src/jquery.multiselect.min.js', dirname(__FILE__)),
+				array('jquery', 'jquery-ui-core'));
+		wp_enqueue_script('jquery-ui-multiselect-filter', 
+				plugins_url('/lib/jquery-ui-multiselect/src/jquery.multiselect.filter.min.js', dirname(__FILE__)),
+				array('jquery', 'jquery-ui-core', 'jquery-ui-multiselect'));
+		wp_enqueue_style('jquery-ui-multiselect',
+				plugins_url('/lib/jquery-ui-multiselect/jquery.multiselect.css', dirname(__FILE__)));
+		wp_enqueue_style('jquery-ui-multiselect-filter',
+				plugins_url('/lib/jquery-ui-multiselect/jquery.multiselect.filter.css', dirname(__FILE__)));
+		wp_enqueue_script('media-upload');
+		wp_enqueue_script('jquery-ui-timepicker', 
+				plugins_url('/lib/jquery-ui-timepicker/src/jquery-ui-timepicker-addon.js', dirname(__FILE__)),
+				array('jquery', 'jquery-ui-core', 'jquery-ui-datepicker', 'jquery-ui-slider'));
+		wp_enqueue_style('jquery-ui-timerpicker',
+				plugins_url('/lib/jquery-ui-timepicker/src/jquery-ui-timepicker-addon.css', dirname(__FILE__)));
+		wp_enqueue_style('ghierarchy-jquery-ui',
+				plugins_url('/css/jquery-ui/jquery-ui.min.css', dirname(__FILE__)));
+		wp_enqueue_style('ghierarchy-jquery-ui-structure',
+				plugins_url('/css/jquery-ui/jquery-ui.structure.min.css', dirname(__FILE__)));
+		wp_enqueue_style('ghierarchy-jquery-ui-theme',
+				plugins_url('/css/jquery-ui/jquery-ui.theme.min.css', dirname(__FILE__)));
 	}
 
 	/**
@@ -347,16 +373,106 @@ class GHierarchy {
 	function adminMenuInit() {
 		add_menu_page(__('Gallery Hierarchy', 'gallery_hierarchy'), 
 				__('Gallery Hierarchy', 'gallery_hierarchy'), 'edit_posts',
-				'gHierarchy', array(&$this, 'gHgalleryPage'),
+				'gHierarchy', array(&$this, 'galleryPage'),
 				'dashicons-format-gallery', 50);
 		add_submenu_page('gHierarchy',
 				__('Load Images into Gallery Hierarchy', 'gallery_hierarchy'),
 				__('Load Images', 'gallery_hierarchy'), 'upload_files', 'gHLoad',
-				array(&$this, 'gHLoadPage'));
+				array(&$this, 'loadPage'));
 		add_submenu_page('gHierarchy',
 				__('Gallery Hierarchy Options', 'gallery_hierarchy'),
 				__('Options', 'gallery_hierarchy'), 'manage_options', 'gHOptions',
 				array(static::$settings, 'printOptions'));
+	}
+
+	/**
+	 * Handles AJAX calls from the gallery javascript
+	 * @todo Look at merging some of the code with doShortcode
+	 */
+	static function ajaxGallery() {
+		global $wpdb;
+
+		$me = static::instance();
+
+		// Build query
+		$parts = [];
+
+		// @todo Recursive
+		if (isset($_POST['folders']) && is_array($_POST['folders'])) {
+			// Check folder ids
+			$f = 0;
+			while ($f < count($_POST['folders'])) {
+				if (!gHisInt($_POST['folders'][$f])) {
+					array_splice($_POST['folders'], $f, 1);
+				} else {
+					$f++;
+				}
+			}
+			if ($_POST['folders'] && ($result = $wpdb->get_col('SELECT dir FROM '
+					. $me->dirTable . ' WHERE id IN (' . join(',', $_POST['folders'])
+					. ')'))) {
+				// Build Folders
+				$q = array();
+				foreach ($result as &$f) {
+					$q[] = 'file LIKE (\'' . preg_replace('/([%\\\'])/', '\\\1', $f)
+							. DIRECTORY_SEPARATOR . '%\')';
+				}
+				$parts[] = join(' OR ', $q);
+			}
+		}
+
+		// Build date
+		// Check dates are valid
+		if (!isset($_POST['start'])
+			|| !strptime($_POST['start'], '%Y-%m-%d %H:%i')) {
+			$_POST['start'] = false;
+		}
+		if (!isset($_POST['end'])
+			|| !strptime($_POST['end'], '%Y-%m-%d %H:%i')) {
+			$_POST['end'] = false;
+		}
+
+		if ($_POST['start'] && $_POST['end']) {
+			$parts[] = 'taken BETWEEN \'' . $_POST['start'] . '\' AND \''
+					. $_POST['end'] . '\'';
+		} else if ($_POST['start']) {
+			$parts[] = 'taken >= \'' . $_POST['start'] . '\'';
+		} else if ($_POST['end']) {
+			$parts[] = 'taken <= \'' . $_POST['end'] . '\'';
+		}
+
+		// Title
+		if (isset($_POST['title']) && $_POST['title']) {
+			if(($q = $me->parseLogic($_POST['title'], 'title = \'%s\''))) {
+				$parts[] = $q;
+			}
+		}
+
+		// Comments
+		if (isset($_POST['comments']) && $_POST['comments']) {
+			if(($q = $me->parseLogic($_POST['comments'], 'comments = \'%s\''))) {
+				$parts[] = $q;
+			}
+		}
+
+		// Tags
+		if (isset($_POST['tags']) && $_POST['tags']) {
+			if(($q = $me->parseLogic($_POST['tags'], 'tags REGEXP \'(,|^)%s(,|$)\'',
+					true))) {
+				$parts[] = $q;
+			}
+		}
+
+		// Build Query
+		$q = 'SELECT * FROM ' . $me->imageTable . ($parts ? ' WHERE (('
+				.join(') AND (', $parts) . ')' . ')' : '');
+		$images = $wpdb->get_results($q, ARRAY_A);
+
+		header('Content-Type: application/json');
+
+		echo json_encode($images);
+
+		exit;
 	}
 
 	protected function echoError($message) {
@@ -403,31 +519,86 @@ class GHierarchy {
 		}
 	}
 
+	/**
+	 * Prints the gallery/search HTML
+	 */
 	protected function printGallery() {
 		global $wpdb;
 		$id = uniqid();
 		// @todo Check if a scan has been run...? Check if we have images?
-		echo '<form id="' . $id . '">';
-		// Print folders
+		echo '<h2>' . __('Search Filter', 'gallery_hierarchy') . '</h2>';
+		// Folders field
 		$folders = $wpdb->get_results('SELECT id, dir FROM ' . $this->dirTable
 				. ' ORDER BY dir');
-		echo '<label for="' . $id . 'folders">' . __('Folders:',
-				'gallery_hierarchy') . '</label><select name="' . $id . 'folders[]" '
-				. 'multiple="multiple">';
+		echo '<p><label for="' . $id . 'folders">' . __('Folders:',
+				'gallery_hierarchy') . '</label> <select name="' . $id . 'folders[]" '
+				. 'id="' . $id . 'folders" multiple="multiple">';
+		echo '<option value=""></option>';
 		if ($folders) {
 			foreach ($folders as &$f) {
 				echo '<option value="' . $f->id . '">' . $f->dir . '</option>';
 			}
 		}
-		echo '</select>';
+		echo '</select></p>';
+
+		echo '<p><label for="' . $id . 'recurse">' . __('Include Subfolders:',
+				'gallery_hierarchy') . '</label> <input type="checkbox" name="' . $id
+				. 'recurse" id="' . $id . 'recurse"></p>';
+	
+		echo '<p><a onclick="gH.toggle(\'' . $id . '\', \'filter\', \''
+				. __('advanced filter', 'gallery_hierarchy') . '\');" id="' . $id
+				. 'filterLabel">' . __('Show advanced filter',
+				'gallery_hierarchy') . '</a></p>';
+
+		echo '<div id="' . $id . 'filter" class="hide">';
+		// Date fields
+		echo '<p><label for="' . $id . 'dates">' . __('Photos Taken Between:',
+				'gallery_hierarchy') . '</label> ';
+		echo '<input type="datetime" name="' . $id . 'start" id="' . $id
+				. 'start">' . __(' and ', 'gallery_hierarchy')
+				. '<input type="datetime" name="' . $id . 'end" id="' . $id
+				. 'end"></p>';
+		
+		// Title field
+		echo '<p><label for="' . $id . 'title">' . __('Title:','gallery_hierarchy') . '</label> ';
+		echo '<input type="text" name="' . $id . 'title" id="' . $id. 'title"></p>';
+		
+		// Comment field
+		echo '<p><label for="' . $id . 'comment">' . __('Comments:','gallery_hierarchy') . '</label> ';
+		echo '<input type="text" name="' . $id . 'comments" id="' . $id. 'comments"></p>';
+		
+		// Tags field
+		echo '<p><label for="' . $id . 'tags">' . __('Tags:','gallery_hierarchy') . '</label> ';
+		echo '<input type="text" name="' . $id . 'tags" id="' . $id. 'tags"></p>';
+
+		echo '</div>';
+	
+		echo '<p><a onclick="gH.toggle(\'' . $id . '\', \'builder\', \''
+				. __('shortcode builder', 'gallery_hierarchy') . '\');" id="' . $id
+				. 'builderLabel">' . __('Show shortcode builder',
+				'gallery_hierarchy') . '</a></p>';
+		echo '<div id="' . $id . 'builder" class="hide">';
+		echo '</div>';
+
+		echo '<p><a onclick="gH.filter(\'' . $id . '\');" class="button">'
+				. __('Filter', 'gallery_hierarchy') . '</a></p>';
+
+		// Pagination
+		echo '<p><label for="' . $id . 'pagination">' . __('Images per page:',
+				'gallery_hierarchy') . '</label> <input type="number" name="' . $id
+				. 'pagination" id="' . $id. 'pagination" onchange="gH.page(\'' . $id
+				. '\');" value="' . static::$settings->num_images . '"></p>';
+
+		// Photo div
 		echo '<div id="' . $id . 'pad"></div>';
-		echo '<script>gH.gallery(\'' . $id . '\');</script>';
+		echo '<script>gH.gallery(\'' . $id . '\', \'' . $this->imageUrl . '\', \''
+				. $this->cacheUrl . '\');</script>';
 	}
 
 	/**
 	 * Prints the main Gallery Hierarchy page.
 	 */
-	function gHgalleryPage() {
+	function galleryPage() {
 		$this->checkFunctions();
 
 		echo '<h1>' . __('Gallery Hierarchy', 'gallery_hierarchy')
@@ -457,7 +628,7 @@ class GHierarchy {
 	/**
 	 * Prints the Load Images page
 	 */
-	function gHLoadPage() {
+	function loadPage() {
 		$this->checkFunctions();
 
 		echo '<h1>' . __('Load Images into Gallery Hierarchy', 'gallery_hierarchy')

@@ -4,3 +4,9 @@
 [submodule "lib/wp-settings"]
 	path = lib/wp-settings
 	url = https://github.com/weldstudio/wp-settings.git
+[submodule "lib/jquery-ui-multiselect"]
+	path = lib/jquery-ui-multiselect
+	url = https://github.com/ehynds/jquery-ui-multiselect-widget.git
+[submodule "lib/jquery-ui-timepicker"]
+	path = lib/jquery-ui-timepicker
+	url = https://github.com/trentrichardson/jQuery-Timepicker-Addon.git

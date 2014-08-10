@@ -61,13 +61,13 @@ if (!class_exists('GHierarchy')) {
 
 			/// @todo Add a hook for plugin deletion
 			register_activation_hook(__FILE__, array('GHierarchy', 'install'));
+			
+			// Handle AJAX requests (from image browser)
+			add_action('wp_ajax_gh_gallery', array('GHierarchy', 'ajaxGallery'));
 		
 			if (is_admin()) {
 				// Initialise
 				add_action('init', array('GHierarchy', 'adminInit'));
-				
-				// Handle AJAX requests (from image browser)
-				add_action('wp_ajax_gHierarchy', array('GHierarchy', 'ajax'));
 			}
 		}
 
