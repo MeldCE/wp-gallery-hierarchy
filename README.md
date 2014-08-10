@@ -3,7 +3,7 @@ wp-gallery-hierarchy
 
 By [Meld Computer Engineering](http://www.meldce.com)
 
-[Support opensource development](https://pledgie.com/campaigns/17426)
+[Support this opensource development](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=KHK78HNWNUZEL&lc=NZ&item_name=Meld%20Computer%20Engineering&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted)
 
 ## Introduction
 
