@@ -1,0 +1,66 @@
+.hide {
+	display: none;
+}
+
+.galleryThumb {
+	display: inline-block;
+	position: relative;
+	padding: 0px;
+	margin: 5px;
+}
+
+.exclude {
+	font-family: "dashicons";
+	position: absolute;
+	color: #F00;
+	font-weight: bold;
+	font-size: 30px;
+	width: 30px;
+	height:30px;
+	opacity: 0.1;
+	filter: alpha(opacity=10);
+	bottom: 5px;
+	left:5px;
+}
+
+.galleryThumb:hover .exclude:hover {
+	opacity: 0.8;
+	filter: alpha(opacity=80);
+}
+
+.galleryThumb:hover .exclude {
+	opacity: 0.4;
+	filter: alpha(opacity=40);
+}
+
+.exclude:before {
+	content: "\f153";
+}
+
+.select {
+	font-family: "dashicons";
+	position: absolute;
+	color: #0F0;
+	font-weight: bold;
+	font-size: 30px;
+	width: 30px;
+	height:30px;
+	opacity: 0.1;
+	filter: alpha(opacity=10);
+	bottom: calc(50% - 15px);
+	right:5px;
+}
+
+.galleryThumb:hover .select {
+	opacity: 0.4;
+	filter: alpha(opacity=40);
+}
+
+.select:before {
+	content: "\f502";
+}
+
+.galleryThumb:hover .select:hover {
+	opacity: 0.8;
+	filter: alpha(opacity=80);
+}
