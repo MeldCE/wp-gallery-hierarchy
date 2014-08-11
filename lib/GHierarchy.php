@@ -19,6 +19,26 @@ class GHierarchy {
 	protected static $filesTransientTime = DAY_IN_SECONDS;
 	protected static $runAdminInit = false;
 
+	protected static $imageTableFields = array(
+			'id' => 'smallint(5) NOT NULL AUTO_INCREMENT',
+			'file' => 'text NOT NULL',
+			'width' => 'smallint(5) unsigned NOT NULL',
+			'height' => 'smallint(5) unsigned NOT NULL',
+			'added' => 'timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP',
+			'taken' => 'timestamp',
+			'title' => 'text',
+			'comment' => 'text',
+			'tags' => 'text',
+			'metadata' => 'text',
+			'exclude' => 'tinyint(1) unsigned NOT NULL DEFAULT 0',
+	);
+
+	protected static $dirTableFields = array(
+			'id' => 'smallint(5) NOT NULL AUTO_INCREMENT',
+			'dir' => 'varchar(350) NOT NULL',
+			'added' => 'timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP',
+	);
+
 	protected static $albums = null;
 
 	/// Rescan variables
@@ -441,16 +461,23 @@ class GHierarchy {
 			$parts[] = 'taken <= \'' . $_POST['end'] . '\'';
 		}
 
+		// File name
+		if (isset($_POST['name']) && $_POST['name']) {
+			if(($q = $me->parseLogic($_POST['name'], 'file LIKE \'%%%s%%\''))) {
+				$parts[] = $q;
+			}
+		}
+
 		// Title
 		if (isset($_POST['title']) && $_POST['title']) {
-			if(($q = $me->parseLogic($_POST['title'], 'title = \'%s\''))) {
+			if(($q = $me->parseLogic($_POST['title'], 'title LIKE \'%%%s%%\''))) {
 				$parts[] = $q;
 			}
 		}
 
 		// Comments
 		if (isset($_POST['comments']) && $_POST['comments']) {
-			if(($q = $me->parseLogic($_POST['comments'], 'comments = \'%s\''))) {
+			if(($q = $me->parseLogic($_POST['comments'], 'comments LIKE \'%%%s%%\''))) {
 				$parts[] = $q;
 			}
 		}
@@ -472,6 +499,51 @@ class GHierarchy {
 
 		echo json_encode($images);
 
+		exit;
+	}
+
+	static function ajaxSave() {
+		global $wpdb;
+
+		$me = static::instance();
+
+		// Go through data to see if we have valid changes
+		if (is_array($_POST['saveData'])) {
+			foreach ($_POST['saveData'] as $i => &$data) {
+				if (gHisInt($i)) {
+					$parts = array();
+					foreach ($data as $f => &$v) {
+						switch ($f) {
+							case 'exclude':
+								if ($v) {
+									$v = 1;
+								} else {
+									$v = 0;
+								}
+								break;
+							case 'taken':
+							case 'title':
+							case 'comment':
+							case 'tags':
+							case 'exclude':
+							default:
+								continue;
+						}
+						$parts[$f] = $v;
+					}
+
+					if ($parts) {
+						if (!$wpdb->update($me->imageTable, $parts, array('id' => $i))) {
+							echo 'Error: ' . __('There was an error updating the images. '
+									. 'Please try again', 'gallery_hierarchy'); //$wpdb->last_error;
+							exit;
+						}
+					}
+				}
+			}
+		}
+
+		echo __('Images updated successfully', 'gallery_hierarchy');
 		exit;
 	}
 
@@ -522,7 +594,7 @@ class GHierarchy {
 	/**
 	 * Prints the gallery/search HTML
 	 */
-	protected function printGallery() {
+	protected function printGallery($insert = false) {
 		global $wpdb;
 		$id = uniqid();
 		// @todo Check if a scan has been run...? Check if we have images?
@@ -559,40 +631,72 @@ class GHierarchy {
 				. '<input type="datetime" name="' . $id . 'end" id="' . $id
 				. 'end"></p>';
 		
+		// Filename field
+		echo '<p><label for="' . $id . 'name">' . __('Filename Contains:',
+				'gallery_hierarchy') . '</label> ';
+		echo '<input type="text" name="' . $id . 'name" id="' . $id. 'name"></p>';
+		
 		// Title field
-		echo '<p><label for="' . $id . 'title">' . __('Title:','gallery_hierarchy') . '</label> ';
+		echo '<p><label for="' . $id . 'title">' . __('Title Contains:',
+				'gallery_hierarchy') . '</label> ';
 		echo '<input type="text" name="' . $id . 'title" id="' . $id. 'title"></p>';
 		
 		// Comment field
-		echo '<p><label for="' . $id . 'comment">' . __('Comments:','gallery_hierarchy') . '</label> ';
+		echo '<p><label for="' . $id . 'comment">' . __('Comments Contain:',
+				'gallery_hierarchy') . '</label> ';
 		echo '<input type="text" name="' . $id . 'comments" id="' . $id. 'comments"></p>';
 		
 		// Tags field
-		echo '<p><label for="' . $id . 'tags">' . __('Tags:','gallery_hierarchy') . '</label> ';
+		echo '<p><label for="' . $id . 'tags">' . __('Has Tags:',
+				'gallery_hierarchy') . '</label> ';
 		echo '<input type="text" name="' . $id . 'tags" id="' . $id. 'tags"></p>';
 
 		echo '</div>';
 	
-		echo '<p><a onclick="gH.toggle(\'' . $id . '\', \'builder\', \''
-				. __('shortcode builder', 'gallery_hierarchy') . '\');" id="' . $id
-				. 'builderLabel">' . __('Show shortcode builder',
+		// Shortcode builder
+		echo '<p><a onclick="gH.toggleBuilder(\'' . $id . '\');" id="' . $id
+				. 'builderLabel">' . __('Enable shortcode builder',
 				'gallery_hierarchy') . '</a></p>';
+		// Builder div
 		echo '<div id="' . $id . 'builder" class="hide">';
+		// Shortcode type
+		echo '<p><label for="' . $id . 'sctype">' . __('Shortcode Type:',
+				'gallery_hierarchy') . '</label> <select name="' . $id . 'sctype" '
+				. 'id="' . $id . 'sctype" onchange="gH.compileShortcode(\'' . $id
+				. '\');">';
+		echo '<option value="ghthumb">' . __('A thumbnail', 'gallery_hierarchy')
+				. '</option>';
+		echo '<option value="ghalbum">' . __('An album', 'gallery_hierarchy')
+				. '</option>';
+		echo '<option value="ghimage">' . __('An image', 'gallery_hierarchy')
+				. '</option>';
+		echo '</select>';
+		// Shortcode window
+		echo '<p>' . __('Shortcode:', 'gallery_hierarchy') . ' <span id="' . $id
+				. 'shortcode"></span></p>';
+		// Toggle selected
+		echo '<p><a onclick="gH.toggleSelected(\'' . $id . '\');" id="' . $id
+				. 'selectedLabel">' . __('Show currently selected images',
+				'gallery_hierarchy') . '</a></p>';
 		echo '</div>';
 
+
 		echo '<p><a onclick="gH.filter(\'' . $id . '\');" class="button">'
-				. __('Filter', 'gallery_hierarchy') . '</a></p>';
+				. __('Filter', 'gallery_hierarchy') . '</a> ';
+		echo '<a onclick="gH.save(\'' . $id . '\');" class="button">'
+				. __('Save Image Changes', 'gallery_hierarchy') . '</a></p>';
 
 		// Pagination
-		echo '<p><label for="' . $id . 'pagination">' . __('Images per page:',
+		echo '<p class="tablenav"><label for="' . $id . 'limit">' . __('Images per page:',
 				'gallery_hierarchy') . '</label> <input type="number" name="' . $id
-				. 'pagination" id="' . $id. 'pagination" onchange="gH.page(\'' . $id
-				. '\');" value="' . static::$settings->num_images . '"></p>';
+				. 'limit" id="' . $id. 'limit" onchange="gH.repage(\'' . $id
+				. '\');" value="' . static::$settings->num_images . '"><span id="'
+				. $id . 'pages" class="tablenav-pages"></span></p>';
 
 		// Photo div
-		echo '<div id="' . $id . 'pad"></div>';
+		echo '<div id="' . $id . 'pad" class="gHpad"></div>';
 		echo '<script>gH.gallery(\'' . $id . '\', \'' . $this->imageUrl . '\', \''
-				. $this->cacheUrl . '\');</script>';
+				. $this->cacheUrl . '\', ' . ($insert ? 1 : 0) . ');</script>';
 	}
 
 	/**
@@ -1850,6 +1954,21 @@ class GHierarchy {
 
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
+		dbDelta($me->buildTableSql($me->dirTable, static::$dirTableFields, 'id'));
+		
+		dbDelta($me->buildTableSql($me->imageTable,
+				static::$imageTableFields, 'id'));
+	}
+
+	/**
+	 * Builds an SQL statement for creating a table.
+	 * @param $table string Name of the table.
+	 * @param $fields array Associative array of the field name and details
+	 * @param $primary string The field name to use as the primary key
+	 */
+	protected function buildTableSql($table, $fields, $primary) {
+		global $wpdb;
+
 		/*
 		 * We'll set the default character set and collation for this table.
 		 * If we don't do this, some characters could end up being converted 
@@ -1864,33 +1983,15 @@ class GHierarchy {
 		if ( ! empty( $wpdb->collate ) ) {
 		  $charset_collate .= " COLLATE {$wpdb->collate}";
 		}
+		$sql = 'CREATE TABLE ' . $table . " ( \n";
 
-		// Check that the directory table is there
-		$sql = "CREATE TABLE " . $me->dirTable . " ( \n"
-				. "id smallint(5) NOT NULL AUTO_INCREMENT, \n"
-				. "dir varchar(350) NOT NULL, \n"
-			  . "added timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, \n"
-			  . "PRIMARY KEY (id) \n"
-				. ") $charset_collate;";
+		foreach ($fields as $f => &$field) {
+			$sql .= $f . ' ' . $field . ", \n";
+		}
 
-		dbDelta( $sql );
+		$sql .= 'PRIMARY KEY (' . $primary . ") \n";
+		$sql .= ') ' . $charset_collate . ';';
 
-		// Check that the image table is there
-		$sql = "CREATE TABLE " . $me->imageTable . " ( \n"
-				. "id smallint(5) NOT NULL AUTO_INCREMENT, \n"
-				. "file text NOT NULL, \n"
-				. "width smallint(5) unsigned NOT NULL, \n"
-				. "height smallint(5) unsigned NOT NULL, \n"
-			  . "added timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, \n"
-			  . "taken timestamp, \n"
-				. "title text, \n"
-				. "comment text, \n"
-				. "tags text, \n"
-				. "metadata text, \n"
-				. "exclude tinyint(1) unsigned NOT NULL DEFAULT 0, \n"
-			  . "PRIMARY KEY (id) \n"
-				. ") $charset_collate;";
-
-		dbDelta( $sql );
+		return $sql;
 	}
 }

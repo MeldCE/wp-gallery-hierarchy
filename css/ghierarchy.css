@@ -9,10 +9,38 @@
 	margin: 5px;
 }
 
-.exclude {
+.orderer {
+	position: absolute;
+	font-weight: bold;
+	font-size: 30px;
+	width: auto;
+	top: 5px;
+	right: 5px;
+	color: #fff;
+	padding: 0px;
+}
+
+.orderer div:not(.order) {
+	font-family: "dashicons";
+}
+
+.orderer .order {
+	font-size: 15px;
+	height: 30px;
+	padding: 0px 4px;
+}
+.orderer div {
+	opacity: 0.1;
+	filter: alpha(opacity=10);
+	display: inline-block;
+	margin: 0px 2px;
+	background-color: #0F0;
+}
+
+.exclude,
+.select {
 	font-family: "dashicons";
 	position: absolute;
-	color: #F00;
 	font-weight: bold;
 	font-size: 30px;
 	width: 30px;
@@ -20,47 +48,52 @@
 	opacity: 0.1;
 	filter: alpha(opacity=10);
 	bottom: 5px;
+}
+
+.exclude {
 	left:5px;
+	color: #F00;
 }
 
-.galleryThumb:hover .exclude:hover {
-	opacity: 0.8;
-	filter: alpha(opacity=80);
-}
-
-.galleryThumb:hover .exclude {
-	opacity: 0.4;
-	filter: alpha(opacity=40);
+.select {
+	right:5px;
+	color: #0F0;
 }
 
 .exclude:before {
 	content: "\f153";
 }
 
-.select {
-	font-family: "dashicons";
-	position: absolute;
-	color: #0F0;
-	font-weight: bold;
-	font-size: 30px;
-	width: 30px;
-	height:30px;
-	opacity: 0.1;
-	filter: alpha(opacity=10);
-	bottom: calc(50% - 15px);
-	right:5px;
+.select:before {
+	content: "\f502";
 }
 
+.galleryThumb .orderer div,
+.galleryThumb:hover .exclude,
 .galleryThumb:hover .select {
 	opacity: 0.4;
 	filter: alpha(opacity=40);
 }
 
-.select:before {
-	content: "\f502";
-}
-
+.galleryThumb .orderer .order,
+.galleryThumb:hover .orderer:hover div:not(.order):hover,
+.galleryThumb:hover .exclude:hover,
 .galleryThumb:hover .select:hover {
+	cursor: pointer;
 	opacity: 0.8;
 	filter: alpha(opacity=80);
 }
+
+.gHpad .galleryThumb.selected .select,
+.gHpad .galleryThumb.excluded .exclude {
+	opacity: 0.7;
+	filter: alpha(opacity=70);
+}
+
+/*.gHpad.builderOn .galleryThumb .exclude ,*/
+.gHpad:not(.builderOn) .galleryThumb .orderer,
+.gHpad .galleryThumb:not(.selected) .orderer,
+.gHpad:not(.builderOn) .galleryThumb .select {
+	display: none;
+}
+
