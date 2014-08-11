@@ -56,7 +56,9 @@ class GHierarchy {
 		/// @todo finfo_close($finfo);
 		$this->dirTable = $wpdb->prefix . 'gHierarchyDirs';
 		$this->imageTable = $wpdb->prefix . 'gHierarchyImages';
-		
+	
+		static::$scanTransientTime = ini_get('max_execution_time');
+	
 		// Make the array of albums
 		$albums = array();
 		$albumDescription = '';
@@ -769,8 +771,8 @@ class GHierarchy {
 				'gallery_hierarchy') . '</h2>';
 		// Check if a job is currently running
 		if (get_transient(static::$scanTransient) !== false) {
-			echo '<p>' . __("Scan currently running.",
-					'gallery_hierarchy') . '</p>';
+			echo '<p>' . __("Scan currently running. Timeout is ",
+					'gallery_hierarchy') . static::$scanTransientTime . 's</p>';
 			if (($status = get_transient(static::$statusTransient)) !== false) {
 				echo '<p>' . __("Status: ",
 						'gallery_hierarchy') . $status . '</p>';
