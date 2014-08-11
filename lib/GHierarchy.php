@@ -13,7 +13,8 @@ class GHierarchy {
 	protected static $scanTransient = 'gHScanTran';
 	protected static $statusTransient = 'gHStatusTran';
 	protected static $filesTransient = 'gHFilesTran';
-	protected $disabled = array();
+	// @todo ?? protected $disabled = array();
+	protected $disable = false;
 	protected static $scanTransientTime = 60;
 	protected static $statusTransientTime = DAY_IN_SECONDS;
 	protected static $filesTransientTime = DAY_IN_SECONDS;
@@ -59,7 +60,7 @@ class GHierarchy {
 		// Make the array of albums
 		$albums = array();
 		$albumDescription = '';
-		foreach (static::getAlbums() as $a => &$album) {
+		foreach (static::getAlbums() as $a => $album) {
 			$albumDescription .= $album['name'] . ' - ' . $album['description'] . '<br>';
 			$albums[$a] = $album['name'];
 		}
@@ -415,7 +416,7 @@ class GHierarchy {
 		$me = static::instance();
 
 		// Build query
-		$parts = [];
+		$parts = array();
 
 		// @todo Recursive
 		if (isset($_POST['folders']) && is_array($_POST['folders'])) {
@@ -738,7 +739,7 @@ class GHierarchy {
 		echo '<h1>' . __('Load Images into Gallery Hierarchy', 'gallery_hierarchy')
 				. '</h1>';
 		
-		if ($this->disabled) {
+		if ($this->disable) {
 			echo '<p>' . __(' Loading disabled. Please fix it.', 'gallery_hierarchy')
 					. '</p>';
 			return;
