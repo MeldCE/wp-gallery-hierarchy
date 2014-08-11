@@ -1956,11 +1956,13 @@ class GHierarchy {
 		$me = static::instance();
 
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-
-		dbDelta($me->buildTableSql($me->dirTable, static::$dirTableFields, 'id'));
 		
-		dbDelta($me->buildTableSql($me->imageTable,
-				static::$imageTableFields, 'id'));
+		$sql = $me->buildTableSql($me->dirTable, static::$dirTableFields, 'id');
+		dbDelta($sql);
+
+		$sql = $me->buildTableSql($me->imageTable,
+				static::$imageTableFields, 'id');
+		dbDelta($sql);
 	}
 
 	/**
