@@ -53,14 +53,8 @@ if (!class_exists('GHierarchy')) {
 			// Include album files
 			gHIncludeFiles(plugin_dir_path(__FILE__) . 'albums/');
 
-			// Action for rescan job
-			add_action('gh_rescan', array('GHierarchy', 'scan'));
-
 			add_action('wp_enqueue_scripts', array('GHierarchy', 'enqueue'));
 			add_action('admin_enqueue_scripts', array('GHierarchy', 'adminEnqueue'));
-
-			/// @todo Add a hook for plugin deletion
-			register_activation_hook(__FILE__, array('GHierarchy', 'install'));
 			
 			// Handle AJAX requests (from image browser)
 			add_action('wp_ajax_gh_gallery', array('GHierarchy', 'ajaxGallery'));
@@ -75,4 +69,10 @@ if (!class_exists('GHierarchy')) {
 	}
 
 	add_action('plugins_loaded', 'gHierarchySetup');
+
+	// Action for rescan job
+	add_action('gh_rescan', array('GHierarchy', 'scan'));
+
+	/// @todo Add a hook for plugin deletion
+	register_activation_hook(__FILE__, array('GHierarchy', 'install'));
 }
