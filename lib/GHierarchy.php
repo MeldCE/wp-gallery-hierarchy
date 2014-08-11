@@ -105,7 +105,7 @@ class GHierarchy {
 												'description' => __('Size to make the thumbnails.',
 														'gallery_hierarchy'),
 												'type' => 'dimensions',
-												'default' => array(200, 150)
+												'default' => array(200, 200)
 										),
 										'gh_crop_thumbnails' => array(
 												'title' => __('Crop Thumbnails', 'gallery_hierarchy'),
