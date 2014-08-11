@@ -3,7 +3,7 @@ wp-gallery-hierarchy
 
 By [Meld Computer Engineering](http://www.meldce.com)
 
-[Support opensource development](https://pledgie.com/campaigns/17426)
+[Support this opensource development](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=KHK78HNWNUZEL&lc=NZ&item_name=Meld%20Computer%20Engineering&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted)
 
 ## Introduction
 
@@ -132,11 +132,14 @@ tag or both the `travel` and `new zealand` tags.
 - What is displayed by default below the images (per type)
 
 ## Installation
-This project uses [Lightbox](https://github.com/lokesh/lightbox2.git) and
-[wp-settings](https://github.com/weldstudio/wp-settings) as a Git submodules.
+This project uses the Github projects mentioned below as Git submodules.
 To initialise them, you will need to run the command
 `git submodule update --init`
-from the cloned directory.
+from the root directory.
+- [Lightbox](https://github.com/lokesh/lightbox2.git)
+- [wp-settings](https://github.com/weldstudio/wp-settings)
+- [jquery-ui-multiselect-widget](https://github.com/ehynds/jquery-ui-multiselect-widget)
+- [jquery-Timepicker-Addon](https://github.com/trentrichardson/jQuery-Timepicker-Addon)
 
 ## Future Features (Todos)
 https://github.com/weldstudio/wp-gallery-hierarchy/issues
