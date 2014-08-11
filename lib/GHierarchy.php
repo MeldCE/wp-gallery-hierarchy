@@ -774,12 +774,7 @@ class GHierarchy {
 		echo '<h2>' . __('Manually uploaded files into the folder?',
 				'gallery_hierarchy') . '</h2>';
 		// Check if a job is currently running
-		if (($time = wp_next_scheduled('gh_rescan'))) {
-			echo '<p>' . __('Rescan scheduled for ', 'gallery_hierarchy')
-					. strftime('%a (%e) at %H:%M:%S %Z', $time) . '. '
-					. '<a href="' . add_query_arg('remove', '1') . '">'
-					. __('Clear job', 'gallery_hierarchy') . '</a></p>';
-		} else if (get_transient(static::$scanTransient) !== false) {
+		if (get_transient(static::$scanTransient) !== false) {
 			echo '<p>' . __("Scan currently running. Timeout is ",
 					'gallery_hierarchy') . static::$scanTransientTime . 's</p>';
 			if (($status = get_transient(static::$statusTransient)) !== false) {
@@ -788,6 +783,13 @@ class GHierarchy {
 			}
 			//echo '<a href="" class="button">' . __('Stop current scan',
 			//		'gallery_hierarchy') . '</a>';
+		} else if ( ($time = wp_next_scheduled('gh_rescan'))) {
+			echo '<p>' . __('Rescan scheduled for ', 'gallery_hierarchy')
+					. strftime('%a (%e) at %H:%M:%S %Z', $time) . '. '
+					. '<a href="' . add_query_arg('remove', '1') . '">'
+					. __('Clear job', 'gallery_hierarchy') . '</a></p>';
+			echo '<p>' . __('Once job starts, status updates will be shown here.',
+					'gallery_hierarchy') . '</p>';
 		} else {
 			echo '<p>' . __('Use the buttons below to rescan the folder.',
 					'gallery_hierarchy') . '</p>';
