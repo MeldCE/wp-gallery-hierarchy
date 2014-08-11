@@ -747,22 +747,26 @@ class GHierarchy {
 			return;
 		}
 
+		if (isset($_REQUEST['remove'])) {
+			wp_clear_scheduled_hook('gh_rescan');
+		}
+
 		// Check if we should start a job
 		if (isset($_REQUEST['start'])) {
 			// Check to make sure something hasn't already started
 			if (($status = get_transient(static::$scanTransient)) === false) {
 				switch($_REQUEST['start']) {
 					case 'rescan':
-						$status = __('Starting rescan...', 'gallery_hierarchy');
+						//$status = __('Starting rescan...', 'gallery_hierarchy');
 						$args = null;
 						break;
 					case 'full':
-						$status = __('Forcing full rescan...', 'gallery_hierarchy');
+						//$status = __('Forcing full rescan...', 'gallery_hierarchy');
 						$args = array(true);
 						break;
 				}
-				static::setScanTransients('start', $status);
-				wp_schedule_single_event(time(), 'gh_rescan');//, $args);
+				//static::setScanTransients('start', $status);
+				wp_schedule_single_event(time() + 60, 'gh_rescan');//, $args);
 			}
 		} else {
 			$status = null;
@@ -770,7 +774,12 @@ class GHierarchy {
 		echo '<h2>' . __('Manually uploaded files into the folder?',
 				'gallery_hierarchy') . '</h2>';
 		// Check if a job is currently running
-		if (get_transient(static::$scanTransient) !== false) {
+		if (($time = wp_next_scheduled('gh_rescan'))) {
+			echo '<p>' . __('Rescan scheduled for ', 'gallery_hierarchy')
+					. strftime('%a (%e) at %H:%M:%S %Z', $time) . '. '
+					. '<a href="' . add_query_arg('remove', '1') . '">'
+					. __('Clear job', 'gallery_hierarchy') . '</a></p>';
+		} else if (get_transient(static::$scanTransient) !== false) {
 			echo '<p>' . __("Scan currently running. Timeout is ",
 					'gallery_hierarchy') . static::$scanTransientTime . 's</p>';
 			if (($status = get_transient(static::$statusTransient)) !== false) {
