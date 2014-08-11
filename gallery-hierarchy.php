@@ -64,6 +64,7 @@ if (!class_exists('GHierarchy')) {
 			
 			// Handle AJAX requests (from image browser)
 			add_action('wp_ajax_gh_gallery', array('GHierarchy', 'ajaxGallery'));
+			add_action('wp_ajax_gh_save', array('GHierarchy', 'ajaxSave'));
 		
 			if (is_admin()) {
 				// Initialise
