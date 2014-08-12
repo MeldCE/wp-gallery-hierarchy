@@ -1,9 +1,9 @@
 wp-gallery-hierarchy
 ====================
 
-By [Meld Computer Engineering](http://www.meldce.com)
+By [The Weld Studio](http://www.theweldstudio.com)
 
-[Support this opensource development](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=KHK78HNWNUZEL&lc=NZ&item_name=Meld%20Computer%20Engineering&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_SM%2egif%3aNonHosted)
+Support this opensource development [Paypal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=opensource%40theweldstudio%2ecom&lc=NZ&item_name=The%20Weld%20Studio%20Opensource&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted) [Gittip][https://www.gittip.com/The%20Weld%20Studio/]
 
 ## Introduction
 
