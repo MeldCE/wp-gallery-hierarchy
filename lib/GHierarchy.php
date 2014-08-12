@@ -350,10 +350,10 @@ class GHierarchy {
 		static::enqueue();
 		/// @todo @see http://codex.wordpress.org/I18n_for_WordPress_Developers
 		wp_enqueue_script('ghierarchy', 
-				plugins_url('/js/ghierarchy.js', dirname(__FILE__)));
+				plugins_url('/js/ghierarchy.min.js', dirname(__FILE__)));
 		//wp_enqueue_style( 'dashicons' );
 		wp_enqueue_style('ghierarchy',
-				plugins_url('/css/ghierarchy.css', dirname(__FILE__)), array('dashicons'));
+				plugins_url('/css/ghierarchy.min.css', dirname(__FILE__)), array('dashicons'));
 		wp_enqueue_script('jquery-ui-multiselect', 
 				plugins_url('/lib/jquery-ui-multiselect/src/jquery.multiselect.min.js', dirname(__FILE__)),
 				array('jquery', 'jquery-ui-core'));
