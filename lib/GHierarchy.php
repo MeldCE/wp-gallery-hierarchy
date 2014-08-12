@@ -12,11 +12,13 @@ class GHierarchy {
 	protected static $settings;
 	protected static $scanTransient = 'gHScanTran';
 	protected static $statusTransient = 'gHStatusTran';
+	protected static $statusTimeTransient = 'gHStatusTimeTran';
 	protected static $filesTransient = 'gHFilesTran';
 	// @todo ?? protected $disabled = array();
 	protected $disable = false;
 	protected static $scanTransientTime = 60;
 	protected static $statusTransientTime = DAY_IN_SECONDS;
+	protected static $statusTimeTransientTime = DAY_IN_SECONDS;
 	protected static $filesTransientTime = DAY_IN_SECONDS;
 	protected static $runAdminInit = false;
 
@@ -771,11 +773,18 @@ class GHierarchy {
 		}
 		echo '<h2>' . __('Manually uploaded files into the folder?',
 				'gallery_hierarchy') . '</h2>';
+		if (($status = get_transient(static::$statusTransient)) !== false) {
+			if (($time = get_transient(static::$statusTimeTransient)) !== false) {
+				$status .= ' <i>(' . __('Updated ', 'gallery_hierarchy')
+						. date_i18n( get_option( 'date_format' ) . ' @ '
+						. get_option( 'time_format'), $time) . ')</i>';
+			}
+		}
 		// Check if a job is currently running
 		if (get_transient(static::$scanTransient) !== false) {
 			echo '<p>' . __("Scan currently running. Timeout is ",
 					'gallery_hierarchy') . static::$scanTransientTime . 's</p>';
-			if (($status = get_transient(static::$statusTransient)) !== false) {
+			if ($status) {
 				echo '<p>' . __("Status: ",
 						'gallery_hierarchy') . $status . '</p>';
 			}
@@ -788,8 +797,10 @@ class GHierarchy {
 					. __('Clear job', 'gallery_hierarchy') . '</a></p>';
 			echo '<p>' . __('Once job starts, status updates will be shown here.',
 					'gallery_hierarchy') . '</p>';
+			// @todo Add a more information link for this problem
 			echo '<p>' . __('Job hasn\'t started? You may need to visit your '
-					. 'Wordpress site to get it started.',
+					. '<a href="' . get_option('site_url') . '">Wordpress site</a> '
+					. 'to get it started.',
 					'gallery_hierarchy') . '</p>';
 		} else {
 			echo '<p>' . __('Use the buttons below to rescan the folder.',
@@ -798,15 +809,16 @@ class GHierarchy {
 					. __('Rescan Directory', 'gallery_hierarchy') . '</a> <a href="'
 					. add_query_arg('start', 'full') . '" class="button button-cancel">'
 					. __('Force Rescan of All Images', 'gallery_hierarchy') . '</a>';
-			if (($status = get_transient(static::$statusTransient)) !== false) {
+			if ($status) {
 				if (get_transient(static::$filesTransient) !== false) {
 					$maxTime = ini_get('max_execution_time');
 					echo '<p><em>' . __('It seems there is an unfinished scan. '
 							. 'It might have exceeded the maximum running time set '
-							. 'by the server configuration (' . $maxTime . '). ',
+							. 'by the server configuration (' . $maxTime . 's). If the last '
+							. 'status update was longer ago than ' . $maxTime . 's, ',
 							'gallery_hierarchy')
 							. '<a href="' . add_query_arg('start', 'rescan') . '">'
-							. __('Please resume the scan', 'gallery_hierarchy')
+							. __('please resume the scan', 'gallery_hierarchy')
 							. '.</a></em></p>';
 				}
 				echo '<p>' . __('Last status from last scan: ', 'gallery_hierarchy')
@@ -1268,6 +1280,8 @@ class GHierarchy {
 		}
 		set_transient(static::$statusTransient, $status,
 				static::$statusTransientTime);
+		set_transient(static::$statusTimeTransient, time(),
+				static::$statusTimeTransientTime);
 		set_transient(static::$scanTransient, $scan,
 				static::$scanTransientTime);
 		static::$nextSet = time() + 10;
