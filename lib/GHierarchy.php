@@ -57,8 +57,6 @@ class GHierarchy {
 		$this->dirTable = $wpdb->prefix . 'gHierarchyDirs';
 		$this->imageTable = $wpdb->prefix . 'gHierarchyImages';
 	
-		static::$scanTransientTime = ini_get('max_execution_time');
-	
 		// Make the array of albums
 		$albums = array();
 		$albumDescription = '';
@@ -766,7 +764,7 @@ class GHierarchy {
 						break;
 				}
 				//static::setScanTransients('start', $status);
-				wp_schedule_single_event(time() + 60, 'gh_rescan');//, $args);
+				wp_schedule_single_event(time(), 'gh_rescan');//, $args);
 			}
 		} else {
 			$status = null;
@@ -790,6 +788,9 @@ class GHierarchy {
 					. __('Clear job', 'gallery_hierarchy') . '</a></p>';
 			echo '<p>' . __('Once job starts, status updates will be shown here.',
 					'gallery_hierarchy') . '</p>';
+			echo '<p>' . __('Job hasn\'t started? You may need to visit your '
+					. 'Wordpress site to get it started.',
+					'gallery_hierarchy') . '</p>';
 		} else {
 			echo '<p>' . __('Use the buttons below to rescan the folder.',
 					'gallery_hierarchy') . '</p>';
@@ -799,12 +800,14 @@ class GHierarchy {
 					. __('Force Rescan of All Images', 'gallery_hierarchy') . '</a>';
 			if (($status = get_transient(static::$statusTransient)) !== false) {
 				if (get_transient(static::$filesTransient) !== false) {
-				echo '<p><em>' . __('It seems there is an unfinished scan. '
-						. 'It might have exceeded the maximum running time set '
-						. 'by the server configuration. ', 'gallery_hierarchy')
-						. '<a href="' . add_query_arg('start', 'rescan') . '">'
-						. __('Please resume the scan', 'gallery_hierarchy')
-						. '.</a></em></p>';
+					$maxTime = ini_get('max_execution_time');
+					echo '<p><em>' . __('It seems there is an unfinished scan. '
+							. 'It might have exceeded the maximum running time set '
+							. 'by the server configuration (' . $maxTime . '). ',
+							'gallery_hierarchy')
+							. '<a href="' . add_query_arg('start', 'rescan') . '">'
+							. __('Please resume the scan', 'gallery_hierarchy')
+							. '.</a></em></p>';
 				}
 				echo '<p>' . __('Last status from last scan: ', 'gallery_hierarchy')
 						. $status . '</p>';
@@ -946,6 +949,8 @@ class GHierarchy {
 		global $wpdb;
 
 		$me = static::instance();
+
+		$html = '';
 
 		// Fill out the attributes with the default
 		switch ($tag) {
@@ -1159,7 +1164,7 @@ class GHierarchy {
 					$atts['size'] = false;
 				}
 
-				$me->printImage($images, $atts);
+				$html = $me->printImage($images, $atts);
 				break;
 			case 'ghthumb':
 				$atts['type'] = static::$settings->get_option('gh_thumb_album');
@@ -1172,10 +1177,12 @@ class GHierarchy {
 				}
 
 				if (isset($atts['type']) && isset($albums[$atts['type']])) {
-					$albums[$atts['type']]['class']::printAlbum($images, $atts);
+					$html = $albums[$atts['type']]['class']::printAlbum($images, $atts);
 				}
 				break;
 		}
+		
+		return $html;
 	}
 
 	/**
@@ -1187,18 +1194,20 @@ class GHierarchy {
 	 *                 shortcode.
 	 */
 	protected function printImage(&$images, &$options) {
+		$html = '';
+
 		foreach ($images as &$image) {
 			// Create link
-			echo '<a';
+			$html .= '<a';
 			switch ($options['link']) {
 				case 'none':
 					break;
 				case 'popup':
-					echo ' href="' . GHierarchy::getImageURL($image) . '"';
+					$html .= ' href="' . GHierarchy::getImageURL($image) . '"';
 					break;
 				default:
 					/// @todo Add the ability to have a link per thumbnail
-					echo ' href="' . $options['link'] . '"';
+					$html .= ' href="' . $options['link'] . '"';
 					break;
 			}
 			
@@ -1224,9 +1233,9 @@ class GHierarchy {
 					break;
 			}
 
-			echo GHierarchy::lightboxData($image, $options['group'], $caption);
+			$html .= GHierarchy::lightboxData($image, $options['group'], $caption);
 
-			echo '><img src="' . GHierarchy::getCImageURL($image, $options['size'])
+			$html .= '><img src="' . GHierarchy::getCImageURL($image, $options['size'])
 				. '">';
 			
 			// Add comment
@@ -1234,15 +1243,17 @@ class GHierarchy {
 				case 'none':
 					break;
 				case 'title':
-					echo '<span>' . $image->title . '</span>';
+					$html .= '<span>' . $image->title . '</span>';
 					break;
 				case 'caption':
-					echo '<span>' . $image->caption . '</span>';
+					$html .= '<span>' . $image->caption . '</span>';
 					break;
 			}
 					
-			echo '</a>';
+			$html .= '</a>';
 		}
+
+		return $html;
 	}
 
 	/**

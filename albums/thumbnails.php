@@ -19,21 +19,22 @@ class GHThumbnails implements GHAlbum {
 	}
 
 	static function printAlbum(&$images, &$options) {
+		$html = '';
 		if ($images) {
-			echo '<div' . ($options['class'] ? ' class="' . $options['class'] . '"'
+			$html .= '<div' . ($options['class'] ? ' class="' . $options['class'] . '"'
 					: '') . '>';
 			foreach ($images as &$image) {
 				// Create link
-				echo '<a';
+				$html .= '<a';
 				switch ($options['link']) {
 					case 'none':
 						break;
 					case 'popup':
-						echo ' href="' . GHierarchy::getImageURL($image) . '"';
+						$html .= ' href="' . GHierarchy::getImageURL($image) . '"';
 						break;
 					default:
 						/// @todo Add the ability to have a link per thumbnail
-						echo ' href="' . $options['link'] . '"';
+						$html .= ' href="' . $options['link'] . '"';
 						break;
 				}
 				
@@ -59,28 +60,30 @@ class GHThumbnails implements GHAlbum {
 						break;
 				}
 
-				echo GHierarchy::lightboxData($image, $options['group'], $caption);
+				$html .= GHierarchy::lightboxData($image, $options['group'], $caption);
 
-				echo '><img src="' . GHierarchy::getCImageURL($image) . '">';
+				$html .= '><img src="' . GHierarchy::getCImageURL($image) . '">';
 				
 				// Add comment
 				switch ($options['caption']) {
 					case 'title':
-						echo '<span>' . $image->title . '&nbsp;</span>';
+						$html .= '<span>' . $image->title . '&nbsp;</span>';
 						break;
 					case 'caption':
-						echo '<span>' . $image->caption . '&nbsp;</span>';
+						$html .= '<span>' . $image->caption . '&nbsp;</span>';
 						break;
 					case 'none':
 					default:
-						echo '<span>&nbsp;</span>';
+						$html .= '<span>&nbsp;</span>';
 						break;
 				}
 						
-				echo '</a>';
+				$html .= '</a>';
 			}
 
-			echo '</div>';
+			$html .= '</div>';
 		}
+
+		return $html;
 	}
 }
