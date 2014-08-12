@@ -3,7 +3,7 @@ wp-gallery-hierarchy
 
 By [The Weld Studio](http://www.theweldstudio.com)
 
-Support this opensource development [Paypal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=opensource%40theweldstudio%2ecom&lc=NZ&item_name=The%20Weld%20Studio%20Opensource&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted) [Gittip][https://www.gittip.com/The%20Weld%20Studio/]
+Support this opensource development [Paypal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=opensource%40theweldstudio%2ecom&lc=NZ&item_name=The%20Weld%20Studio%20Opensource&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHosted) [Gittip](https://www.gittip.com/The%20Weld%20Studio/)
 
 ## Introduction
 
