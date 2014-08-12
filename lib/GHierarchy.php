@@ -1247,7 +1247,7 @@ class GHierarchy {
 
 			$html .= GHierarchy::lightboxData($image, $options['group'], $caption);
 
-			$html .= '><img src="' . GHierarchy::getCImageURL($image, $options['size'])
+			$html .= ' class= "' . $options['class'] . '"><img src="' . GHierarchy::getCImageURL($image, $options['size'])
 				. '">';
 			
 			// Add comment

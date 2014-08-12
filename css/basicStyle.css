@@ -1,0 +1,32 @@
+.right {
+	float: right;
+}
+
+.left {
+	float: left;
+}
+
+.ghimage img {
+	max-width: 100%;
+	height: auto;
+}
+
+.ghthumbnail {
+	text-align: center;
+}
+
+.ghthumbnail a {
+	display: inline-block;
+	border: solid 1px #ccc;
+	box-shadow: 3px 3px 3px #999;
+	margin: 5px;
+	padding: 5px;
+}
+
+.ghimage span,
+.ghthumbnail a span {
+	display:block;
+	font-size: 12px;
+	font-style: italic;
+	text-align: center;
+}
