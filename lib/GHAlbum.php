@@ -37,7 +37,7 @@ interface GHAlbum {
 	static function enqueue();
 
 	/**
-	 * Prints the album for the given images and options. The options will
+	 * Generates the album for the given images and options. The options will
 	 * be the options built from the options in the shortcode and the defaults
 	 * set in the plugin options.
 	 *
@@ -46,6 +46,7 @@ interface GHAlbum {
 	 *                      order of the array should be the order in which the
 	 *                      images are placed
 	 * @param $options array Array containing the options built for the shortcode
+	 * @return string The HTML for the album
 	 */
 	 static function printAlbum(&$images, &$options);
 }
