@@ -1,2 +1,8 @@
 *~
 .*.sw?
+gallery-hierarchy
+gallery-hierarchy.tgz
+css/basicStyle.css
+css/basicStyle.min.css
+css/ghierarchy.min.css
+js/ghierarchy.min.js
