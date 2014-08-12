@@ -1,5 +1,6 @@
 wp-gallery-hierarchy
 ====================
+A simplistic gallery plugin for Wordpress that stores images in a hierarchical folder structure.
 
 By [The Weld Studio](http://www.theweldstudio.com)
 
