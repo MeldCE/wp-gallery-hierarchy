@@ -3,7 +3,7 @@ SHELL := /bin/bash
 # Building everything
 all: release
 
-release: gallery-hierarchy.zip
+release: gallery-hierarchy.zip gallery-hierarchy.tgz
 
 clean: clean-minify clean-release
 
@@ -11,7 +11,7 @@ clean-release:
 	rm -f gallery-hierarchy.zip
 	rm gallery-hierarchy
 
-coreFiles = README.md LICENSE gallery-hierarchy.php lib/GHierarchy.php lib/GHAlbum.php lib/utils.php
+coreFiles = readme.txt README.md LICENSE gallery-hierarchy.php lib/GHierarchy.php lib/GHAlbum.php lib/utils.php
 core: $(coreFiles)
 
 albumFiles = $(wildcard albums/*.php)
@@ -81,4 +81,7 @@ gallery-hierarchy:
 	ln -s . gallery-hierarchy
 
 gallery-hierarchy.zip: gallery-hierarchy core albums lightbox2 css js submodules
-	zip gallery-hierarchy.zip $(addprefix gallery-hierarchy/,$(Files))
+	zip -X gallery-hierarchy.zip $(addprefix gallery-hierarchy/,$(Files))
+
+gallery-hierarchy.tgz: gallery-hierarchy core albums lightbox2 css js submodules
+	tar -czf gallery-hierarchy.tgz $(addprefix gallery-hierarchy/,$(Files))
