@@ -70,6 +70,9 @@ if (!class_exists('GHierarchy')) {
 
 	}
 
+	// Add links to plugin meta
+	add_filter( 'plugin_row_meta', array('GHierarchy', 'pluginMeta'), 10, 2);
+
 	add_action('plugins_loaded', 'gHierarchySetup');
 
 	// Action for rescan job
