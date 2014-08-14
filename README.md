@@ -141,7 +141,6 @@ This project uses the Github projects mentioned below as Git submodules.
 To initialise them, you will need to run the command
 `git submodule update --init`
 from the root directory.
-- [Lightbox](https://github.com/lokesh/lightbox2.git)
 - [wp-settings](https://github.com/weldstudio/wp-settings)
 - [jquery-ui-multiselect-widget](https://github.com/ehynds/jquery-ui-multiselect-widget)
 - [jquery-Timepicker-Addon](https://github.com/trentrichardson/jQuery-Timepicker-Addon)
