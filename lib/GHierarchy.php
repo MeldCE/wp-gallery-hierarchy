@@ -394,8 +394,6 @@ class GHierarchy {
 	static function head() {
 		echo '<script type="text/javascript">'
 				. 'jQuery(document).ready(function() {'
-				. 'console.log("hellp");'
-				. 'console.log(jQuery("a[data-fancybox=\'fancybox\']"));'
 				. 'jQuery("a[data-fancybox=\'fancybox\']").fancybox();'
 				. '});'
 				. '</script>';
