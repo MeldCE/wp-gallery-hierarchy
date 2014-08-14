@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-version = 0.1-beta
+version = 0.1-beta-fancybox
 
 # Building everything
 all: release
@@ -24,8 +24,8 @@ css/basicStyle.css: albums/thumbnails.php
 
 
 # Submodules
-submoduleFiles = $(WPSettings) $(JqueryUiMultiselect) $(JqueryUiTimepicker) $(Lightbox2)
-submodules: wp-settings jquery-ui-multiselect jquery-ui-timepicker lightbox2
+submoduleFiles = $(WPSettings) $(JqueryUiMultiselect) $(JqueryUiTimepicker) $(Lightbox)
+submodules: wp-settings jquery-ui-multiselect jquery-ui-timepicker lightbox
 
 WPSettings = $(shell ls lib/wp-settings/{LICENSE,README.md,WPSettings.php})
 wp-settings: $(WPSettings)
@@ -37,8 +37,8 @@ JqueryUiTimepicker = $(shell ls lib/jquery-ui-timepicker/src/jquery-ui-timepicke
 jquery-ui-timepicker: $(JqueryUiTimepicker)
 
 
-Lightbox2 = $(shell ls lib/lightbox2/{img/*.{png,gif},css/*,js/lightbox.min.js})
-lightbox2 : $(Lightbox2)
+Lightbox = $(shell ls lib/fancybox/{*.gif,*.png,jquery.fancybox-1.3.4.pack.js,jquery.mousewheel-3.0.4.pack.js,jquery.fancybox-1.3.4.css})
+lightbox : $(Lightbox)
 
 
 jqueryUi = $(shell ls css/jquery-ui/{images/*,jquery-ui.min.css,jquery-ui.structure.min.css,jquery-ui.theme.min.css})
@@ -82,8 +82,8 @@ Files = $(JSFiles) $(CssFiles) $(coreFiles) $(albumFiles) $(submoduleFiles)
 gallery-hierarchy:
 	ln -s . gallery-hierarchy
 
-gallery-hierarchy.$(version).zip: gallery-hierarchy core albums lightbox2 css js submodules
+gallery-hierarchy.$(version).zip: gallery-hierarchy core albums css js submodules
 	zip -X gallery-hierarchy.$(version).zip $(addprefix gallery-hierarchy/,$(Files))
 
-gallery-hierarchy.$(version).tgz: gallery-hierarchy core albums lightbox2 css js submodules
+gallery-hierarchy.$(version).tgz: gallery-hierarchy core albums css js submodules
 	tar -czf gallery-hierarchy.$(version).tgz $(addprefix gallery-hierarchy/,$(Files))

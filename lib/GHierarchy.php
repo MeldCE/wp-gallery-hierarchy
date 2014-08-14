@@ -383,10 +383,22 @@ class GHierarchy {
 	 */
 	static function enqueue() {
 		// Enqueue lightbox script
-		wp_enqueue_script('lightbox', 
-				plugins_url('/lib/lightbox2/js/lightbox.min.js', dirname(__FILE__)));
-		wp_enqueue_style('lightbox',
-				plugins_url('/lib/lightbox2/css/lightbox.css', dirname(__FILE__)));
+		wp_enqueue_script('fancybox-js', 
+				plugins_url('/lib/fancybox/jquery.fancybox-1.3.4.pack.js', dirname(__FILE__)), array('jquery', 'fancybox-mouse'));
+		wp_enqueue_script('fancybox-mouse', 
+				plugins_url('/lib/fancybox/jquery.mousewheel-3.0.4.pack.js', dirname(__FILE__)), array('jquery'));
+		wp_enqueue_style('fancybox',
+				plugins_url('/lib/fancybox/jquery.fancybox-1.3.4.css', dirname(__FILE__)));
+	}
+
+	static function head() {
+		echo '<script type="text/javascript">'
+				. 'jQuery(document).ready(function() {'
+				. 'console.log("hellp");'
+				. 'console.log(jQuery("a[data-fancybox=\'fancybox\']"));'
+				. 'jQuery("a[data-fancybox=\'fancybox\']").fancybox();'
+				. '});'
+				. '</script>';
 	}
 
 	/**
@@ -927,7 +939,7 @@ class GHierarchy {
 
 	/**
 	 * Generates the require parameters to be included in the <a> tag of the
-	 * image for lightbox to work on the image.
+	 * image for the lightbox to work on the image.
 	 *
 	 * @param $image stdClass Object containing the image to generate the
 	 *               parameters for.
@@ -937,10 +949,11 @@ class GHierarchy {
 	 */
 	static function lightboxData(stdClass &$image, $group = null,
 			$caption = null) {
-		$html = ' data-lightbox="' . ($group ? $group : uniqid()) . '"';
+		$html = ' data-fancybox="fancybox" rel="' . ($group ? $group : uniqid())
+				. '"';
 		
 		if ($caption) {
-			$html .= ' data-title="' . $caption . '"';
+			$html .= ' title="' . $caption . '"';
 		}
 		
 		return $html;

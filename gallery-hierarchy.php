@@ -55,7 +55,9 @@ if (!class_exists('GHierarchy')) {
 
 			add_action('wp_enqueue_scripts', array('GHierarchy', 'enqueue'));
 			add_action('admin_enqueue_scripts', array('GHierarchy', 'adminEnqueue'));
-			
+
+			add_action('wp_head', array('GHierarchy', 'head'));
+
 			// Handle AJAX requests (from image browser)
 			add_action('wp_ajax_gh_gallery', array('GHierarchy', 'ajaxGallery'));
 			add_action('wp_ajax_gh_save', array('GHierarchy', 'ajaxSave'));
