@@ -453,12 +453,19 @@ var gH = (function () {
 		compileShortcode: function(id) {
 			var code = '[' + g[id]['sctype'].val();
 
+			var filter = []
+
+			// Add selected ids
+			if (g[id]['selectOrder'].length) {
+				filter = g[id]['selectOrder'].slice(0);
+			}
+
 			// Add filter
 			if (!g[id]['idsOnly']) {
 				// Folders
 				var folders = g[id]['folders'].val();
 				if (folders) {
-					code += ' folder="' + folders.join(',') + '"';
+					filter.push('folder=' + folders.join('|'));
 				}
 
 				// Date
@@ -466,22 +473,19 @@ var gH = (function () {
 				var end = g[id]['end'].val();
 
 				if (start || end) {
-					code += 'taken="' + (start ? start : '') + '-' + (end ? end : '') + '"';
+					filter.push('taken=' + (start ? start : '') + '|' + (end ? end : ''));
 				}
 
 				var part;
 				var P = ['name', 'title', 'comment', 'tags'];
 				for (p in P) {
 					if ((part = g[id][P[p]].val())) {
-						code += P[p] + '="' + part + '"';
+						filter.push(P[p] + '=' + part);
 					}
 				}
 			}
 
-			// Add selected ids
-			if (g[id]['selectOrder'].length) {
-				code += ' id="' + g[id]['selectOrder'].join(',') + '"';
-			}
+			code += ' id="' + filter.join(',') + '"';
 
 			code += ']';
 			
