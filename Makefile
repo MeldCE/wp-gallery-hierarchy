@@ -1,9 +1,11 @@
 SHELL := /bin/bash
 
+version = 0.1-beta
+
 # Building everything
 all: release
 
-release: gallery-hierarchy.zip gallery-hierarchy.tgz
+release: gallery-hierarchy.$(version).zip gallery-hierarchy.$(version).tgz
 
 clean: clean-minify clean-release
 
@@ -80,8 +82,8 @@ Files = $(JSFiles) $(CssFiles) $(coreFiles) $(albumFiles) $(submoduleFiles)
 gallery-hierarchy:
 	ln -s . gallery-hierarchy
 
-gallery-hierarchy.zip: gallery-hierarchy core albums lightbox2 css js submodules
-	zip -X gallery-hierarchy.zip $(addprefix gallery-hierarchy/,$(Files))
+gallery-hierarchy.$(version).zip: gallery-hierarchy core albums lightbox2 css js submodules
+	zip -X gallery-hierarchy.$(version).zip $(addprefix gallery-hierarchy/,$(Files))
 
-gallery-hierarchy.tgz: gallery-hierarchy core albums lightbox2 css js submodules
-	tar -czf gallery-hierarchy.tgz $(addprefix gallery-hierarchy/,$(Files))
+gallery-hierarchy.$(version).tgz: gallery-hierarchy core albums lightbox2 css js submodules
+	tar -czf gallery-hierarchy.$(version).tgz $(addprefix gallery-hierarchy/,$(Files))
