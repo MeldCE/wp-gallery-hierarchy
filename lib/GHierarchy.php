@@ -2030,7 +2030,7 @@ class GHierarchy {
 			$sql .= $f . ' ' . $field . ", \n";
 		}
 
-		$sql .= 'PRIMARY KEY (' . $primary . ") \n";
+		$sql .= 'PRIMARY KEY  (' . $primary . ") \n";
 		$sql .= ') ' . $charset_collate . ';';
 
 		return $sql;
