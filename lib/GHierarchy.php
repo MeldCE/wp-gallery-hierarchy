@@ -390,6 +390,28 @@ class GHierarchy {
 	}
 
 	/**
+	 * Adds links to the plugin metadata on the Installed plugins page
+	 */
+	static function pluginMeta($links, $file) {
+		/// @todo Make better
+		if ( $file == plugin_basename(str_replace('lib', 'gallery-hierarchy.php', __DIR__))) {
+			$links[] = '<a '
+					. 'href="https://github.com/weldstudio/wp-gallery-hierarchy/issues"'
+					. 'title="' . __('Issues', 'gallery_hierarchy') . '">'
+					. __('Issues', 'gallery_hierarchy') . '</a>';
+			$links[] = '<a href="http://gittip.weldce.com" title="'
+					. __('Gift a weekly amount', 'gallery_hierarchy')
+					. '" target="_blank">'
+					. __('Gift a weekly amount', 'gallery_hierarchy') . '</a>';
+			$links[] = '<a href="http://gift.weldce.com" title="'
+					. __('Gift a little', 'gallery_hierarchy') . '" target="_blank">'
+					. __('Gift a little', 'gallery_hierarchy') . '</a>';
+		}
+
+		return $links;
+	}
+
+	/**
 	 * Function to create the Gallery Hierarchy admin menu.
 	 * Called by @see gHierarchy::init()
 	 */
