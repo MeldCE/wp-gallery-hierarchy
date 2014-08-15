@@ -45,7 +45,7 @@ var gH = (function () {
 				};
 
 				// Initialise currentLimit
-				if ((g[id]['currentLimit'] = parseInt(g[id]['limit'].val())) === false) {
+				if (isNaN(g[id]['currentLimit'] = parseInt(g[id]['limit'].val()))) {
 					g[id]['currentLimit'] = 50;
 					g[id]['limit'].val(50);
 				}
@@ -214,21 +214,25 @@ var gH = (function () {
 		repage: function(id) {
 			var limit = parseInt(g[id]['limit'].val());
 			
-			if (limit === false) {
+			if (isNaN(limit)) {
 				g[id]['limit'].val('50');
 				limit = 50;
 			}
 
-			/* Calculate what offset the current offset would be on and
-			 * amd calculate new offset from there
-			 */
-			if (limit) {
-				g[id]['currentOffset'] = Math.floor(g[id]['currentOffset'] / limit) * limit;
-			} else {
-				g[id]['currentOffset'] = 0;
+			g[id]['currentLimit'] = limit;
+
+			if (g[id]['currentImages']) {
+				/* Calculate what offset the current offset would be on and
+				 * amd calculate new offset from there
+				 */
+				if (limit) {
+					g[id]['currentOffset'] = Math.floor(g[id]['currentOffset'] / limit) * limit;
+				} else {
+					g[id]['currentOffset'] = 0;
+				}
+
+				this.printImages(id, g[id]['currentOffset']);
 			}
-			
-			this.printImages(id, g[id]['currentOffset']);
 		},
 
 		changePage: function(id) {
@@ -236,7 +240,7 @@ var gH = (function () {
 			var page;
 			var currentPage = Math.floor(g[id]['currentOffset'] / g[id]['currentLimit']) + 1;
 			var maxPage = Math.floor(g[id]['currentImages'].length / g[id]['currentLimit']) + 1;
-			if ((page = parseInt(g[id]['pageNumber'].val())) === false) {
+			if (isNaN(page = parseInt(g[id]['pageNumber'].val()))) {
 				page = currentPage;
 				g[id]['pageNumber'].val(page);
 			} else {
@@ -263,10 +267,9 @@ var gH = (function () {
 		 * @param offset int Offset to use
 		 */
 		printImages: function(id, offset) {
-			if ((offset = parseInt(offset)) === false) {
+			if (isNaN(offset = parseInt(offset))) {
 				offset = 0;
 			}
-			console.log('New offset is ' + offset);
 			
 			g[id]['currentOffset'] = offset;
 
@@ -279,9 +282,14 @@ var gH = (function () {
 			var i;
 			for(i = offset; i < limit; i++) {
 				var d = (g[id]['currentImages'][i]['div'] = $(document.createElement('div'))).addClass('galleryThumb');
-				var o,p;
+				var o,p,l;
+				// Temporary Image Link
+				d.append((l = $(document.createElement('a'))));
+				l.attr('href', g[id]['imageUrl'] + '/' + g[id]['currentImages'][i]['file']);
+				l.attr('data-lightbox', 'thumbs');
+				l.attr('data-title', 'ID: ' + g[id]['currentImages'][i]['id'] + '. Title: ' + g[id]['currentImages'][i]['title'] + '. Comment: ' + g[id]['currentImages'][i]['comment']);
 				// Image
-				d.append((o = $(document.createElement('img'))));
+				l.append((o = $(document.createElement('img'))));
 				o.attr('src', g[id]['cacheUrl'] + '/' + this.thumbnail(g[id]['currentImages'][i]['file']));
 				// Excluder
 				d.append((o = $(document.createElement('div'))));
