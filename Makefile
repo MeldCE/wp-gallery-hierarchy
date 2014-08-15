@@ -9,6 +9,12 @@ release: gallery-hierarchy.$(version).zip gallery-hierarchy.$(version).tgz
 
 clean: clean-minify clean-release
 
+sync: svn
+	rsync -r -R --delete $(Files) svn/trunk
+
+svn:
+	svn co http://plugins.svn.wordpress.org/gallery-hierarchy svn
+
 clean-release:
 	rm -f gallery-hierarchy.zip
 	rm gallery-hierarchy
