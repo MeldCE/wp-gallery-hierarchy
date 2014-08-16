@@ -34,6 +34,7 @@ var gH = (function () {
 						'comment': $('#' + id + 'comment'),
 						'tags': $('#' + id + 'tags'),
 						'filter': $('#' + id + 'filter'),
+						'filterButton': $('#' + id + 'filterButton'),
 						'filterLabel': $('#' + id + 'filterLabel'),
 						'builder': $('#' + id + 'builder'),
 						'builderLabel': $('#' + id + 'builderLabel'),
@@ -105,6 +106,10 @@ var gH = (function () {
 		 * @return boolean Whether the part is showing or not
 		 */
 		toggle: function(id, part, label, onLabel, offLabel) {
+			if(!g[id]) {
+				return;
+			}
+
 			if (!onLabel) onLabel = 'Show';
 			if (!offLabel) offLabel = 'Hide';
 			if (g[id] && g[id][part]) {
@@ -129,6 +134,10 @@ var gH = (function () {
 		 * since last time.
 		 */
 		filter: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
 			if (!g[id]['query']) {
 				g[id]['query'] = {
 						'folders': [],
@@ -175,12 +184,17 @@ var gH = (function () {
 			}
 
 			if (changed) {
+				/// @todo Add localisation
+				g[id]['filterButton'].html('Loading...');
 				$.post(ajaxurl + '?action=gh_gallery', g[id]['query'], this.returnFunction(this.receiveData, id));
-				//$.post(ajaxurl + '?action=ghierarchy', {'test': 'oob'}, this.successFunction(id));
 			}
 		},
 
 		toggleBuilder: function (id) {
+			if(!g[id]) {
+				return;
+			}
+
 			/// @todo Add localisation
 			if (!g[id]['insertOnly']) {
 				if ((g[id]['builderOn'] = this.toggle(id, 'builder', 'shortcode builder', 'Enable', 'Disable'))) {
@@ -194,7 +208,14 @@ var gH = (function () {
 		},
 
 		receiveData: function (id, data, textStatus, jqXHR) {
+			if(!g[id]) {
+				return;
+			}
+
 			g[id]['imageData'] = data;
+			
+			/// @todo Add localisation
+			g[id]['filterButton'].html('Filter');
 
 			this.setCurrentImages(id, g[id]['imageData']);
 			this.printImages(id, 0);
@@ -207,6 +228,10 @@ var gH = (function () {
 		 * Handles a change in the number images per page.
 		 */
 		repage: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
 			var limit = parseInt(g[id]['limit'].val());
 			
 			if (isNaN(limit)) {
@@ -231,6 +256,10 @@ var gH = (function () {
 		},
 
 		changePage: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
 			// Get value
 			var page;
 			var currentPage = Math.floor(g[id]['currentOffset'] / g[id]['currentLimit']) + 1;
@@ -262,6 +291,10 @@ var gH = (function () {
 		 * @param offset int Offset to use
 		 */
 		printImages: function(id, offset) {
+			if(!g[id]) {
+				return;
+			}
+
 			if (isNaN(offset = parseInt(offset))) {
 				offset = 0;
 			}
@@ -403,6 +436,10 @@ var gH = (function () {
 		},
 
 		setCurrentImages: function(id, images) {
+			if(!g[id]) {
+				return;
+			}
+
 			var i;
 			g[id]['currentImages'] = images;
 			g[id]['imageIndex'] = {};
@@ -414,6 +451,10 @@ var gH = (function () {
 		},
 
 		toggleSelected: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
 			var i;
 			if (g[id]['showingCurrent'] !== false) {
 				// Clean up unselected
@@ -451,7 +492,41 @@ var gH = (function () {
 			};
 		},
 
+		clearSelected: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
+			if (g[id]['selectOrder']) {
+				var i, iId;
+				
+				if (g[id]['showingCurrent'] === false) {
+					for (i in g[id]['selectOrder']) {
+						iId = g[id]['selectOrder'][i];
+						if (g[id]['imageIndex'][iId]) {
+							iId = g[id]['imageIndex'][iId];
+							g[id]['currentImages'][iId]['div'].removeClass('selected');
+						}
+					}
+				}
+
+				g[id]['selectOrder'] = [];
+				g[id]['selected'] = {};
+
+				if (g[id]['showingCurrent'] !== false) {
+					this.toggleSelected(id);
+				}
+
+				g[id]['idsOnly'] = false;
+				this.compileShortcode(id);
+			}
+		},
+
 		order: function(id, i, add) {
+			if(!g[id]) {
+				return;
+			}
+
 			if (add !== -1 && add !== 1) {
 				return;
 			}
@@ -479,6 +554,10 @@ var gH = (function () {
 		 * @param id string The id of the gallery.
 		 */
 		compileShortcode: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
 			var code = '[' + g[id]['sctype'].val();
 
 			var filter = []
@@ -524,6 +603,10 @@ var gH = (function () {
 		 * Sends data back to the server to be saved
 		 */
 		save: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
 			var i, v, data = {}, change = false;
 			for (i in g[id]['changed']) {
 				console.log('Change ' + i);
@@ -546,6 +629,10 @@ var gH = (function () {
 		},
 
 		confirmSave: function(id, data, textStatus, jqXHR) {
+			if(!g[id]) {
+				return;
+			}
+
 			alert(data);
 			if(data.substring( 0, 'Error'.length ) !== 'Error') {
 				g[id]['changed'] = {};
@@ -560,6 +647,10 @@ var gH = (function () {
 		 * @param i int The index to the image selecting.
 		 */
 		select: function(id, i) {
+			if(!g[id]) {
+				return;
+			}
+
 			// Get image id
 			if (g[id]['currentImages'][i]) {
 				var iId = g[id]['currentImages'][i]['id'];
@@ -589,6 +680,10 @@ var gH = (function () {
 		},
 
 		reOrder: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
 			var i, iId;
 
 			for (i in g[id]['selectOrder']) {
@@ -608,6 +703,10 @@ var gH = (function () {
 		 * @param i int The index to the image excluding.
 		 */
 		exclude: function(id, i) {
+			if(!g[id]) {
+				return;
+			}
+
 			// Get image id
 			if (g[id]['imageData'][i]) {
 				var iId = g[id]['imageData'][i]['id'];
