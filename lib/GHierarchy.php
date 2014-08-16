@@ -390,6 +390,28 @@ class GHierarchy {
 	}
 
 	/**
+	 * Adds links to the plugin metadata on the Installed plugins page
+	 */
+	static function pluginMeta($links, $file) {
+		/// @todo Make better
+		if ( $file == plugin_basename(str_replace('lib', 'gallery-hierarchy.php', __DIR__))) {
+			$links[] = '<a '
+					. 'href="https://github.com/weldstudio/wp-gallery-hierarchy/issues"'
+					. 'title="' . __('Issues', 'gallery_hierarchy') . '">'
+					. __('Issues', 'gallery_hierarchy') . '</a>';
+			$links[] = '<a href="http://gittip.weldce.com" title="'
+					. __('Gift a weekly amount', 'gallery_hierarchy')
+					. '" target="_blank">'
+					. __('Gift a weekly amount', 'gallery_hierarchy') . '</a>';
+			$links[] = '<a href="http://gift.weldce.com" title="'
+					. __('Gift a little', 'gallery_hierarchy') . '" target="_blank">'
+					. __('Gift a little', 'gallery_hierarchy') . '</a>';
+		}
+
+		return $links;
+	}
+
+	/**
 	 * Function to create the Gallery Hierarchy admin menu.
 	 * Called by @see gHierarchy::init()
 	 */
@@ -680,12 +702,14 @@ class GHierarchy {
 		// Toggle selected
 		echo '<p><a onclick="gH.toggleSelected(\'' . $id . '\');" id="' . $id
 				. 'selectedLabel">' . __('Show currently selected images',
-				'gallery_hierarchy') . '</a></p>';
+				'gallery_hierarchy') . '</a> <a onclick="gH.clearSelected(\'' . $id
+				. '\');" id="' . $id . 'builderLabel">'
+				. __('Clear selected images', 'gallery_hierarchy') . '</a></p>';
 		echo '</div>';
 
 
-		echo '<p><a onclick="gH.filter(\'' . $id . '\');" class="button">'
-				. __('Filter', 'gallery_hierarchy') . '</a> ';
+		echo '<p><a onclick="gH.filter(\'' . $id . '\');" class="button" id="'
+				. $id . 'filterButton">' . __('Filter', 'gallery_hierarchy') . '</a> ';
 		echo '<a onclick="gH.save(\'' . $id . '\');" class="button">'
 				. __('Save Image Changes', 'gallery_hierarchy') . '</a></p>';
 
@@ -2030,7 +2054,7 @@ class GHierarchy {
 			$sql .= $f . ' ' . $field . ", \n";
 		}
 
-		$sql .= 'PRIMARY KEY (' . $primary . ") \n";
+		$sql .= 'PRIMARY KEY  (' . $primary . ") \n";
 		$sql .= ') ' . $charset_collate . ';';
 
 		return $sql;

@@ -1,8 +1,10 @@
 *~
 .*.sw?
 gallery-hierarchy
-gallery-hierarchy.tgz
+gallery-hierarchy.*.tgz
+gallery-hierarchy.*.zip
 css/basicStyle.css
 css/basicStyle.min.css
 css/ghierarchy.min.css
 js/ghierarchy.min.js
+svn
