@@ -17,6 +17,7 @@ var gH = (function () {
 						'cacheUrl': cacheUrl,
 						'selected': {}, // Stores the selected images
 						'currentImages': null, // Stores the images displayed in pad
+						'imageIndex': null, // Used to look an image in currentImages based on its id
 						'selectOrder': [], // Stores the order of selected images
 						'changed': {}, // Stores any changed information to send to server
 						'currentOffset': 0, // Stores the current image offset
@@ -195,13 +196,7 @@ var gH = (function () {
 		receiveData: function (id, data, textStatus, jqXHR) {
 			g[id]['imageData'] = data;
 
-			var i;
-			g[id]['imageIndex'] = {};
-			for (i in g[id]['imageData']) {
-				g[id]['imageIndex'][g[id]['imageData'][i]['id']] = i;
-			}
-
-			g[id]['currentImages'] = g[id]['imageData'];
+			this.setCurrentImages(id, g[id]['imageData']);
 			this.printImages(id, 0);
 
 			g[id]['idsOnly'] = false;
@@ -269,6 +264,11 @@ var gH = (function () {
 		printImages: function(id, offset) {
 			if (isNaN(offset = parseInt(offset))) {
 				offset = 0;
+			}
+
+			// Stop if we have no images
+			if (!g[id]['currentImages']) {
+				return;
 			}
 			
 			g[id]['currentOffset'] = offset;
@@ -402,17 +402,37 @@ var gH = (function () {
 			o.addClass('last-page');
 		},
 
+		setCurrentImages: function(id, images) {
+			var i;
+			g[id]['currentImages'] = images;
+			g[id]['imageIndex'] = {};
+			for (i in g[id]['currentImages']) {
+				if (g[id]['currentImages'][i]['id']) {
+					g[id]['imageIndex'][g[id]['currentImages'][i]['id']] = i;
+				}
+			}
+		},
+
 		toggleSelected: function(id) {
+			var i;
 			if (g[id]['showingCurrent'] !== false) {
-				g[id]['currentImages'] = g[id]['imageData'];
+				// Clean up unselected
+				for (i in g[id]['selected']) {
+					if (!g[id]['selected'][i]['selected']) {
+						delete g[id]['selected'][i];
+					}
+				}
+				this.setCurrentImages(id, g[id]['imageData']);
 				g[id]['selectedLabel'].html('Show currently selected images');
 				this.printImages(id, g[id]['showingCurrent']);
 				g[id]['showingCurrent'] = false;
 			} else {
 				g[id]['currentImages'] = [];
+				g[id]['imageIndex'] = {};
 				var i;
 				for (i in g[id]['selectOrder']) {
 					g[id]['currentImages'][i] = g[id]['selected'][g[id]['selectOrder'][i]];
+					g[id]['imageIndex'][g[id]['selectOrder'][i]] = i;
 				}
 				g[id]['showingCurrent'] = g[id]['currentOffset'];
 				g[id]['currentOffset'] = 0;
@@ -435,8 +455,8 @@ var gH = (function () {
 			if (add !== -1 && add !== 1) {
 				return;
 			}
-			if (g[id]['imageData'][i]) {
-				var iId = g[id]['imageData'][i]['id'];
+			if (g[id]['currentImages'][i]) {
+				var iId = g[id]['currentImages'][i]['id'];
 				var o = g[id]['selectOrder'].indexOf(iId);
 				if ((add === -1 && o === 0) || (add === 1 && o === (g[id]['selectOrder'].length) - 1)) {
 					return;
@@ -444,10 +464,10 @@ var gH = (function () {
 				var oId = g[id]['selectOrder'][o + add];
 				g[id]['selectOrder'][o + add] = g[id]['selectOrder'][o];
 				g[id]['selectOrder'][o] = oId;
-				if (g[id]['imageData'][g[id]['imageIndex'][oId]]) {
-					g[id]['imageData'][g[id]['imageIndex'][oId]]['order'].html(o + 1);
+				if (g[id]['imageIndex'][oId] && g[id]['currentImages'][g[id]['imageIndex'][oId]]) {
+					g[id]['currentImages'][g[id]['imageIndex'][oId]]['order'].html(o + 1);
 				}
-				g[id]['imageData'][i]['order'].html(o + add + 1);
+				g[id]['currentImages'][i]['order'].html(o + add + 1);
 				
 				this.compileShortcode(id);
 			}
@@ -541,24 +561,41 @@ var gH = (function () {
 		 */
 		select: function(id, i) {
 			// Get image id
-			if (g[id]['imageData'][i]) {
-				var iId = g[id]['imageData'][i]['id'];
+			if (g[id]['currentImages'][i]) {
+				var iId = g[id]['currentImages'][i]['id'];
 				var x;
-				if (g[id]['selected'][iId]) {
+
+				if (g[id]['selected'][iId] && g[id]['selected'][iId]['selected'] == true) {
 					if ((x = g[id]['selectOrder'].indexOf(iId)) !== -1) {
 						g[id]['selectOrder'].splice(x, 1);
 					}
-					g[id]['imageData'][i]['div'].removeClass('selected');
-					g[id]['selected'][iId]['selected'] = false;
+					g[id]['currentImages'][i]['div'].removeClass('selected');
+					if (g[id]['showingCurrent'] !== false) {
+						g[id]['selected'][iId]['selected'] = false;
+					} else {
+						delete g[id]['selected'][iId];
+					}
+					this.reOrder(id);
 				} else {
-					g[id]['selected'][iId] = g[id]['imageData'][i];
+					g[id]['selected'][iId] = g[id]['currentImages'][i];
 					g[id]['selected'][iId]['selected'] = true;
 					g[id]['selectOrder'].push(iId);
-					g[id]['imageData'][i]['order'].html(g[id]['selectOrder'].length);
-					g[id]['imageData'][i]['div'].addClass('selected');
+					g[id]['currentImages'][i]['order'].html(g[id]['selectOrder'].length);
+					g[id]['currentImages'][i]['div'].addClass('selected');
 					g[id]['idsOnly'] = true;
 				}
 				this.compileShortcode(id);
+			}
+		},
+
+		reOrder: function(id) {
+			var i, iId;
+
+			for (i in g[id]['selectOrder']) {
+				iId = g[id]['selectOrder'][i];
+				if (g[id]['imageIndex'][iId]) {
+					g[id]['currentImages'][g[id]['imageIndex'][iId]]['order'].html((i*1) + 1);
+				}
 			}
 		},
 
