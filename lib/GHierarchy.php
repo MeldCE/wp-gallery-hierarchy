@@ -991,19 +991,19 @@ class GHierarchy {
 		// Fill out the attributes with the default
 		switch ($tag) {
 			case 'ghimage':
-				$classO = 'gh_image_class';
-				$classAO = 'gh_image_class_append';
-				$caption = 'gh_image_description';
+				$classO = 'image_class';
+				$classAO = 'image_class_append';
+				$caption = 'image_description';
 				break;
 			case 'ghthumb':
-				$classO = 'gh_thumb_class';
-				$classAO = 'gh_thumb_class_append';
-				$caption = 'gh_thumb_description';
+				$classO = 'thumb_class';
+				$classAO = 'thumb_class_append';
+				$caption = 'thumb_description';
 				break;
 			case 'ghalbum':
-				$classO = 'gh_album_class';
-				$classAO = 'gh_album_class_append';
-				$caption = 'gh_album_description';
+				$classO = 'album_class';
+				$classAO = 'album_class_append';
+				$caption = 'album_description';
 				break;
 		}
 
