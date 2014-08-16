@@ -712,12 +712,14 @@ class GHierarchy {
 		// Toggle selected
 		echo '<p><a onclick="gH.toggleSelected(\'' . $id . '\');" id="' . $id
 				. 'selectedLabel">' . __('Show currently selected images',
-				'gallery_hierarchy') . '</a></p>';
+				'gallery_hierarchy') . '</a> <a onclick="gH.clearSelected(\'' . $id
+				. '\');" id="' . $id . 'builderLabel">'
+				. __('Clear selected images', 'gallery_hierarchy') . '</a></p>';
 		echo '</div>';
 
 
-		echo '<p><a onclick="gH.filter(\'' . $id . '\');" class="button">'
-				. __('Filter', 'gallery_hierarchy') . '</a> ';
+		echo '<p><a onclick="gH.filter(\'' . $id . '\');" class="button" id="'
+				. $id . 'filterButton">' . __('Filter', 'gallery_hierarchy') . '</a> ';
 		echo '<a onclick="gH.save(\'' . $id . '\');" class="button">'
 				. __('Save Image Changes', 'gallery_hierarchy') . '</a></p>';
 

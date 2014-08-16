@@ -17,6 +17,7 @@ var gH = (function () {
 						'cacheUrl': cacheUrl,
 						'selected': {}, // Stores the selected images
 						'currentImages': null, // Stores the images displayed in pad
+						'imageIndex': null, // Used to look an image in currentImages based on its id
 						'selectOrder': [], // Stores the order of selected images
 						'changed': {}, // Stores any changed information to send to server
 						'currentOffset': 0, // Stores the current image offset
@@ -33,6 +34,7 @@ var gH = (function () {
 						'comment': $('#' + id + 'comment'),
 						'tags': $('#' + id + 'tags'),
 						'filter': $('#' + id + 'filter'),
+						'filterButton': $('#' + id + 'filterButton'),
 						'filterLabel': $('#' + id + 'filterLabel'),
 						'builder': $('#' + id + 'builder'),
 						'builderLabel': $('#' + id + 'builderLabel'),
@@ -45,7 +47,7 @@ var gH = (function () {
 				};
 
 				// Initialise currentLimit
-				if ((g[id]['currentLimit'] = parseInt(g[id]['limit'].val())) === false) {
+				if (isNaN(g[id]['currentLimit'] = parseInt(g[id]['limit'].val()))) {
 					g[id]['currentLimit'] = 50;
 					g[id]['limit'].val(50);
 				}
@@ -104,6 +106,10 @@ var gH = (function () {
 		 * @return boolean Whether the part is showing or not
 		 */
 		toggle: function(id, part, label, onLabel, offLabel) {
+			if(!g[id]) {
+				return;
+			}
+
 			if (!onLabel) onLabel = 'Show';
 			if (!offLabel) offLabel = 'Hide';
 			if (g[id] && g[id][part]) {
@@ -128,6 +134,10 @@ var gH = (function () {
 		 * since last time.
 		 */
 		filter: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
 			if (!g[id]['query']) {
 				g[id]['query'] = {
 						'folders': [],
@@ -174,12 +184,17 @@ var gH = (function () {
 			}
 
 			if (changed) {
+				/// @todo Add localisation
+				g[id]['filterButton'].html('Loading...');
 				$.post(ajaxurl + '?action=gh_gallery', g[id]['query'], this.returnFunction(this.receiveData, id));
-				//$.post(ajaxurl + '?action=ghierarchy', {'test': 'oob'}, this.successFunction(id));
 			}
 		},
 
 		toggleBuilder: function (id) {
+			if(!g[id]) {
+				return;
+			}
+
 			/// @todo Add localisation
 			if (!g[id]['insertOnly']) {
 				if ((g[id]['builderOn'] = this.toggle(id, 'builder', 'shortcode builder', 'Enable', 'Disable'))) {
@@ -193,15 +208,16 @@ var gH = (function () {
 		},
 
 		receiveData: function (id, data, textStatus, jqXHR) {
-			g[id]['imageData'] = data;
-
-			var i;
-			g[id]['imageIndex'] = {};
-			for (i in g[id]['imageData']) {
-				g[id]['imageIndex'][g[id]['imageData'][i]['id']] = i;
+			if(!g[id]) {
+				return;
 			}
 
-			g[id]['currentImages'] = g[id]['imageData'];
+			g[id]['imageData'] = data;
+			
+			/// @todo Add localisation
+			g[id]['filterButton'].html('Filter');
+
+			this.setCurrentImages(id, g[id]['imageData']);
 			this.printImages(id, 0);
 
 			g[id]['idsOnly'] = false;
@@ -212,31 +228,43 @@ var gH = (function () {
 		 * Handles a change in the number images per page.
 		 */
 		repage: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
 			var limit = parseInt(g[id]['limit'].val());
 			
-			if (limit === false) {
+			if (isNaN(limit)) {
 				g[id]['limit'].val('50');
 				limit = 50;
 			}
 
-			/* Calculate what offset the current offset would be on and
-			 * amd calculate new offset from there
-			 */
-			if (limit) {
-				g[id]['currentOffset'] = Math.floor(g[id]['currentOffset'] / limit) * limit;
-			} else {
-				g[id]['currentOffset'] = 0;
+			g[id]['currentLimit'] = limit;
+
+			if (g[id]['currentImages']) {
+				/* Calculate what offset the current offset would be on and
+				 * amd calculate new offset from there
+				 */
+				if (limit) {
+					g[id]['currentOffset'] = Math.floor(g[id]['currentOffset'] / limit) * limit;
+				} else {
+					g[id]['currentOffset'] = 0;
+				}
+
+				this.printImages(id, g[id]['currentOffset']);
 			}
-			
-			this.printImages(id, g[id]['currentOffset']);
 		},
 
 		changePage: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
 			// Get value
 			var page;
 			var currentPage = Math.floor(g[id]['currentOffset'] / g[id]['currentLimit']) + 1;
 			var maxPage = Math.floor(g[id]['currentImages'].length / g[id]['currentLimit']) + 1;
-			if ((page = parseInt(g[id]['pageNumber'].val())) === false) {
+			if (isNaN(page = parseInt(g[id]['pageNumber'].val()))) {
 				page = currentPage;
 				g[id]['pageNumber'].val(page);
 			} else {
@@ -263,10 +291,18 @@ var gH = (function () {
 		 * @param offset int Offset to use
 		 */
 		printImages: function(id, offset) {
-			if ((offset = parseInt(offset)) === false) {
+			if(!g[id]) {
+				return;
+			}
+
+			if (isNaN(offset = parseInt(offset))) {
 				offset = 0;
 			}
-			console.log('New offset is ' + offset);
+
+			// Stop if we have no images
+			if (!g[id]['currentImages']) {
+				return;
+			}
 			
 			g[id]['currentOffset'] = offset;
 
@@ -279,9 +315,14 @@ var gH = (function () {
 			var i;
 			for(i = offset; i < limit; i++) {
 				var d = (g[id]['currentImages'][i]['div'] = $(document.createElement('div'))).addClass('galleryThumb');
-				var o,p;
+				var o,p,l;
+				// Temporary Image Link
+				d.append((l = $(document.createElement('a'))));
+				l.attr('href', g[id]['imageUrl'] + '/' + g[id]['currentImages'][i]['file']);
+				l.attr('data-lightbox', 'thumbs');
+				l.attr('data-title', 'ID: ' + g[id]['currentImages'][i]['id'] + '. Title: ' + g[id]['currentImages'][i]['title'] + '. Comment: ' + g[id]['currentImages'][i]['comment']);
 				// Image
-				d.append((o = $(document.createElement('img'))));
+				l.append((o = $(document.createElement('img'))));
 				o.attr('src', g[id]['cacheUrl'] + '/' + this.thumbnail(g[id]['currentImages'][i]['file']));
 				// Excluder
 				d.append((o = $(document.createElement('div'))));
@@ -394,17 +435,45 @@ var gH = (function () {
 			o.addClass('last-page');
 		},
 
+		setCurrentImages: function(id, images) {
+			if(!g[id]) {
+				return;
+			}
+
+			var i;
+			g[id]['currentImages'] = images;
+			g[id]['imageIndex'] = {};
+			for (i in g[id]['currentImages']) {
+				if (g[id]['currentImages'][i]['id']) {
+					g[id]['imageIndex'][g[id]['currentImages'][i]['id']] = i;
+				}
+			}
+		},
+
 		toggleSelected: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
+			var i;
 			if (g[id]['showingCurrent'] !== false) {
-				g[id]['currentImages'] = g[id]['imageData'];
+				// Clean up unselected
+				for (i in g[id]['selected']) {
+					if (!g[id]['selected'][i]['selected']) {
+						delete g[id]['selected'][i];
+					}
+				}
+				this.setCurrentImages(id, g[id]['imageData']);
 				g[id]['selectedLabel'].html('Show currently selected images');
 				this.printImages(id, g[id]['showingCurrent']);
 				g[id]['showingCurrent'] = false;
 			} else {
 				g[id]['currentImages'] = [];
+				g[id]['imageIndex'] = {};
 				var i;
 				for (i in g[id]['selectOrder']) {
 					g[id]['currentImages'][i] = g[id]['selected'][g[id]['selectOrder'][i]];
+					g[id]['imageIndex'][g[id]['selectOrder'][i]] = i;
 				}
 				g[id]['showingCurrent'] = g[id]['currentOffset'];
 				g[id]['currentOffset'] = 0;
@@ -423,12 +492,46 @@ var gH = (function () {
 			};
 		},
 
+		clearSelected: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
+			if (g[id]['selectOrder']) {
+				var i, iId;
+				
+				if (g[id]['showingCurrent'] === false) {
+					for (i in g[id]['selectOrder']) {
+						iId = g[id]['selectOrder'][i];
+						if (g[id]['imageIndex'][iId]) {
+							iId = g[id]['imageIndex'][iId];
+							g[id]['currentImages'][iId]['div'].removeClass('selected');
+						}
+					}
+				}
+
+				g[id]['selectOrder'] = [];
+				g[id]['selected'] = {};
+
+				if (g[id]['showingCurrent'] !== false) {
+					this.toggleSelected(id);
+				}
+
+				g[id]['idsOnly'] = false;
+				this.compileShortcode(id);
+			}
+		},
+
 		order: function(id, i, add) {
+			if(!g[id]) {
+				return;
+			}
+
 			if (add !== -1 && add !== 1) {
 				return;
 			}
-			if (g[id]['imageData'][i]) {
-				var iId = g[id]['imageData'][i]['id'];
+			if (g[id]['currentImages'][i]) {
+				var iId = g[id]['currentImages'][i]['id'];
 				var o = g[id]['selectOrder'].indexOf(iId);
 				if ((add === -1 && o === 0) || (add === 1 && o === (g[id]['selectOrder'].length) - 1)) {
 					return;
@@ -436,10 +539,10 @@ var gH = (function () {
 				var oId = g[id]['selectOrder'][o + add];
 				g[id]['selectOrder'][o + add] = g[id]['selectOrder'][o];
 				g[id]['selectOrder'][o] = oId;
-				if (g[id]['imageData'][g[id]['imageIndex'][oId]]) {
-					g[id]['imageData'][g[id]['imageIndex'][oId]]['order'].html(o + 1);
+				if (g[id]['imageIndex'][oId] && g[id]['currentImages'][g[id]['imageIndex'][oId]]) {
+					g[id]['currentImages'][g[id]['imageIndex'][oId]]['order'].html(o + 1);
 				}
-				g[id]['imageData'][i]['order'].html(o + add + 1);
+				g[id]['currentImages'][i]['order'].html(o + add + 1);
 				
 				this.compileShortcode(id);
 			}
@@ -451,6 +554,10 @@ var gH = (function () {
 		 * @param id string The id of the gallery.
 		 */
 		compileShortcode: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
 			var code = '[' + g[id]['sctype'].val();
 
 			var filter = []
@@ -496,6 +603,10 @@ var gH = (function () {
 		 * Sends data back to the server to be saved
 		 */
 		save: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
 			var i, v, data = {}, change = false;
 			for (i in g[id]['changed']) {
 				console.log('Change ' + i);
@@ -518,6 +629,10 @@ var gH = (function () {
 		},
 
 		confirmSave: function(id, data, textStatus, jqXHR) {
+			if(!g[id]) {
+				return;
+			}
+
 			alert(data);
 			if(data.substring( 0, 'Error'.length ) !== 'Error') {
 				g[id]['changed'] = {};
@@ -532,25 +647,50 @@ var gH = (function () {
 		 * @param i int The index to the image selecting.
 		 */
 		select: function(id, i) {
+			if(!g[id]) {
+				return;
+			}
+
 			// Get image id
-			if (g[id]['imageData'][i]) {
-				var iId = g[id]['imageData'][i]['id'];
+			if (g[id]['currentImages'][i]) {
+				var iId = g[id]['currentImages'][i]['id'];
 				var x;
-				if (g[id]['selected'][iId]) {
+
+				if (g[id]['selected'][iId] && g[id]['selected'][iId]['selected'] == true) {
 					if ((x = g[id]['selectOrder'].indexOf(iId)) !== -1) {
 						g[id]['selectOrder'].splice(x, 1);
 					}
-					g[id]['imageData'][i]['div'].removeClass('selected');
-					g[id]['selected'][iId]['selected'] = false;
+					g[id]['currentImages'][i]['div'].removeClass('selected');
+					if (g[id]['showingCurrent'] !== false) {
+						g[id]['selected'][iId]['selected'] = false;
+					} else {
+						delete g[id]['selected'][iId];
+					}
+					this.reOrder(id);
 				} else {
-					g[id]['selected'][iId] = g[id]['imageData'][i];
+					g[id]['selected'][iId] = g[id]['currentImages'][i];
 					g[id]['selected'][iId]['selected'] = true;
 					g[id]['selectOrder'].push(iId);
-					g[id]['imageData'][i]['order'].html(g[id]['selectOrder'].length);
-					g[id]['imageData'][i]['div'].addClass('selected');
+					g[id]['currentImages'][i]['order'].html(g[id]['selectOrder'].length);
+					g[id]['currentImages'][i]['div'].addClass('selected');
 					g[id]['idsOnly'] = true;
 				}
 				this.compileShortcode(id);
+			}
+		},
+
+		reOrder: function(id) {
+			if(!g[id]) {
+				return;
+			}
+
+			var i, iId;
+
+			for (i in g[id]['selectOrder']) {
+				iId = g[id]['selectOrder'][i];
+				if (g[id]['imageIndex'][iId]) {
+					g[id]['currentImages'][g[id]['imageIndex'][iId]]['order'].html((i*1) + 1);
+				}
 			}
 		},
 
@@ -563,6 +703,10 @@ var gH = (function () {
 		 * @param i int The index to the image excluding.
 		 */
 		exclude: function(id, i) {
+			if(!g[id]) {
+				return;
+			}
+
 			// Get image id
 			if (g[id]['imageData'][i]) {
 				var iId = g[id]['imageData'][i]['id'];
