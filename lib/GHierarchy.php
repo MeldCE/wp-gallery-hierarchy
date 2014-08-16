@@ -710,8 +710,9 @@ class GHierarchy {
 
 		echo '<p><a onclick="gH.filter(\'' . $id . '\');" class="button" id="'
 				. $id . 'filterButton">' . __('Filter', 'gallery_hierarchy') . '</a> ';
-		echo '<a onclick="gH.save(\'' . $id . '\');" class="button">'
-				. __('Save Image Changes', 'gallery_hierarchy') . '</a></p>';
+		echo '<a onclick="gH.save(\'' . $id . '\');" class="button" id="' . $id
+				. 'saveButton">' . __('Save Image Changes', 'gallery_hierarchy')
+				. '</a></p>';
 
 		// Pagination
 		echo '<p class="tablenav"><label for="' . $id . 'limit">' . __('Images per page:',

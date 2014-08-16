@@ -35,6 +35,7 @@ var gH = (function () {
 						'tags': $('#' + id + 'tags'),
 						'filter': $('#' + id + 'filter'),
 						'filterButton': $('#' + id + 'filterButton'),
+						'saveButton': $('#' + id + 'saveButton'),
 						'filterLabel': $('#' + id + 'filterLabel'),
 						'builder': $('#' + id + 'builder'),
 						'builderLabel': $('#' + id + 'builderLabel'),
@@ -624,6 +625,8 @@ var gH = (function () {
 			}
 			
 			if (change) {
+				// @todo Add localisation
+				g[id]['saveButton'].html('Saving...');
 				$.post(ajaxurl + '?action=gh_save', {'saveData': data}, this.returnFunction(this.confirmSave, id));
 			}
 		},
@@ -637,6 +640,8 @@ var gH = (function () {
 			if(data.substring( 0, 'Error'.length ) !== 'Error') {
 				g[id]['changed'] = {};
 			}
+			// @todo Add localisation
+			g[id]['saveButton'].html('Save Image Changes');
 		},
 
 		/**
