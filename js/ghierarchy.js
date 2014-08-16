@@ -319,8 +319,9 @@ var gH = (function () {
 				// Temporary Image Link
 				d.append((l = $(document.createElement('a'))));
 				l.attr('href', g[id]['imageUrl'] + '/' + g[id]['currentImages'][i]['file']);
-				l.attr('data-lightbox', 'thumbs');
-				l.attr('data-title', 'ID: ' + g[id]['currentImages'][i]['id'] + '. Title: ' + g[id]['currentImages'][i]['title'] + '. Comment: ' + g[id]['currentImages'][i]['comment']);
+				l.attr('data-fancybox', 'fancybox');
+				l.attr('rel', 'thumbs');
+				l.attr('title', 'ID: ' + g[id]['currentImages'][i]['id'] + '. Title: ' + g[id]['currentImages'][i]['title'] + '. Comment: ' + g[id]['currentImages'][i]['comment']);
 				// Image
 				l.append((o = $(document.createElement('img'))));
 				o.attr('src', g[id]['cacheUrl'] + '/' + this.thumbnail(g[id]['currentImages'][i]['file']));
