@@ -76,7 +76,7 @@ class GHierarchy {
 						'gHFolders' => array(
 								'title' => __('Folder Options', 'gallery_hierarchy'),
 								'fields' => array(
-										'gh_folder' => array(
+										'folder' => array(
 												'title' => __('Image Folder', 'gallery_hierarchy'),
 												'description' => __('This should be a relative path '
 														. 'inside of wp-content to a folder containing your '
@@ -84,7 +84,7 @@ class GHierarchy {
 												'type' => 'folder',
 												'default' => 'gHImages'
 										),
-										'gh_cache_folder' => array(
+										'cache_folder' => array(
 												'title' => __('Cache Image Folder', 'gallery_hierarchy'),
 												'description' => __('This should be a relative path '
 														. 'inside of wp-content to a folder that will be '
@@ -99,7 +99,7 @@ class GHierarchy {
 						'gHThumbnails' => array(
 								'title' => __('Thumbnail Options', 'gallery_hierarchy'),
 								'fields' => array(
-										'gh_thumbnail_size' => array(
+										'thumbnail_size' => array(
 												'title' => __('Thumbnail Dimensions',
 														'gallery_hierarchy'),
 												'description' => __('Size to make the thumbnails.',
@@ -107,7 +107,7 @@ class GHierarchy {
 												'type' => 'dimensions',
 												'default' => array(200, 200)
 										),
-										'gh_crop_thumbnails' => array(
+										'crop_thumbnails' => array(
 												'title' => __('Crop Thumbnails', 'gallery_hierarchy'),
 												'description' => __('If this option is selected, the '
 														. 'image will be cropped so that if fills the entire '
@@ -120,7 +120,7 @@ class GHierarchy {
 						'gHScanning' => array(
 								'title' => __('Image Loading Options', 'gallery_hierarchy'),
 								'fields' => array(
-										'gh_resize_images' => array(
+										'resize_images' => array(
 												'title' => __('Resize Images', 'gallery_hierarchy'),
 												'description' => __('If this option is selected, the '
 														. 'images will be resized to the maximum '
@@ -130,7 +130,7 @@ class GHierarchy {
 												'type' => 'boolean',
 												'default' => true
 										),
-										'gh_image_size' => array(
+										'image_size' => array(
 												'title' => __('Image Dimensions',
 														'gallery_hierarchy'),
 												'description' => __('Maximum size of the images.',
@@ -138,7 +138,7 @@ class GHierarchy {
 												'type' => 'dimensions',
 												'default' => array(1100, 1100)
 										),
-										'gh_folder_keywords' => array(
+										'folder_keywords' => array(
 												'title' => __('Folders to Tags', 'gallery_hierarchy'),
 												'description' => __('If this option is selected, each '
 														. 'folder name the image is inside will be added as a'
@@ -154,7 +154,7 @@ class GHierarchy {
 						'gHDisplay' => array(
 								'title' => __('Display Options', 'gallery_hierarchy'),
 								'fields' => array(
-										'gh_add_title' => array(
+										'add_title' => array(
 												'title' => __('Add Title', 'gallery_hierarchy'),
 												'description' => __('If this option is selected, the '
 														. 'image title will be added to the start of the '
@@ -163,7 +163,7 @@ class GHierarchy {
 												'type' => 'boolean',
 												'default' => true
 										),
-										'gh_group' => array(
+										'group' => array(
 												'title' => __('Group Images by Default',
 														'gallery_hierarchy'),
 												'description' => __('If this option is selected, '
@@ -173,7 +173,7 @@ class GHierarchy {
 												'type' => 'boolean',
 												'default' => true
 										),
-										'gh_thumb_album' => array(
+										'thumb_album' => array(
 												'title' => __('Album For Thumbnail Shortcut',
 														'gallery_hierarchy'),
 												'description' => __('What album type to use for the '
@@ -183,7 +183,7 @@ class GHierarchy {
 												'values' => $albums,
 												'default' => 'thumbnail'
 										),
-										'gh_thumb_class' => array(
+										'thumb_class' => array(
 												'title' => __('Default Thumbnail Class', 'gallery_hierarchy'),
 												'description' => __('The classes to set on a '
 														. 'thumbnail by default (space separated).',
@@ -191,7 +191,7 @@ class GHierarchy {
 												'type' => 'text',
 												'default' => '',
 										),
-										'gh_thumb_class_append' => array(
+										'thumb_class_append' => array(
 												'title' => __('Append Specified Thumbnail Classes',
 														'gallery_hierarchy'),
 												'description' => __('If true, any classes given in '
@@ -201,7 +201,7 @@ class GHierarchy {
 												'type' => 'boolean',
 												'default' => false
 										),
-										'gh_thumb_description' => array(
+										'thumb_description' => array(
 												'title' => __('Thumbnail Description',
 														'gallery_hierarchy'),
 												'description' => __('What is shown by default underneath '
@@ -214,7 +214,7 @@ class GHierarchy {
 												),
 												'default' => ''
 										),
-										'gh_album_class' => array(
+										'album_class' => array(
 												'title' => __('Default Album Class', 'gallery_hierarchy'),
 												'description' => __('The classes to set on a '
 														. 'album by default (space separated).',
@@ -222,7 +222,7 @@ class GHierarchy {
 												'type' => 'text',
 												'default' => '',
 										),
-										'gh_album_class_append' => array(
+										'album_class_append' => array(
 												'title' => __('Append Specified Album Classes',
 														'gallery_hierarchy'),
 												'description' => __('If true, any classes given in '
@@ -232,7 +232,7 @@ class GHierarchy {
 												'type' => 'boolean',
 												'default' => false
 										),
-										'gh_album_description' => array(
+										'album_description' => array(
 												'title' => __('Album Description', 'gallery_hierarchy'),
 												'description' => __('What is shown by default underneath '
 														. 'an album image.', 'gallery_hierarchy'),
@@ -244,7 +244,7 @@ class GHierarchy {
 												),
 												'default' => 'comment'
 										),
-										'gh_image_class' => array(
+										'image_class' => array(
 												'title' => __('Default Image Class', 'gallery_hierarchy'),
 												'description' => __('The classes to set on a '
 														. 'image by default (space separated).',
@@ -252,7 +252,7 @@ class GHierarchy {
 												'type' => 'text',
 												'default' => '',
 										),
-										'gh_image_class_append' => array(
+										'image_class_append' => array(
 												'title' => __('Append Specified Image Classes', 'gallery_hierarchy'),
 												'description' => __('If true, any classes given in '
 														. 'the shortcode will be appended to the default '
@@ -261,7 +261,7 @@ class GHierarchy {
 												'type' => 'boolean',
 												'default' => false
 										),
-										'gh_image_description' => array(
+										'image_description' => array(
 												'title' => __('Image Description', 'gallery_hierarchy'),
 												'description' => __('What is shown by default underneath '
 														. 'an image.', 'gallery_hierarchy'),
@@ -273,7 +273,7 @@ class GHierarchy {
 												),
 												'default' => 'title'
 										),
-										'gh_popup_description' => array(
+										'popup_description' => array(
 												'title' => __('Image Popup Description',
 														'gallery_hierarchy'),
 												'description' => __('What is shown by default underneath '
@@ -291,7 +291,7 @@ class GHierarchy {
 						'gHOther' => array(
 								'title' => __('Other Options', 'gallery_hierarchy'),
 								'fields' => array(
-										'gh_num_images' => array(
+										'num_images' => array(
 												'title' => __('Images per Page', 'gallery_hierarchy'),
 												'description' => __('Default number of images per '
 														. 'page to show in the gallery view. Set to 0 '
