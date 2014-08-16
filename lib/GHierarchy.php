@@ -307,13 +307,13 @@ class GHierarchy {
 		static::$settings = new WPSettings($options);
 
 		// Create path to image Directory
-		$imageDir = static::$settings->get_option('gh_folder');
+		$imageDir = static::$settings->folder;
 		$this->imageDir = gHpath(WP_CONTENT_DIR, $imageDir);
 		// Remove trailing slash
 		$this->imageDir = gHptrim($this->imageDir);
 		$this->imageUrl = content_url($imageDir);
 		// Create path to cache directory
-		$cacheDir = static::$settings->get_option('gh_cache_folder');
+		$cacheDir = static::$settings->cache_folder
 		$this->cacheDir = gHpath(WP_CONTENT_DIR, $cacheDir);
 		$this->cacheUrl = content_url($cacheDir);
 		// Remove trailing slash
@@ -1140,7 +1140,7 @@ class GHierarchy {
 		// `group="<group1>"` - id for linking photos to scroll through with
 		// lightbox (`ghthumbnail` `ghimage`)
 		if (!isset($atts['group'])
-				&& static::$settings->get_option('gh_group')) {
+				&& static::$settings->group) {
 			$atts['group'] = 'group';
 		}
 
@@ -1167,14 +1167,14 @@ class GHierarchy {
 		}
 
 		// add_title
-		$atts['add_title'] = static::$settings->get_option('gh_add_title');
+		$atts['add_title'] = static::$settings->add_title;
 
 		// `popup_caption="(none|title|comment)"` - Type of caption to show on
 		//	popup. Default set in plugin options (`ghalbum` `ghthumbnail`
 		// `ghimage`)
 		if (!isset($atts['popup_caption'])) {
 			$atts['popup_caption'] =
-					static::$settings->get_option('gh_popup_description');
+					static::$settings->popup_description;
 		}
 		
 		// `link="(none|popup|<url>)"` - URL link on image, by default it will be
@@ -1203,13 +1203,13 @@ class GHierarchy {
 				$html = $me->printImage($images, $atts);
 				break;
 			case 'ghthumb':
-				$atts['type'] = static::$settings->get_option('gh_thumb_album');
+				$atts['type'] = static::$settings->thumb_album;
 			case 'ghalbum':
 				// `type="<type1>"` - of album (`ghalbum`)
 				// Check we have a valid album, if not, use the thumbnail one
 				$albums = static::getAlbums();
 				if (!isset($atts['type']) || !isset($albums[$atts['type']])) {
-					$atts['type'] = static::$settings->get_option('gh_thumb_album');
+					$atts['type'] = static::$settings->thumb_album;
 				}
 
 				if (isset($atts['type']) && isset($albums[$atts['type']])) {
@@ -1705,8 +1705,8 @@ class GHierarchy {
 	 * @note The Imagick object will be modified
 	 */
 	protected function createThumbnail($image, &$imagick = null) {
-		$thumbnailSize = static::$settings->get_option('gh_thumbnail_size');
-		$crop = static::$settings->get_option('gh_crop_thumbnails');
+		$thumbnailSize = static::$settings->thumbnail_size;
+		$crop = static::$settings->crop_thumbnails;
 
 		$this->resizeImage($image, $imagick, $thumbnailSize, $crop);
 
@@ -1874,9 +1874,9 @@ class GHierarchy {
 				}
 
 				// Resize the image if required
-				if (static::$settings->get_option('gh_resize_images')) {
+				if (static::$settings->resize_images) {
 					if ($this->resizeImage(null, $imagick,
-							static::$settings->get_option('gh_image_size')) !== null) {
+							static::$settings->image_size) !== null) {
 						$changed = true;
 					}
 				}
@@ -1970,7 +1970,7 @@ class GHierarchy {
 			$tags = preg_split(' *, *', $tags);
 		}
 
-		if (static::$settings->get_option('gh_folder_keywords')) {	
+		if (static::$settings->folder_keywords) {	
 			$dir = dirname($img);
 
 			$dir = explode(DIRECTORY_SEPARATOR, $dir);
