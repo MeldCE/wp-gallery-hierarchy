@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-version = 0.1-beta-fancybox
+version = 0.1.3-fancybox
 
 # Building everything
 all: release
