@@ -21,13 +21,16 @@ class GHierarchy {
 	protected static $statusTimeTransientTime = DAY_IN_SECONDS;
 	protected static $filesTransientTime = DAY_IN_SECONDS;
 	protected static $runAdminInit = false;
+	protected static $dbVersion = 2;
+
+	protected static $lp;
 
 	protected static $imageTableFields = array(
 			'id' => 'smallint(5) NOT NULL AUTO_INCREMENT',
 			'file' => 'text NOT NULL',
 			'width' => 'smallint(5) unsigned NOT NULL',
 			'height' => 'smallint(5) unsigned NOT NULL',
-			'added' => 'timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP',
+			'updated' => 'timestamp NOT NULL',
 			'taken' => 'timestamp',
 			'title' => 'text',
 			'comment' => 'text',
@@ -51,8 +54,16 @@ class GHierarchy {
 	protected $cacheDir;
 	protected $cacheUrl;
 
+	function __destruct() {
+		if (static::$lp) {
+			fclose(static::$lp);
+		}
+	}
+
 	protected function  __construct() {
 		global $wpdb;
+
+		//static::$lp = fopen('galleruy-hierarchy.log', 'a');
 
 		$this->finfo = finfo_open(FILEINFO_MIME_TYPE);
 		/// @todo finfo_close($finfo);
@@ -76,7 +87,7 @@ class GHierarchy {
 						'gHFolders' => array(
 								'title' => __('Folder Options', 'gallery_hierarchy'),
 								'fields' => array(
-										'gh_folder' => array(
+										'folder' => array(
 												'title' => __('Image Folder', 'gallery_hierarchy'),
 												'description' => __('This should be a relative path '
 														. 'inside of wp-content to a folder containing your '
@@ -84,7 +95,7 @@ class GHierarchy {
 												'type' => 'folder',
 												'default' => 'gHImages'
 										),
-										'gh_cache_folder' => array(
+										'cache_folder' => array(
 												'title' => __('Cache Image Folder', 'gallery_hierarchy'),
 												'description' => __('This should be a relative path '
 														. 'inside of wp-content to a folder that will be '
@@ -99,7 +110,7 @@ class GHierarchy {
 						'gHThumbnails' => array(
 								'title' => __('Thumbnail Options', 'gallery_hierarchy'),
 								'fields' => array(
-										'gh_thumbnail_size' => array(
+										'thumbnail_size' => array(
 												'title' => __('Thumbnail Dimensions',
 														'gallery_hierarchy'),
 												'description' => __('Size to make the thumbnails.',
@@ -107,7 +118,7 @@ class GHierarchy {
 												'type' => 'dimensions',
 												'default' => array(200, 200)
 										),
-										'gh_crop_thumbnails' => array(
+										'crop_thumbnails' => array(
 												'title' => __('Crop Thumbnails', 'gallery_hierarchy'),
 												'description' => __('If this option is selected, the '
 														. 'image will be cropped so that if fills the entire '
@@ -120,7 +131,7 @@ class GHierarchy {
 						'gHScanning' => array(
 								'title' => __('Image Loading Options', 'gallery_hierarchy'),
 								'fields' => array(
-										'gh_resize_images' => array(
+										'resize_images' => array(
 												'title' => __('Resize Images', 'gallery_hierarchy'),
 												'description' => __('If this option is selected, the '
 														. 'images will be resized to the maximum '
@@ -130,7 +141,16 @@ class GHierarchy {
 												'type' => 'boolean',
 												'default' => true
 										),
-										'gh_image_size' => array(
+										'rotate_images' => array(
+												'title' => __('Rotate Images', 'gallery_hierarchy'),
+												'description' => __('If this option is selected, the '
+														. 'images will be rotated to the correct '
+														. 'orientation based on the image metadata.',
+														'gallery_hierarchy'),
+												'type' => 'boolean',
+												'default' => true
+										),
+										'image_size' => array(
 												'title' => __('Image Dimensions',
 														'gallery_hierarchy'),
 												'description' => __('Maximum size of the images.',
@@ -138,7 +158,7 @@ class GHierarchy {
 												'type' => 'dimensions',
 												'default' => array(1100, 1100)
 										),
-										'gh_folder_keywords' => array(
+										'folder_keywords' => array(
 												'title' => __('Folders to Tags', 'gallery_hierarchy'),
 												'description' => __('If this option is selected, each '
 														. 'folder name the image is inside will be added as a'
@@ -154,7 +174,7 @@ class GHierarchy {
 						'gHDisplay' => array(
 								'title' => __('Display Options', 'gallery_hierarchy'),
 								'fields' => array(
-										'gh_add_title' => array(
+										'add_title' => array(
 												'title' => __('Add Title', 'gallery_hierarchy'),
 												'description' => __('If this option is selected, the '
 														. 'image title will be added to the start of the '
@@ -163,7 +183,7 @@ class GHierarchy {
 												'type' => 'boolean',
 												'default' => true
 										),
-										'gh_group' => array(
+										'group' => array(
 												'title' => __('Group Images by Default',
 														'gallery_hierarchy'),
 												'description' => __('If this option is selected, '
@@ -173,7 +193,7 @@ class GHierarchy {
 												'type' => 'boolean',
 												'default' => true
 										),
-										'gh_thumb_album' => array(
+										'thumb_album' => array(
 												'title' => __('Album For Thumbnail Shortcut',
 														'gallery_hierarchy'),
 												'description' => __('What album type to use for the '
@@ -183,7 +203,7 @@ class GHierarchy {
 												'values' => $albums,
 												'default' => 'thumbnail'
 										),
-										'gh_thumb_class' => array(
+										'thumb_class' => array(
 												'title' => __('Default Thumbnail Class', 'gallery_hierarchy'),
 												'description' => __('The classes to set on a '
 														. 'thumbnail by default (space separated).',
@@ -191,7 +211,7 @@ class GHierarchy {
 												'type' => 'text',
 												'default' => '',
 										),
-										'gh_thumb_class_append' => array(
+										'thumb_class_append' => array(
 												'title' => __('Append Specified Thumbnail Classes',
 														'gallery_hierarchy'),
 												'description' => __('If true, any classes given in '
@@ -201,7 +221,7 @@ class GHierarchy {
 												'type' => 'boolean',
 												'default' => false
 										),
-										'gh_thumb_description' => array(
+										'thumb_description' => array(
 												'title' => __('Thumbnail Description',
 														'gallery_hierarchy'),
 												'description' => __('What is shown by default underneath '
@@ -214,7 +234,7 @@ class GHierarchy {
 												),
 												'default' => ''
 										),
-										'gh_album_class' => array(
+										'album_class' => array(
 												'title' => __('Default Album Class', 'gallery_hierarchy'),
 												'description' => __('The classes to set on a '
 														. 'album by default (space separated).',
@@ -222,7 +242,7 @@ class GHierarchy {
 												'type' => 'text',
 												'default' => '',
 										),
-										'gh_album_class_append' => array(
+										'album_class_append' => array(
 												'title' => __('Append Specified Album Classes',
 														'gallery_hierarchy'),
 												'description' => __('If true, any classes given in '
@@ -232,7 +252,7 @@ class GHierarchy {
 												'type' => 'boolean',
 												'default' => false
 										),
-										'gh_album_description' => array(
+										'album_description' => array(
 												'title' => __('Album Description', 'gallery_hierarchy'),
 												'description' => __('What is shown by default underneath '
 														. 'an album image.', 'gallery_hierarchy'),
@@ -244,7 +264,7 @@ class GHierarchy {
 												),
 												'default' => 'comment'
 										),
-										'gh_image_class' => array(
+										'image_class' => array(
 												'title' => __('Default Image Class', 'gallery_hierarchy'),
 												'description' => __('The classes to set on a '
 														. 'image by default (space separated).',
@@ -252,7 +272,7 @@ class GHierarchy {
 												'type' => 'text',
 												'default' => '',
 										),
-										'gh_image_class_append' => array(
+										'image_class_append' => array(
 												'title' => __('Append Specified Image Classes', 'gallery_hierarchy'),
 												'description' => __('If true, any classes given in '
 														. 'the shortcode will be appended to the default '
@@ -261,7 +281,7 @@ class GHierarchy {
 												'type' => 'boolean',
 												'default' => false
 										),
-										'gh_image_description' => array(
+										'image_description' => array(
 												'title' => __('Image Description', 'gallery_hierarchy'),
 												'description' => __('What is shown by default underneath '
 														. 'an image.', 'gallery_hierarchy'),
@@ -273,7 +293,7 @@ class GHierarchy {
 												),
 												'default' => 'title'
 										),
-										'gh_popup_description' => array(
+										'popup_description' => array(
 												'title' => __('Image Popup Description',
 														'gallery_hierarchy'),
 												'description' => __('What is shown by default underneath '
@@ -291,7 +311,7 @@ class GHierarchy {
 						'gHOther' => array(
 								'title' => __('Other Options', 'gallery_hierarchy'),
 								'fields' => array(
-										'gh_num_images' => array(
+										'num_images' => array(
 												'title' => __('Images per Page', 'gallery_hierarchy'),
 												'description' => __('Default number of images per '
 														. 'page to show in the gallery view. Set to 0 '
@@ -300,6 +320,13 @@ class GHierarchy {
 												'type' => 'number',
 												'default' => 50
 										),
+										'db_version' => array(
+												'title' => __('Database Version', 'gallery_hierarchy'),
+												'description' => __('Stores the current database '
+														. 'version to know when the database needs to be '
+														. 'upgraded.', 'gallery_hierarchy'),
+												'type' => 'internal',
+										),
 								)
 						)
 				)
@@ -307,13 +334,13 @@ class GHierarchy {
 		static::$settings = new WPSettings($options);
 
 		// Create path to image Directory
-		$imageDir = static::$settings->get_option('gh_folder');
+		$imageDir = static::$settings->folder;
 		$this->imageDir = gHpath(WP_CONTENT_DIR, $imageDir);
 		// Remove trailing slash
 		$this->imageDir = gHptrim($this->imageDir);
 		$this->imageUrl = content_url($imageDir);
 		// Create path to cache directory
-		$cacheDir = static::$settings->get_option('gh_cache_folder');
+		$cacheDir = static::$settings->cache_folder;
 		$this->cacheDir = gHpath(WP_CONTENT_DIR, $cacheDir);
 		$this->cacheUrl = content_url($cacheDir);
 		// Remove trailing slash
@@ -720,8 +747,9 @@ class GHierarchy {
 
 		echo '<p><a onclick="gH.filter(\'' . $id . '\');" class="button" id="'
 				. $id . 'filterButton">' . __('Filter', 'gallery_hierarchy') . '</a> ';
-		echo '<a onclick="gH.save(\'' . $id . '\');" class="button">'
-				. __('Save Image Changes', 'gallery_hierarchy') . '</a></p>';
+		echo '<a onclick="gH.save(\'' . $id . '\');" class="button" id="' . $id
+				. 'saveButton">' . __('Save Image Changes', 'gallery_hierarchy')
+				. '</a></p>';
 
 		// Pagination
 		echo '<p class="tablenav"><label for="' . $id . 'limit">' . __('Images per page:',
@@ -789,18 +817,32 @@ class GHierarchy {
 		if (isset($_REQUEST['start'])) {
 			// Check to make sure something hasn't already started
 			if (($status = get_transient(static::$scanTransient)) === false) {
+				$start = false;
 				switch($_REQUEST['start']) {
 					case 'rescan':
 						//$status = __('Starting rescan...', 'gallery_hierarchy');
 						$args = null;
+						$start = true;
 						break;
 					case 'full':
 						//$status = __('Forcing full rescan...', 'gallery_hierarchy');
 						$args = array(true);
+						$start = true;
 						break;
 				}
-				//static::setScanTransients('start', $status);
-				wp_schedule_single_event(time(), 'gh_rescan');//, $args);
+				if ($start) {
+					//static::setScanTransients('start', $status);
+					wp_schedule_single_event(time(), 'gh_rescan');//, $args);
+				}
+			}
+		} else if (isset($_REQUEST['clear'])) {
+			// Check to make sure something hasn't already started
+			if (($status = get_transient(static::$scanTransient)) === false) {
+				switch($_REQUEST['clear']) {
+					case 'clear':
+						delete_transient(static::$filesTransient);
+						break;
+				}
 			}
 		} else {
 			$status = null;
@@ -853,7 +895,10 @@ class GHierarchy {
 							'gallery_hierarchy')
 							. '<a href="' . add_query_arg('start', 'rescan') . '">'
 							. __('please resume the scan', 'gallery_hierarchy')
-							. '.</a></em></p>';
+							. '</a> or '
+							. '<a href="' . add_query_arg('clear', 'clear') . '">'
+							. __('clear the scan', 'gallery_hierarchy')
+							. '</a>.</em></p>';
 				}
 				echo '<p>' . __('Last status from last scan: ', 'gallery_hierarchy')
 						. $status . '</p>';
@@ -1002,19 +1047,19 @@ class GHierarchy {
 		// Fill out the attributes with the default
 		switch ($tag) {
 			case 'ghimage':
-				$classO = 'gh_image_class';
-				$classAO = 'gh_image_class_append';
-				$caption = 'gh_image_description';
+				$classO = 'image_class';
+				$classAO = 'image_class_append';
+				$caption = 'image_description';
 				break;
 			case 'ghthumb':
-				$classO = 'gh_thumb_class';
-				$classAO = 'gh_thumb_class_append';
-				$caption = 'gh_thumb_description';
+				$classO = 'thumb_class';
+				$classAO = 'thumb_class_append';
+				$caption = 'thumb_description';
 				break;
 			case 'ghalbum':
-				$classO = 'gh_album_class';
-				$classAO = 'gh_album_class_append';
-				$caption = 'gh_album_description';
+				$classO = 'album_class';
+				$classAO = 'album_class_append';
+				$caption = 'album_description';
 				break;
 		}
 
@@ -1151,7 +1196,7 @@ class GHierarchy {
 		// `group="<group1>"` - id for linking photos to scroll through with
 		// lightbox (`ghthumbnail` `ghimage`)
 		if (!isset($atts['group'])
-				&& static::$settings->get_option('gh_group')) {
+				&& static::$settings->group) {
 			$atts['group'] = 'group';
 		}
 
@@ -1178,14 +1223,14 @@ class GHierarchy {
 		}
 
 		// add_title
-		$atts['add_title'] = static::$settings->get_option('gh_add_title');
+		$atts['add_title'] = static::$settings->add_title;
 
 		// `popup_caption="(none|title|comment)"` - Type of caption to show on
 		//	popup. Default set in plugin options (`ghalbum` `ghthumbnail`
 		// `ghimage`)
 		if (!isset($atts['popup_caption'])) {
 			$atts['popup_caption'] =
-					static::$settings->get_option('gh_popup_description');
+					static::$settings->popup_description;
 		}
 		
 		// `link="(none|popup|<url>)"` - URL link on image, by default it will be
@@ -1214,13 +1259,13 @@ class GHierarchy {
 				$html = $me->printImage($images, $atts);
 				break;
 			case 'ghthumb':
-				$atts['type'] = static::$settings->get_option('gh_thumb_album');
+				$atts['type'] = static::$settings->thumb_album;
 			case 'ghalbum':
 				// `type="<type1>"` - of album (`ghalbum`)
 				// Check we have a valid album, if not, use the thumbnail one
 				$albums = static::getAlbums();
 				if (!isset($atts['type']) || !isset($albums[$atts['type']])) {
-					$atts['type'] = static::$settings->get_option('gh_thumb_album');
+					$atts['type'] = static::$settings->thumb_album;
 				}
 
 				if (isset($atts['type']) && isset($albums[$atts['type']])) {
@@ -1347,10 +1392,15 @@ class GHierarchy {
 				$files = $me->scanFolder();
 			}
 
+			// Stats
+			$files['newDirs'] = 0;
+			$files['newImages'] = 0;
+			$files['updatedImages'] = 0;
+			$files['redoneImages'] = 0;
+
 			static::setScanTransients('scan', 
-					__('Found ', 'gallery_hierarchy') . $files['totalDirs']
-					. __(' folders and ', 'gallery_hierarchy') . $files['totalImages']
-					.__(' images.', 'gallery_hierarchy'), $files);
+					__("Found $files[totalDirs] folders and $files[totalImages] "
+					. ' images.', 'gallery_hierarchy'), $files);
 
 			// Add directories
 			// Get the current directories
@@ -1381,58 +1431,85 @@ class GHierarchy {
 			//			. 'WHERE id IN (' . . ')'));
 			//}
 
-			static::setScanTransients('scan',  __('Added ',
-					'gallery_hierarchy') . $files['newDirs']
-					. __(' folders, deleted ', 'gallery_hierarchy')
-					. count($dirs) . __(' removed folders. Now adding ',
-					'gallery_hierarchy') . $files['totalImages'] . __(' images.',
+			static::setScanTransients('scan',  __("Added $files[newDirs] folders, ",
+					'gallery_hierarchy')
+					. count($dirs) . __(' folders total. Now looking at '
+					. "$files[totalImages] images. ",
 					'gallery_hierarchy'), $files);
 
 
 			// Add images
 			
 			//Get current images
-			$images = $wpdb->get_results('SELECT file,id,added FROM '
+			$images = $wpdb->get_results('SELECT file,id,updated FROM ' 
 					. $me->imageTable, OBJECT_K);
 
 			while(($image = array_shift($files['images'])) !== null) {
 				$iPath = gHpath($me->imageDir, $image);
-				
+
 				if (isset($images[$image])) {
-					if (filemtime($iPath) > $images[$image]->added) {
+					$updated = phpDate($images[$image]->updated);
+					//$updated = $images[$image]->updated;
+			
+					// Don't bugger round with the timezones, just use utc
+					$ftime = gmdate('U', filemtime($iPath));
+
+					if (static::$lp) fwrite(static::$lp, "$iPath: $ftime > $updated?\n");
+
+					if ($ftime > $updated) {
+						if (static::$lp) fwrite(static::$lp, "Updating $iPath\n");
 						$me->registerImage($image, $images[$image]->id);
-						$files['newImages']++;
+						$files['updatedImages']++;
 					} else if ($fullScan) {
+						if (static::$lp) fwrite(static::$lp, "Redoing $iPath\n");
 						$me->registerImage($image, $images[$image]->id, true);
-						$files['newImages']++;
+						$files['redoneImages']++;
 					} else {
 						unset($images[$image]);
 					}
 				} else {
+					if (static::$lp) fwrite(static::$lp, "Adding $iPath\n");
 					$me->registerImage($image);
 					$files['newImages']++;
 				}
 
 				// Report status
 				if (static::$nextSet < time()) {
-					static::setScanTransients('scan',  
-							__("Added $files[newImages] new images. ", 'gallery_hierarchy')
+					static::setScanTransients('scan',
+							($files['newImages'] ? __("Added $files[newImages] new images. ",
+							'gallery_hierarchy') : '')
+							. ($files['updatedImages'] ? __("Updated $files[updatedImages] "
+							. "images. ",
+							'gallery_hierarchy') : '')
+							. ($files['redoneImages'] ? __("Redid $files[redoneImages] "
+							. "images. ", 'gallery_hierarchy') : '')
 							. count($files['images']) . __(' to check.', 'gallery_hierarchy'),
 							$files);
 				}
 			}
-			
+
 			//if (count($dirs)) {
 			//	$wpdb->query($wpdb->prepare('DELETE FROM ' . $me->dirTable
 			//			. 'WHERE id IN (' . . ')'));
 			//}
+
+			$changes = ($files['newDirs'] ? __("Added $files[newDirs] folders",
+					'gallery_hierarchy') : '')
+					//. count($dirs) . __(' removed. ', 'gallery_hierarchy')
+					. ($files['newImages'] ? __("Added $files[newImages] new images. ",
+					'gallery_hierarchy') : '')
+					. ($files['updatedImages'] ? __("Updated $files[updatedImages] "
+					. "images. ",
+					'gallery_hierarchy') : '')
+					. ($files['redoneImages'] ? __("Redid $files[redoneImages] "
+					. "images. ", 'gallery_hierarchy') : '');
+					//. __('Deleted ', 'gallery_hierarchy')
+					//. count($images) . __(' removed.', 'gallery_hierarchy')
 			
-			static::setScanTransients('scan',  __('Added ', 'gallery_hierarchy')
-					. $files['newDirs'] . __(' folders, deleted ', 'gallery_hierarchy')
-					. count($dirs) . __(' removed. ', 'gallery_hierarchy')
-					. __('Added ', 'gallery_hierarchy') . $files['newImages']
-					. __(' images, deleted ', 'gallery_hierarchy')
-					. count($images) . __(' removed.', 'gallery_hierarchy'));
+			static::setScanTransients('scan',
+					__('Scan complete. ', 'gallery_hierarchy')
+					. ($changes ? __('Changes were: ', 'gallery_hierarchy') . $changes
+					: __('No changes found.', 'gallery_hierarchy')));
 			delete_transient(static::$filesTransient);
 		} catch (Exception $e) {
 			static::setScanTransients('scan', __('Error: ',
@@ -1460,10 +1537,8 @@ class GHierarchy {
 			$files = array(
 					'dirs' => array(),
 					'totalDirs' => 0,
-					'newDirs' => 0,
 					'images' => array(),
 					'totalImages' => 0,
-					'newImages' => 0,
 			);
 		}
 
@@ -1511,7 +1586,7 @@ class GHierarchy {
 
 			// Report status
 			if (static::$nextSet < time()) {
-				static::setScanTransients('scanning', __('Scanning Folder...',
+				static::setScanTransients('scanning', __('Scanning Folder. ',
 						'gallery_hierarchy') . $files['totalDirs'] . __(' folders found, ',
 						'gallery_hierarchy') . $files['totalImages'] . __(' images found.',
 						'gallery_hierarchy'));
@@ -1716,8 +1791,8 @@ class GHierarchy {
 	 * @note The Imagick object will be modified
 	 */
 	protected function createThumbnail($image, &$imagick = null) {
-		$thumbnailSize = static::$settings->get_option('gh_thumbnail_size');
-		$crop = static::$settings->get_option('gh_crop_thumbnails');
+		$thumbnailSize = static::$settings->thumbnail_size;
+		$crop = static::$settings->crop_thumbnails;
 
 		$this->resizeImage($image, $imagick, $thumbnailSize, $crop);
 
@@ -1743,11 +1818,12 @@ class GHierarchy {
 	 *                      image will be resized to fit inside the given
 	 *                      dimensions.
 	 * @param $newImagePath string Path to image to write to.
-	 * @retval true If the image was written to.
-	 * @retval false If the image was not written to.
+	 * @retval true If the image was resized.
+	 * @retval false If the image was not resized.
 	 * @note If given, the Imagick object will be modified!
 	 */
-	protected function resizeImage($image, &$imagick, $newSize, $crop = false, $newImagePath = false) {
+	protected function resizeImage($image, &$imagick, $newSize, $crop = false,
+			$newImagePath = false) {
 		$write = false;
 		if ($newImagePath) {
 			$write = true;
@@ -1760,7 +1836,7 @@ class GHierarchy {
 			// Check we have a valid image
 			if (!is_file($iPath) || !in_array(finfo_file($this->finfo,
 					$iPath), $this->imageMimes)) {
-				return; /// @todo Do something worse
+				return false; /// @todo Do something worse
 			}
 
 			// Create an image (for resizing, rotating and thumbnail)
@@ -1773,7 +1849,7 @@ class GHierarchy {
 
 		// First check if we need to do anything
 		if ($cw <= $newSize['width'] && $ch <= $newSize['height']) {
-			return null;
+			return false;
 		}
 
 		if ($crop) {
@@ -1804,10 +1880,80 @@ class GHierarchy {
 				rename($iPath . '.new', $iPath);
 			}
 			unset($imagick);
-			return true;
 		}
 
-		return false;
+		return true;
+	}
+
+	/**
+	 * Rotates and flips a given image.
+	 *
+	 * @param $image string Path to the image relative to the base directory
+	 * @param $imagick Imagick Imagick object already containing the image.
+	 *                         If not given, the image will be overwritten.
+	 *                         If given, the image will not be written.
+	 * @param $flip ('V'|'H'|false) Whether or not to flip the image in the
+	 *              vertical plane, horizontal plane or both. Flip will
+	 *              occur before the rotate.
+	 * @param $rotate number Degrees to rotate the image clockwise
+	 * @param $newImagePath string Path to image to write to.
+	 * @retval true If the image was changed.
+	 * @retval false If the image was not changed.
+	 * @note If given, the Imagick object will be modified!
+	 */
+	protected function rotateImage($image, &$imagick, $flip = false, $rotate = 0,
+			$newImagePath = false) {
+		$changed = false;
+
+		$write = false;
+		if ($newImagePath) {
+			$write = true;
+		}
+
+		if (!$imagick) {
+			$write = true;
+			$iPath = gHpath($this->imageDir, $image);
+
+			// Check we have a valid image
+			if (!is_file($iPath) || !in_array(finfo_file($this->finfo,
+					$iPath), $this->imageMimes)) {
+				return; /// @todo Do something worse
+			}
+
+			// Create an image (for resizing, rotating and thumbnail)
+			$imagick = new Imagick();
+			$imagick->readImage($iPath);
+		}
+
+		// Flip the image
+		if ($flip) {
+			if (strpos($flip, 'V') !== false) {
+				$imagick->flipImage();
+				$changed = true;
+			}
+			if (strpos($flip, 'H') !== false) {
+				$imagick->flopImage();
+				$changed = true;
+			}
+		}
+
+		// Rotate the image
+		if ($rotate) {
+			$imagick->rotateImage(new ImagickPixel('none'), $rotate);
+			$changed = true;
+		}
+
+		if ($write) {
+			if ($newImagePath) {
+				$imagick->writeImage($newImagePath);
+			} else {
+				$imagick->writeImage($iPath . '.new');
+				rename($iPath . '.new', $iPath);
+			}
+			unset($imagick);
+		}
+
+		return $changed;
 	}
 
 	/** 
@@ -1847,49 +1993,48 @@ class GHierarchy {
 
 			if (!$id || ($id && !$forced)) {
 				// Check the orientation
-				if (isset($exif['Orientation'])) {
-					$rotate = 0;
-					$flip = '';
+				if (static::$settings->rotate_images) {
+					if (isset($exif['Orientation'])) {
+						$rotate = 0;
+						$flip = '';
 
-					switch ($exif['Orientation']) {
-						case 5 : // vertical flip + 90 rotate right
-							$flip = 'V';
-						case 6 : // 90 rotate right
-							$rotate = 90;
-							break;
-						case 7 : // horizontal flip + 90 rotate right
-							$flip = 'H';
-						case 8 : // 90 rotate left
-							$rotate = -90;
-							break;
-						case 4 : // vertical flip
-							$flip = 'V';
-							break;
-						case 3 : // 180 rotate left
-							$rotate = 180;
-							break;
-						case 2 : // horizontal flip
-							$flip = 'H';
-							break;						
-						case 1 : // no action in the case it doesn't need a rotation
-						default:
-							break; 
-					}
+						switch ($exif['Orientation']) {
+							case 5 : // vertical flip + 90 rotate right
+								$flip = 'V';
+							case 6 : // 90 rotate right
+								$rotate = 90;
+								break;
+							case 7 : // horizontal flip + 90 rotate right
+								$flip = 'H';
+							case 8 : // 90 rotate left
+								$rotate = -90;
+								break;
+							case 4 : // vertical flip
+								$flip = 'V';
+								break;
+							case 3 : // 180 rotate left
+								$rotate = 180;
+								break;
+							case 2 : // horizontal flip
+								$flip = 'H';
+								break;						
+							case 1 : // no action in the case it doesn't need a rotation
+							default:
+								break; 
+						}
 
-					// Flip / rototate the image
-					if ($rotate || $flip) {
-						rotateImage($rotate, $flip, null, $imagick);
-						$changed = true;
+						// Flip / rototate the image
+						if ($rotate || $flip) {
+							$changed = $this->rotateImage(null, $imagick, $flip, $rotate);
+						}
+						/// @todo Remove orientation from image?
 					}
-					/// @todo Remove orientation from image?
 				}
 
 				// Resize the image if required
-				if (static::$settings->get_option('gh_resize_images')) {
-					if ($this->resizeImage(null, $imagick,
-							static::$settings->get_option('gh_image_size')) !== null) {
-						$changed = true;
-					}
+				if (static::$settings->resize_images) {
+					$changed = $this->resizeImage(null, $imagick,
+							static::$settings->image_size) || $changed;
 				}
 
 				// Write changed image to file
@@ -1981,7 +2126,7 @@ class GHierarchy {
 			$tags = preg_split(' *, *', $tags);
 		}
 
-		if (static::$settings->get_option('gh_folder_keywords')) {	
+		if (static::$settings->folder_keywords) {	
 			$dir = dirname($img);
 
 			$dir = explode(DIRECTORY_SEPARATOR, $dir);
@@ -1997,11 +2142,15 @@ class GHierarchy {
 			$tags = join(',', $tags);
 		}
 
+		if (static::$lp) fwrite(static::$lp, "$img date will be " . time() . " " 
+				. gmdate('Y-m-d H:i:s', time()) . "\n");
+
 		// Write image to database
 		$data = array(
 				'file' => $img,
 				'width' => $width,
-				'height' => $height
+				'height' => $height,
+				'updated' => gmdate('Y-m-d H:i:s', time())
 		);
 		if ($taken) $data['taken'] = $taken;
 		if ($title) $data['title'] = $title;
@@ -2022,6 +2171,27 @@ class GHierarchy {
 	 * @todo Add index for dir and image names
 	 */
 	static function install() {
+		static::installDatabase();
+	}
+
+	static function checkDatabase() {
+		global $wpdb;
+		$me = static::instance();
+
+		$current = static::$settings->db_version;
+
+		if (!$current) {
+			/**
+			 * Update version 2 - changing added field to updated and adding
+			 * ON UPDATE CURRENT_TIMESTAMP to updated
+			 */
+			$wpdb->query('ALTER TABLE ' . $me->imageTable . ' CHANGE added '
+					. 'updated timestamp NOT NULL DEFAULT \'0000-00-00 00:00:00\'');
+			static::$settings->db_version = static::$dbVersion;
+		}
+	}
+
+	static function installDatabase() {
 		global $wpdb;
 
 		$me = static::instance();
@@ -2034,6 +2204,8 @@ class GHierarchy {
 		$sql = $me->buildTableSql($me->imageTable,
 				static::$imageTableFields, 'id');
 		dbDelta($sql);
+
+		static::$settings->db_version = static::$dbVersion;
 	}
 
 	/**

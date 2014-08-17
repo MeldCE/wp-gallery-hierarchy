@@ -45,6 +45,9 @@ if (!class_exists('GHierarchy')) {
 		//}
 
 		if (is_plugin_active('gallery-hierarchy/gallery-hierarchy.php')) {
+			// Check database version is correct
+			GHierarchy::checkDatabase();
+
 			// Shortcodes
 			add_shortcode('ghalbum', array('GHierarchy', 'doShortcode'));
 			add_shortcode('ghthumb', array('GHierarchy', 'doShortcode'));
@@ -67,7 +70,6 @@ if (!class_exists('GHierarchy')) {
 				add_action('init', array('GHierarchy', 'adminInit'));
 			}
 		}
-
 	}
 
 	// Add links to plugin meta
