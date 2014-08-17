@@ -435,6 +435,9 @@ var gH = (function () {
 			}
 			o.html('&raquo;');
 			o.addClass('last-page');
+
+			// Recall fancybox to add it to the new images
+			$("a[data-fancybox=\'fancybox\']").fancybox();
 		},
 
 		setCurrentImages: function(id, images) {
