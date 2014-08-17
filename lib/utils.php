@@ -62,7 +62,7 @@ function mysqlDate($date, $format) {
 	$date = strptime($date, $format);
 	$date = mktime($date['tm_hour'], $date['tm_min'], $date['tm_sec'],
 			$date['tm_mon']+1, $date['tm_mday'], $date['tm_year'] + 1900);
-	return gmdate('Y-m-d H:i:s', $date);
+	return date('Y-m-d H:i:s', $date);
 }
 
 /**
@@ -73,7 +73,7 @@ function mysqlDate($date, $format) {
  * @retval false You stuffed up
  */
 function phpDate($date) {
-	return strtotime($time);
+	return strtotime($date);
 }
 
 ?>
