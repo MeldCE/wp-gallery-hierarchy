@@ -2022,8 +2022,8 @@ class GHierarchy {
 
 				// Resize the image if required
 				if (static::$settings->resize_images) {
-					$changed = $changed || $this->resizeImage(null, $imagick,
-							static::$settings->image_size);
+					$changed = $this->resizeImage(null, $imagick,
+							static::$settings->image_size) || $changed;
 				}
 
 				// Write changed image to file
