@@ -73,7 +73,8 @@ class GHierarchy {
 		// Make the array of albums
 		$albums = array();
 		$albumDescription = '';
-		foreach (static::getAlbums() as $a => $album) {
+		$albumsData = static::getAlbums();
+		foreach ($albumsData as $a => $album) {
 			$albumDescription .= $album['name'] . ' - ' . $album['description'] . '<br>';
 			$albums[$a] = $album['name'];
 		}
