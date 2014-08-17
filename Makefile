@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-version = 0.1-beta
+version = 0.1.3
 
 # Building everything
 all: release
