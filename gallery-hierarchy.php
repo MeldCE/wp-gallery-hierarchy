@@ -6,7 +6,7 @@
  * Description: A simple image gallery where images are stored in hierarchical folders
  * Author: Weld Computer Engineering
  * Author URI: http://www.weldce.com
- * Version: 0.1
+ * Version: 0.1.3
  */
 
 if (!class_exists('GHierarchy')) {
