@@ -23,6 +23,8 @@ class GHierarchy {
 	protected static $runAdminInit = false;
 	protected static $dbVersion = 2;
 
+	protected static $shortcodes = array('ghthumb', 'ghalbum', 'ghimage');
+
 	protected static $lp;
 
 	protected static $imageTableFields = array(
@@ -452,8 +454,22 @@ class GHierarchy {
 	 */
 	static function addMediaTab() {
 		$me = static::instance();
+		$error = false;
 
-		return wp_iframe(array($me, 'printGallery'), true, $errors);
+		if (isset($_REQUEST['shortcode'])) {
+			$shortcode = str_replace('\\"', '"', $_REQUEST['shortcode']);
+			if (($shortcode = json_decode($shortcode, true)) !== null) {
+				if (($shortcode = $me->generateShortcode($shortcode))) {
+					media_send_to_editor($shortcode);
+				} else {
+					$error = 'Could not generate shortcode from given data.';
+				}
+			} else {
+				$error = 'Could not decode given data.';
+			}
+		}
+		
+		return wp_iframe(array($me, 'printGallery'), true, $error);
 	}
 
 	/**
@@ -664,11 +680,15 @@ class GHierarchy {
 	/**
 	 * Prints the gallery/search HTML
 	 */
-	function printGallery($insert = false) {
+	function printGallery($insert = false, $error = false) {
 		global $wpdb;
 		$id = uniqid();
 		// @todo Check if a scan has been run...? Check if we have images?
 		echo '<h2>' . __('Search Filter', 'gallery_hierarchy') . '</h2>';
+
+		if ($error) {
+			$this->echoError($error);
+		}
 
 		// Submit form if inserting
 		if ($insert) {
@@ -749,6 +769,17 @@ class GHierarchy {
 		echo '<option value="ghimage">' . __('An image', 'gallery_hierarchy')
 				. '</option>';
 		echo '</select>';
+		// Shortcode options
+		// Groups option
+		echo '<p><label for="' . $id . 'group">' . __('Image Group:',
+				'gallery_hierarchy') . '</label> ';
+		echo '<input type="text" name="' . $id . 'group" id="' . $id. 'group"></p>';
+		// Class option
+		echo '<p><label for="' . $id . 'class">' . __('Classes:',
+				'gallery_hierarchy') . '</label> ';
+		echo '<input type="text" name="' . $id . 'class" id="' . $id. 'class"></p>';
+
+
 		// Shortcode window
 		echo '<p>' . __('Shortcode:', 'gallery_hierarchy') . ' <span id="' . $id
 				. 'shortcode"></span></p>';
@@ -1059,8 +1090,19 @@ class GHierarchy {
 	 * @param $content string Content inside of the shortcode (shouldn't be any)
 	 * @param $tag string Tag of the shortcode.
 	 */
-	static function doShortcode($atts, $content, $tag) {
+	static function doShortcode($atts, $content = '', $tag = null) {
 		global $wpdb;
+
+		if (!$tag) {
+			if (!isset($atts['tag'])) {
+				return '';
+			}
+			$tag = $atts['tag'];
+		}
+
+		if (!$tag || !in_array($atts['type'], static::$shortcodes)) {
+			return '';
+		}
 
 		$me = static::instance();
 
@@ -1123,7 +1165,24 @@ class GHierarchy {
 							if (strpos($part[1], '|') !== false) {
 								$part[1] = explode('|', $part[1]);
 
-							// Check the dates are valid
+								// Check the dates are valid
+								if (!strptime($part[1][0], '%Y-%m-%d %H:%M')) {
+									$part[1][0] = false;
+								}
+								if (!strptime($part[1][1], '%Y-%m-%d %H:%M')) {
+									$part[1][1] = false;
+								}
+
+								if ($part[1][0] && $part[1][1]) {
+									$query[$part[0]] = $part[0] . ' BETWEEN \'' . $part[1][0]
+											. '\' AND \'' . $part[1][1] . '\'';
+								} else if ($part[1][0]) {
+									$query[$part[0]] = $part[0] . ' >= \'' . $part[1][0] . '\'';
+								} else if ($part[1][1]) {
+									$query[$part[0]] = $part[0] . ' <= \'' . $part[1][1] . '\'';
+								}
+							} else {
+								/// @todo
 							}
 							break;
 						case 'tags':
@@ -1298,6 +1357,57 @@ class GHierarchy {
 		
 		return $html;
 	}
+
+	/**
+	 * Generates shortcode from given attributes.
+	 *
+	 * @param $atts Array Associative array containing the attriutes specified in
+	 *              the shortcode
+	 * @return string The generated shortcode.
+	 * @retval false Could not generate shortcode
+	 */
+	 protected function generateShortcode($atts) {
+			$filter = array();
+
+			if (!isset($atts['type'])
+						|| !in_array($atts['type'], static::$shortcodes)) {
+				return false;
+			}
+
+			// Add selected ids
+			if (isset($atts['ids'])) {
+				$filter = $atts['ids'];
+			}
+
+			// Folders
+			if (isset($atts['folders'])) {
+				filter.push('folder=' . $atts['folders'].join('|'));
+			}
+
+			// Check the dates are valid
+			if (isset($atts['start'])
+					&& !strptime($atts['start'], '%Y-%m-%d %H:%M')) {
+				unset($atts['start']);
+			}
+			if (isset($atts['end'])
+					&& !strptime($atts['end'], '%Y-%m-%d %H:%M')) {
+				unset($atts['end']);
+			}
+
+			if (isset($atts['start']) || isset($atts['end'])) {
+				$filter[] = ('taken=' . (isset($atts['start']) ? $atts['start'] : '') . '|'
+						. (isset($atts['end']) ? $atts['end'] : ''));
+			}
+
+			$parts = ['name', 'title', 'comment', 'tags'];
+			foreach ($parts as $p) {
+				if (isset($atts[$p])) {
+					$filter[] = $p . '=' . $atts[$p];
+				}
+			}
+
+			return '[' . $atts['type'] . ' id="' . join(',', $filter) . '"' . ']';
+	 }
 
 	/**
 	 * Prints galbum images.

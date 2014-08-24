@@ -24,15 +24,31 @@ var gH = (function () {
 						'currentLimit': 0,
 						'showingCurrent': false, // False if not or filtered image offset
 						'idsOnly': false, // True when only ids should be in shortcode
-						'pad': idO,
-						'folders': $('#' + id + 'folders'),
-						'recurse': $('#' + id + 'recurse'),
-						'start': $('#' + id + 'start'),
-						'end': $('#' + id + 'end'),
-						'name': $('#' + id + 'name'),
-						'title': $('#' + id + 'title'),
-						'comment': $('#' + id + 'comment'),
+						'pad': idO, // pad DOM element
+						'input': $('#' + id + 'input'), // Input field used when inserting into post/page
+						'form': $('#' + id + 'form'), // Form used when inserting into post/page
+						'folders': $('#' + id + 'folders'), // Field select input
+						'recurse': $('#' + id + 'recurse'), // Recursive checkbox
+						'start': $('#' + id + 'start'), // Start date input
+						'end': $('#' + id + 'end'), // End date input
+						'name': $('#' + id + 'name'), // Name search input
+						'title': $('#' + id + 'title'), // Title search input
+						'comment': $('#' + id + 'comment'), // Comment
 						'tags': $('#' + id + 'tags'),
+						'group': $('#' + id + 'group'),
+						'class': $('#' + id + 'class'),
+						'limit': $('#' + id + 'limit'),
+						'sort': $('#' + id + 'sort'),
+						'caption': $('#' + id + 'caption'),
+						'popup_caption': $('#' + id + 'popupCaption'),
+						'link': $('#' + id + 'link'),
+						'size': $('#' + id + 'size'),
+						'type': $('#' + id + 'type'),
+						'include_excluded': $('#' + id + 'includeExcluded'),
+						'options': {
+								'ghalbum': ['type'],
+								'ghimage': ['size'],
+						},
 						'filter': $('#' + id + 'filter'),
 						'filterButton': $('#' + id + 'filterButton'),
 						'saveButton': $('#' + id + 'saveButton'),
@@ -256,6 +272,9 @@ var gH = (function () {
 			}
 		},
 
+		/**
+		 * Repages the current images when the images per page is changed
+		 */
 		changePage: function(id) {
 			if(!g[id]) {
 				return;
@@ -284,6 +303,23 @@ var gH = (function () {
 				this.printImages(id, page);
 			}
 		},
+
+		/**
+		 * Submits the insert form to insert images into the post/page.
+		 */
+		insert: function(id) {
+			if(!g[id]) {
+				return;
+			}
+			
+			var code = this.gatherShortcodeData(id);
+
+			if (g[id]['input'].length !== 0) {
+				g[id]['input'].val(JSON.stringify(code));
+				g[id]['form'].submit();
+			}
+		},
+
 		
 		/**
 		 * Draws the current images in the page
@@ -550,11 +586,9 @@ var gH = (function () {
 		},
 
 		/**
-		 * Compiles the shortcode based on the information available
-		 *
-		 * @param id string The id of the gallery.
+		 * Retrieves shortcode data
 		 */
-		compileShortcode: function(id) {
+		gatherShortcodeData: function(id) {
 			if(!g[id]) {
 				return;
 			}
@@ -563,11 +597,9 @@ var gH = (function () {
 					type: g[id]['sctype'].val()
 			};
 
-			var filter = []
-
 			// Add selected ids
 			if (g[id]['selectOrder'].length) {
-				filter = g[id]['selectOrder'].slice(0);
+				code['ids'] = g[id]['selectOrder'];
 			}
 
 			// Add filter
@@ -575,12 +607,53 @@ var gH = (function () {
 				// Folders
 				var folders = g[id]['folders'].val();
 				if (folders) {
-					filter.push('folder=' + folders.join('|'));
+					code['folders'] = folders;
 				}
 
 				// Date
-				var start = g[id]['start'].val();
-				var end = g[id]['end'].val();
+				code['start'] = g[id]['start'].val();
+				code['end'] = g[id]['end'].val();
+
+				var P = ['name', 'title', 'comment', 'tags'];
+				for (p in P) {
+					if ((part = g[id][P[p]].val())) {
+						code[P[p]] = part;
+					}
+				}
+			}
+			
+			return code;
+		},
+
+		/**
+		 * Compiles the shortcode based on the information available
+		 *
+		 * @param id string The id of the gallery.
+		 */
+		compileShortcode: function(id) {
+			if(!g[id]) {
+				return;
+			}
+		
+			var code = this.gatherShortcodeData(id);
+
+			var filter = [];
+
+			// Add selected ids
+			if (code['ids']) {
+				filter = code['ids'].slice(0);
+			}
+
+			// Add filter
+			if (!g[id]['idsOnly']) {
+				// Folders
+				if (code['folders']) {
+					filter.push('folder=' + code['folders'].join('|'));
+				}
+
+				// Date
+				var start = code['start'];
+				var end = code['end'];
 
 				if (start || end) {
 					filter.push('taken=' + (start ? start : '') + '|' + (end ? end : ''));
@@ -589,27 +662,22 @@ var gH = (function () {
 				var part;
 				var P = ['name', 'title', 'comment', 'tags'];
 				for (p in P) {
-					if ((part = g[id][P[p]].val())) {
+					if ((part = code[P[p]])) {
 						filter.push(P[p] + '=' + part);
 					}
 				}
 			}
 
-			code['filters'] = filter;
+			return '[' + code.type + ' id="' + filter.join(',') + '"' + ']';
 			
-			return code;
 		},
 
 		redisplayShortcode: function(id) {
 			if(!g[id]) {
 				return;
 			}
-		
-			var code = this.compileShortcode(id);
 
-			var text = '[' + code.type + ' id="' + code.filters.join(',') + '"' + ']';
-
-			g[id]['shortcode'].html(text);
+			g[id]['shortcode'].html(this.compileShortcode(id));
 		},
 
 		/**
