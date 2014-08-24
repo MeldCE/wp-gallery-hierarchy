@@ -439,6 +439,24 @@ class GHierarchy {
 	}
 
 	/**
+	 * Adds the Gallery Hierarchy link to the Add Media dialog
+	 */
+	static function uploadTabs($tabs) {
+		$tabs['ghierarchy'] = __('Gallery Hierarchy', 'gallery_hierarchy');
+
+		return $tabs;
+	}
+
+	/**
+	 * Prints the Gallery Hierarchy Add Media tab.
+	 */
+	static function addMediaTab() {
+		$me = static::instance();
+
+		return wp_iframe(array($me, 'printGallery'), true, $errors);
+	}
+
+	/**
 	 * Function to create the Gallery Hierarchy admin menu.
 	 * Called by @see gHierarchy::init()
 	 */
@@ -646,18 +664,25 @@ class GHierarchy {
 	/**
 	 * Prints the gallery/search HTML
 	 */
-	protected function printGallery($insert = false) {
+	function printGallery($insert = false) {
 		global $wpdb;
 		$id = uniqid();
 		// @todo Check if a scan has been run...? Check if we have images?
 		echo '<h2>' . __('Search Filter', 'gallery_hierarchy') . '</h2>';
+
+		// Submit form if inserting
+		if ($insert) {
+			echo '<form id="' . $id . 'form" method="POST">'
+					. '<input type="hidden" name="shortcode" id="' . $id . 'input">'
+					. '</form>';
+		}
+
 		// Folders field
 		$folders = $wpdb->get_results('SELECT id, dir FROM ' . $this->dirTable
 				. ' ORDER BY dir');
 		echo '<p><label for="' . $id . 'folders">' . __('Folders:',
 				'gallery_hierarchy') . '</label> <select name="' . $id . 'folders[]" '
 				. 'id="' . $id . 'folders" multiple="multiple">';
-		echo '<option value=""></option>';
 		if ($folders) {
 			foreach ($folders as &$f) {
 				echo '<option value="' . $f->id . '">' . $f->dir . '</option>';
@@ -707,8 +732,9 @@ class GHierarchy {
 	
 		// Shortcode builder
 		echo '<p><a onclick="gH.toggleBuilder(\'' . $id . '\');" id="' . $id
-				. 'builderLabel">' . __('Enable shortcode builder',
-				'gallery_hierarchy') . '</a></p>';
+				. 'builderLabel">' . ($insert ? __('Show shortcode options',
+				'gallery_hierarchy') : __('Enable shortcode builder',
+				'gallery_hierarchy')) . '</a></p>';
 		// Builder div
 		echo '<div id="' . $id . 'builder" class="hide">';
 		// Shortcode type
@@ -739,7 +765,13 @@ class GHierarchy {
 				. $id . 'filterButton">' . __('Filter', 'gallery_hierarchy') . '</a> ';
 		echo '<a onclick="gH.save(\'' . $id . '\');" class="button" id="' . $id
 				. 'saveButton">' . __('Save Image Changes', 'gallery_hierarchy')
-				. '</a></p>';
+				. '</a>';
+		if ($insert) {
+			echo ' <a onclick="gH.insert(\'' . $id . '\');" class="button" id="'
+					. $id . 'saveButton">' . __('Insert Images', 'gallery_hierarchy')
+					. '</a>';
+		}
+		echo '</p>';
 
 		// Pagination
 		echo '<p class="tablenav"><label for="' . $id . 'limit">' . __('Images per page:',
@@ -749,7 +781,8 @@ class GHierarchy {
 				. $id . 'pages" class="tablenav-pages"></span></p>';
 
 		// Photo div
-		echo '<div id="' . $id . 'pad" class="gHpad"></div>';
+		echo '<div id="' . $id . 'pad" class="gHpad'
+				. ($insert ? ' builderOn' : '') . '"></div>';
 		echo '<script>gH.gallery(\'' . $id . '\', \'' . $this->imageUrl . '\', \''
 				. $this->cacheUrl . '\', ' . ($insert ? 1 : 0) . ');</script>';
 	}

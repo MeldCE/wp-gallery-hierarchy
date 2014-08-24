@@ -6,7 +6,7 @@
  * Description: A simple image gallery where images are stored in hierarchical folders
  * Author: Weld Computer Engineering
  * Author URI: http://www.weldce.com
- * Version: 0.1
+ * Version: 0.1.4
  */
 
 if (!class_exists('GHierarchy')) {
@@ -66,6 +66,8 @@ if (!class_exists('GHierarchy')) {
 			if (is_admin()) {
 				// Initialise
 				add_action('init', array('GHierarchy', 'adminInit'));
+
+				add_filter('media_upload_tabs', array('GHierarchy', 'uploadTabs'));
 			}
 		}
 	}
@@ -74,6 +76,9 @@ if (!class_exists('GHierarchy')) {
 	add_filter( 'plugin_row_meta', array('GHierarchy', 'pluginMeta'), 10, 2);
 
 	add_action('plugins_loaded', 'gHierarchySetup');
+	
+	//add_action('media_upload_ghierarchy', 'gHierarchyAddMediaTab');
+	add_action('media_upload_ghierarchy', array('GHierarchy', 'addMediaTab'));
 
 	// Action for rescan job
 	add_action('gh_rescan', array('GHierarchy', 'scan'));
