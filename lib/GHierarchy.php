@@ -455,12 +455,12 @@ class GHierarchy {
 	static function addMediaTab() {
 		$me = static::instance();
 		$error = false;
+		$shortcode = false;
 
 		if (isset($_REQUEST['shortcode'])) {
 			$shortcode = str_replace('\\"', '"', $_REQUEST['shortcode']);
 			if (($shortcode = json_decode($shortcode, true)) !== null) {
 				if (($shortcode = $me->generateShortcode($shortcode))) {
-					media_send_to_editor($shortcode);
 				} else {
 					$error = 'Could not generate shortcode from given data.';
 				}
@@ -469,7 +469,11 @@ class GHierarchy {
 			}
 		}
 		
-		return wp_iframe(array($me, 'printGallery'), true, $error);
+		wp_iframe(array($me, 'printGallery'), true, $error);
+		
+		if ($shortcode) {
+			media_send_to_editor($shortcode);
+		}
 	}
 
 	/**
@@ -1369,8 +1373,8 @@ class GHierarchy {
 	 protected function generateShortcode($atts) {
 			$filter = array();
 
-			if (!isset($atts['type'])
-						|| !in_array($atts['type'], static::$shortcodes)) {
+			if (!isset($atts['code'])
+						|| !in_array($atts['code'], static::$shortcodes)) {
 				return false;
 			}
 
@@ -1406,7 +1410,7 @@ class GHierarchy {
 				}
 			}
 
-			return '[' . $atts['type'] . ' id="' . join(',', $filter) . '"' . ']';
+			return '[' . $atts['code'] . ' id="' . join(',', $filter) . '"' . ']';
 	 }
 
 	/**

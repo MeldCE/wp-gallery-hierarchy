@@ -320,7 +320,6 @@ var gH = (function () {
 			}
 		},
 
-		
 		/**
 		 * Draws the current images in the page
 		 *
@@ -594,7 +593,7 @@ var gH = (function () {
 			}
 
 			var code = {
-					type: g[id]['sctype'].val()
+					code: g[id]['sctype'].val()
 			};
 
 			// Add selected ids
@@ -668,8 +667,7 @@ var gH = (function () {
 				}
 			}
 
-			return '[' + code.type + ' id="' + filter.join(',') + '"' + ']';
-			
+			return '[' + code.code + ' id="' + filter.join(',') + '"' + ']';
 		},
 
 		redisplayShortcode: function(id) {
