@@ -22,6 +22,8 @@ class GHierarchy {
 	protected static $filesTransientTime = DAY_IN_SECONDS;
 	protected static $runAdminInit = false;
 	protected static $dbVersion = 2;
+	protected static $featureMeta = 'ghierarchyFeature';
+	protected static $nonce = 'ghierachy_nonce';
 
 	protected static $shortcodes = array('ghthumb', 'ghalbum', 'ghimage');
 
@@ -441,6 +443,18 @@ class GHierarchy {
 	}
 
 	/**
+	 * Add featured gallery metabox
+	 */
+	static function registerMetaboxes() {
+		add_meta_box('gHFeature', __('Gallery Hierarch Featured Gallery/Image',
+				'gallery_hierarchy'), array(&$me, 'printImageMeta'),
+				'post', 'normal', 'normal');
+		add_meta_box('gHFeature', __('Gallery Hierarch Featured Gallery/Image',
+				'gallery_hierarchy'), array(&$me, 'printImageMeta'),
+				'page', 'normal', 'normal');
+	}
+
+	/**
 	 * Adds the Gallery Hierarchy link to the Add Media dialog
 	 */
 	static function uploadTabs($tabs) {
@@ -636,6 +650,35 @@ class GHierarchy {
 		echo __('Images updated successfully', 'gallery_hierarchy');
 		exit;
 	}
+
+	function printImageMeta($post, $metabox) {
+		wp_nonce_field('gHierarchyFeature', static::$nonce);
+		$id = uniqid();
+
+		$data = false;
+
+		if ($post) { // Get previous metadata
+			$data = get_post_meta($post->ID, static::$featureMeta, true);
+		}
+
+		echo '<div id="' . $id . 'featureImage">';
+		// Display our feature image
+		if ($data && $data['featureImage']) {
+		}		
+		echo '</div>';
+
+	}
+
+	static function saveImageMeta($postId) {
+		if (!isset($_POST[static::$nonce])) {
+			return;
+		}
+
+		if (!wp_verify_nonce($_POST[static::$nonce], 'gHierarchyFeature')) {
+			return;
+		}
+	}
+
 
 	protected function echoError($message) {
 		echo '<div id="message" class="error">' . $message . '</div>';

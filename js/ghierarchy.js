@@ -320,6 +320,16 @@ var gH = (function () {
 			}
 		},
 
+		adjustImage: function(obj, imgUrl, saveFn) {
+			if ((obj = $(obj)) && Caman) {
+				// Draw layout
+				var parts;
+				obj.append((parts['div'] = $(document.createElement('div'))));
+				parts['div'].append((parts['original'] = $(document.createElement('img'))));
+				parts['div'].append((parts['buttons'] = $(document.createElement('div'))));
+				parts['div
+		},
+
 		/**
 		 * Draws the current images in the page
 		 *

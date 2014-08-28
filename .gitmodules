@@ -10,3 +10,12 @@
 [submodule "lib/jquery-ui-timepicker"]
 	path = lib/jquery-ui-timepicker
 	url = https://github.com/trentrichardson/jQuery-Timepicker-Addon.git
+[submodule "lib/jcarousel"]
+	path = lib/jcarousel
+	url = https://github.com/jsor/jcarousel.git
+[submodule "lib/camanjs"]
+	path = lib/camanjs
+	url = https://github.com/meltingice/CamanJS.git
+[submodule "plupload"]
+	path = plupload
+	url = https://github.com/moxiecode/plupload.git

@@ -68,6 +68,8 @@ if (!class_exists('GHierarchy')) {
 				add_action('init', array('GHierarchy', 'adminInit'));
 
 				add_filter('media_upload_tabs', array('GHierarchy', 'uploadTabs'));
+				
+				//add_action('add_meta_boxes', array('GHierarchy', 'registerMetaboxes'));
 			}
 		}
 	}
