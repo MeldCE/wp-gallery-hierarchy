@@ -4,6 +4,9 @@
 [submodule "lib/wp-settings"]
 	path = lib/wp-settings
 	url = https://github.com/weldstudio/wp-settings.git
+[submodule "lib/jcarousel"]
+	path = lib/jcarousel
+	url = https://github.com/jsor/jcarousel.git
 [submodule "lib/jquery-ui-multiselect"]
 	path = lib/jquery-ui-multiselect
 	url = https://github.com/ehynds/jquery-ui-multiselect-widget.git
