@@ -18,6 +18,9 @@ class GHThumbnails implements GHAlbum {
 	static function enqueue() {
 	}
 
+	static function attributes() {
+	}
+
 	static function printAlbum(&$images, &$options) {
 		$html = '';
 		if ($images) {
