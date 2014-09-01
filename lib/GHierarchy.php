@@ -81,257 +81,294 @@ class GHierarchy {
 		}
 
 		$options = array(
-				'title' => __('Gallery Hierarchy Options', 'gallery_hierarchy'),
-				'id' => 'gHOptions',
-				'useTabs' => true,
-				'prefix' => 'gh_',
-				'settings' => array(
-						'gHFolders' => array(
-								'title' => __('Folder Options', 'gallery_hierarchy'),
-								'fields' => array(
-										'folder' => array(
-												'title' => __('Image Folder', 'gallery_hierarchy'),
-												'description' => __('This should be a relative path '
-														. 'inside of wp-content to a folder containing your '
-														. 'images.', 'gallery_hierarchy'),
-												'type' => 'folder',
-												'default' => 'gHImages'
-										),
-										'cache_folder' => array(
-												'title' => __('Cache Image Folder', 'gallery_hierarchy'),
-												'description' => __('This should be a relative path '
-														. 'inside of wp-content to a folder that will be '
-														. 'used to store images created by Gallery '
-														. 'Hierarchy, including thumbnails.',
-														'gallery_hierarchy'),
-												'type' => 'folder',
-												'default' => 'gHCache'
-										),
-								)
+			'title' => __('Gallery Hierarchy Options', 'gallery_hierarchy'),
+			'id' => 'gHOptions',
+			'useTabs' => true,
+			'prefix' => 'gh_',
+			'settings' => array(
+				'gHFolders' => array(
+					'title' => __('Folder Options', 'gallery_hierarchy'),
+					'fields' => array(
+						'folder' => array(
+								'title' => __('Image Folder', 'gallery_hierarchy'),
+								'description' => __('This should be a relative path '
+										. 'inside of wp-content to a folder containing your '
+										. 'images.', 'gallery_hierarchy'),
+								'type' => 'folder',
+								'default' => 'gHImages'
 						),
-						'gHThumbnails' => array(
-								'title' => __('Thumbnail Options', 'gallery_hierarchy'),
-								'fields' => array(
-										'thumbnail_size' => array(
-												'title' => __('Thumbnail Dimensions',
-														'gallery_hierarchy'),
-												'description' => __('Size to make the thumbnails.',
-														'gallery_hierarchy'),
-												'type' => 'dimensions',
-												'default' => array(200, 200)
-										),
-										'crop_thumbnails' => array(
-												'title' => __('Crop Thumbnails', 'gallery_hierarchy'),
-												'description' => __('If this option is selected, the '
-														. 'image will be cropped so that if fills the entire '
-														. 'thumbnail.', 'gallery_hierarchy'),
-												'type' => 'boolean',
-												'default' => false
-										)
-								)
+						'cache_folder' => array(
+								'title' => __('Cache Image Folder', 'gallery_hierarchy'),
+								'description' => __('This should be a relative path '
+										. 'inside of wp-content to a folder that will be '
+										. 'used to store images created by Gallery '
+										. 'Hierarchy, including thumbnails.',
+										'gallery_hierarchy'),
+								'type' => 'folder',
+								'default' => 'gHCache'
 						),
-						'gHScanning' => array(
-								'title' => __('Image Loading Options', 'gallery_hierarchy'),
-								'fields' => array(
-										'resize_images' => array(
-												'title' => __('Resize Images', 'gallery_hierarchy'),
-												'description' => __('If this option is selected, the '
-														. 'images will be resized to the maximum '
-														. 'dimensions '
-														. 'specified in the Image Dimensions setting'
-														. 'below.', 'gallery_hierarchy'),
-												'type' => 'boolean',
-												'default' => true
-										),
-										'rotate_images' => array(
-												'title' => __('Rotate Images', 'gallery_hierarchy'),
-												'description' => __('If this option is selected, the '
-														. 'images will be rotated to the correct '
-														. 'orientation based on the image metadata.',
-														'gallery_hierarchy'),
-												'type' => 'boolean',
-												'default' => true
-										),
-										'image_size' => array(
-												'title' => __('Image Dimensions',
-														'gallery_hierarchy'),
-												'description' => __('Maximum size of the images.',
-														'gallery_hierarchy'),
-												'type' => 'dimensions',
-												'default' => array(1100, 1100)
-										),
-										'folder_keywords' => array(
-												'title' => __('Folders to Tags', 'gallery_hierarchy'),
-												'description' => __('If this option is selected, each '
-														. 'folder name the image is inside will be added as a'
-														. 'tag to the image information in the database. '
-														. 'Folder names can be ignored by adding a \'-\' to '
-														. 'the front of the name.',
-														'gallery_hierarchy'),
-												'type' => 'boolean',
-												'default' => true
-										)
-								)
+					)
+				),
+				'gHThumbnails' => array(
+					'title' => __('Thumbnail Options', 'gallery_hierarchy'),
+					'fields' => array(
+						'thumbnail_size' => array(
+								'title' => __('Thumbnail Dimensions',
+										'gallery_hierarchy'),
+								'description' => __('Size to make the thumbnails.',
+										'gallery_hierarchy'),
+								'type' => 'dimensions',
+								'default' => array(200, 200)
 						),
-						'gHDisplay' => array(
-								'title' => __('Display Options', 'gallery_hierarchy'),
-								'fields' => array(
-										'add_title' => array(
-												'title' => __('Add Title', 'gallery_hierarchy'),
-												'description' => __('If this option is selected, the '
-														. 'image title will be added to the start of the '
-														. 'image comment when being displayed on the image.',
-														'gallery_hierarchy'),
-												'type' => 'boolean',
-												'default' => true
-										),
-										'group' => array(
-												'title' => __('Group Images by Default',
-														'gallery_hierarchy'),
-												'description' => __('If this option is selected, '
-														. 'images will be grouped by default into the '
-														. 'group "group".',
-														'gallery_hierarchy'),
-												'type' => 'boolean',
-												'default' => true
-										),
-										'thumb_album' => array(
-												'title' => __('Album For Thumbnail Shortcut',
-														'gallery_hierarchy'),
-												'description' => __('What album type to use for the '
-														. 'thumbnail shortcode.', 'gallery_hierarchy')
-														. '<br>' . $albumDescription,
-												'type' => 'select',
-												'values' => $albums,
-												'default' => 'thumbnail'
-										),
-										'thumb_class' => array(
-												'title' => __('Default Thumbnail Class', 'gallery_hierarchy'),
-												'description' => __('The classes to set on a '
-														. 'thumbnail by default (space separated).',
-														'gallery_hierarchy'),
-												'type' => 'text',
-												'default' => '',
-										),
-										'thumb_class_append' => array(
-												'title' => __('Append Specified Thumbnail Classes',
-														'gallery_hierarchy'),
-												'description' => __('If true, any classes given in '
-														. 'the shortcode will be appended to the default '
-														. ' classes given above.',
-														'gallery_hierarchy'),
-												'type' => 'boolean',
-												'default' => false
-										),
-										'thumb_description' => array(
-												'title' => __('Thumbnail Description',
-														'gallery_hierarchy'),
-												'description' => __('What is shown by default underneath '
-														. 'a thumbnail.', 'gallery_hierarchy'),
-												'type' => 'select',
-												'values' => array(
-														 '' => __('Nothing', 'gallery_hierarchy'),
-														 'title' => __('Image Title', 'gallery_hierarchy'),
-														 'comment' => __('Image Comment', 'gallery_hierarchy')
-												),
-												'default' => ''
-										),
-										'album_class' => array(
-												'title' => __('Default Album Class', 'gallery_hierarchy'),
-												'description' => __('The classes to set on a '
-														. 'album by default (space separated).',
-														'gallery_hierarchy'),
-												'type' => 'text',
-												'default' => '',
-										),
-										'album_class_append' => array(
-												'title' => __('Append Specified Album Classes',
-														'gallery_hierarchy'),
-												'description' => __('If true, any classes given in '
-														. 'the shortcode will be appended to the default '
-														. ' classes given above.',
-														'gallery_hierarchy'),
-												'type' => 'boolean',
-												'default' => false
-										),
-										'album_description' => array(
-												'title' => __('Album Description', 'gallery_hierarchy'),
-												'description' => __('What is shown by default underneath '
-														. 'an album image.', 'gallery_hierarchy'),
-												'type' => 'select',
-												'values' => array(
-														 '' => __('Nothing', 'gallery_hierarchy'),
-														 'title' => __('Image Title', 'gallery_hierarchy'),
-														 'comment' => __('Image Comment', 'gallery_hierarchy')
-												),
-												'default' => 'comment'
-										),
-										'image_class' => array(
-												'title' => __('Default Image Class', 'gallery_hierarchy'),
-												'description' => __('The classes to set on a '
-														. 'image by default (space separated).',
-														'gallery_hierarchy'),
-												'type' => 'text',
-												'default' => '',
-										),
-										'image_class_append' => array(
-												'title' => __('Append Specified Image Classes', 'gallery_hierarchy'),
-												'description' => __('If true, any classes given in '
-														. 'the shortcode will be appended to the default '
-														. ' classes given above.',
-														'gallery_hierarchy'),
-												'type' => 'boolean',
-												'default' => false
-										),
-										'image_description' => array(
-												'title' => __('Image Description', 'gallery_hierarchy'),
-												'description' => __('What is shown by default underneath '
-														. 'an image.', 'gallery_hierarchy'),
-												'type' => 'select',
-												'values' => array(
-														 '' => __('Nothing', 'gallery_hierarchy'),
-														 'title' => __('Image Title', 'gallery_hierarchy'),
-														 'comment' => __('Image Comment', 'gallery_hierarchy')
-												),
-												'default' => 'title'
-										),
-										'popup_description' => array(
-												'title' => __('Image Popup Description',
-														'gallery_hierarchy'),
-												'description' => __('What is shown by default underneath '
-														. 'an image popup.', 'gallery_hierarchy'),
-												'type' => 'select',
-												'values' => array(
-														 '' => __('Nothing', 'gallery_hierarchy'),
-														 'title' => __('Image Title', 'gallery_hierarchy'),
-														 'comment' => __('Image Comment', 'gallery_hierarchy')
-												),
-												'default' => 'title'
-										)
-								)
-						),
-						'gHOther' => array(
-								'title' => __('Other Options', 'gallery_hierarchy'),
-								'fields' => array(
-										'num_images' => array(
-												'title' => __('Images per Page', 'gallery_hierarchy'),
-												'description' => __('Default number of images per '
-														. 'page to show in the gallery view. Set to 0 '
-														. 'for all of the images (could be really '
-														. 'slow).', 'gallery_hierarchy'),
-												'type' => 'number',
-												'default' => 50
-										),
-										'db_version' => array(
-												'title' => __('Database Version', 'gallery_hierarchy'),
-												'description' => __('Stores the current database '
-														. 'version to know when the database needs to be '
-														. 'upgraded.', 'gallery_hierarchy'),
-												'type' => 'internal',
-										),
-								)
+						'crop_thumbnails' => array(
+							'title' => __('Crop Thumbnails', 'gallery_hierarchy'),
+							'description' => __('If this option is selected, the '
+									. 'image will be cropped so that if fills the entire '
+									. 'thumbnail.', 'gallery_hierarchy'),
+							'type' => 'boolean',
+							'default' => false
 						)
+					)
+				),
+				'gHScanning' => array(
+					'title' => __('Image Loading Options', 'gallery_hierarchy'),
+					'fields' => array(
+						'resize_images' => array(
+							'title' => __('Resize Images', 'gallery_hierarchy'),
+							'description' => __('If this option is selected, the '
+									. 'images will be resized to the maximum '
+									. 'dimensions '
+									. 'specified in the Image Dimensions setting'
+									. 'below.', 'gallery_hierarchy'),
+							'type' => 'boolean',
+							'default' => true
+						),
+						'rotate_images' => array(
+							'title' => __('Rotate Images', 'gallery_hierarchy'),
+							'description' => __('If this option is selected, the '
+									. 'images will be rotated to the correct '
+									. 'orientation based on the image metadata.',
+									'gallery_hierarchy'),
+							'type' => 'boolean',
+							'default' => true
+						),
+						'image_size' => array(
+							'title' => __('Image Dimensions',
+									'gallery_hierarchy'),
+							'description' => __('Maximum size of the images.',
+									'gallery_hierarchy'),
+							'type' => 'dimensions',
+							'default' => array(1100, 1100)
+						),
+						'folder_keywords' => array(
+							'title' => __('Folders to Tags', 'gallery_hierarchy'),
+							'description' => __('If this option is selected, each '
+									. 'folder name the image is inside will be added as a'
+									. 'tag to the image information in the database. '
+									. 'Folder names can be ignored by adding a \'-\' to '
+									. 'the front of the name.',
+									'gallery_hierarchy'),
+							'type' => 'boolean',
+							'default' => true
+						)
+					)
+				),
+				'gHDisplay' => array(
+					'title' => __('Display Options', 'gallery_hierarchy'),
+					'fields' => array(
+						'add_title' => array(
+							'title' => __('Add Title', 'gallery_hierarchy'),
+							'description' => __('If this option is selected, the '
+									. 'image title will be added to the start of the '
+									. 'image comment when being displayed on the image.',
+									'gallery_hierarchy'),
+							'type' => 'boolean',
+							'default' => true
+						),
+						'title_glue' => array(
+							'title' => __('Add Title', 'gallery_hierarchy'),
+							'description' => __('If the Add Title option is selected above, '
+									. 'this text will be used to glue the title to the start of '
+									. 'the comment.', 'gallery_hierarchy'),
+							'type' => 'text',
+							'default' => '. '
+						),
+
+						'group' => array(
+								'title' => __('Group Images by Default',
+										'gallery_hierarchy'),
+								'description' => __('If this option is selected, '
+										. 'images will be grouped by default into the '
+										. 'group "group".',
+										'gallery_hierarchy'),
+								'type' => 'boolean',
+								'default' => true
+						),
+						'thumb_album' => array(
+							'title' => __('Album For Thumbnail Shortcut',
+									'gallery_hierarchy'),
+							'description' => __('What album type to use for the '
+									. 'thumbnail shortcode.', 'gallery_hierarchy')
+									. '<br>' . $albumDescription,
+							'type' => 'select',
+							'values' => $albums,
+							'default' => 'thumbnail'
+						),
+						'thumb_class' => array(
+							'title' => __('Default Thumbnail Class', 'gallery_hierarchy'),
+							'description' => __('The classes to set on a '
+									. 'thumbnail by default (space separated).',
+									'gallery_hierarchy'),
+							'type' => 'text',
+							'default' => '',
+						),
+						'thumb_class_append' => array(
+							'title' => __('Append Specified Thumbnail Classes',
+									'gallery_hierarchy'),
+							'description' => __('If true, any classes given in '
+									. 'the shortcode will be appended to the default '
+									. ' classes given above.',
+									'gallery_hierarchy'),
+							'type' => 'boolean',
+							'default' => false
+						),
+						'thumb_description' => array(
+							'title' => __('Thumbnail Description',
+									'gallery_hierarchy'),
+							'description' => __('What is shown by default underneath '
+									. 'a thumbnail.', 'gallery_hierarchy'),
+							'type' => 'select',
+							'values' => array(
+									 '' => __('Nothing', 'gallery_hierarchy'),
+									 'title' => __('Image Title', 'gallery_hierarchy'),
+									 'comment' => __('Image Comment', 'gallery_hierarchy')
+							),
+							'default' => ''
+						),
+						'album_class' => array(
+							'title' => __('Default Album Class', 'gallery_hierarchy'),
+							'description' => __('The classes to set on a '
+									. 'album by default (space separated).',
+									'gallery_hierarchy'),
+							'type' => 'text',
+							'default' => '',
+						),
+						'album_class_append' => array(
+							'title' => __('Append Specified Album Classes',
+									'gallery_hierarchy'),
+							'description' => __('If true, any classes given in '
+									. 'the shortcode will be appended to the default '
+									. ' classes given above.',
+									'gallery_hierarchy'),
+							'type' => 'boolean',
+							'default' => false
+						),
+						'album_description' => array(
+							'title' => __('Album Description', 'gallery_hierarchy'),
+							'description' => __('What is shown by default underneath '
+									. 'an album image.', 'gallery_hierarchy'),
+							'type' => 'select',
+							'values' => array(
+								 '' => __('Nothing', 'gallery_hierarchy'),
+								 'title' => __('Image Title', 'gallery_hierarchy'),
+								 'comment' => __('Image Comment', 'gallery_hierarchy')
+							),
+							'default' => 'comment'
+						),
+						'image_class' => array(
+							'title' => __('Default Image Class', 'gallery_hierarchy'),
+							'description' => __('The classes to set on a '
+									. 'image by default (space separated).',
+									'gallery_hierarchy'),
+							'type' => 'text',
+							'default' => '',
+						),
+						'image_class_append' => array(
+							'title' => __('Append Specified Image Classes', 'gallery_hierarchy'),
+							'description' => __('If true, any classes given in '
+									. 'the shortcode will be appended to the default '
+									. ' classes given above.',
+									'gallery_hierarchy'),
+							'type' => 'boolean',
+							'default' => false
+						),
+						'image_description' => array(
+							'title' => __('Image Description', 'gallery_hierarchy'),
+							'description' => __('What is shown by default underneath '
+									. 'an image.', 'gallery_hierarchy'),
+							'type' => 'select',
+							'values' => array(
+								 '' => __('Nothing', 'gallery_hierarchy'),
+								 'title' => __('Image Title', 'gallery_hierarchy'),
+								 'comment' => __('Image Comment', 'gallery_hierarchy')
+							),
+							'default' => 'title'
+						),
+						'popup_description' => array(
+							'title' => __('Image Popup Description',
+									'gallery_hierarchy'),
+							'description' => __('What is shown by default underneath '
+									. 'an image popup.', 'gallery_hierarchy'),
+							'type' => 'select',
+							'values' => array(
+								 '' => __('Nothing', 'gallery_hierarchy'),
+								 'title' => __('Image Title', 'gallery_hierarchy'),
+								 'comment' => __('Image Comment', 'gallery_hierarchy')
+							),
+							'default' => 'title'
+						)
+					)
+				),
+				'gHOther' => array(
+					'title' => __('Other Options', 'gallery_hierarchy'),
+					'fields' => array(
+						'num_images' => array(
+							'title' => __('Images per Page', 'gallery_hierarchy'),
+							'description' => __('Default number of images per '
+									. 'page to show in the gallery view. Set to 0 '
+									. 'for all of the images (could be really '
+									. 'slow).', 'gallery_hierarchy'),
+							'type' => 'number',
+							'default' => 50,
+						),
+						'local_resize' => array(
+							'title' => __('Resize Locally During Upload',
+									'gallery_hierarchy'),
+							'description' => __('If this option is checked, images '
+									. 'will be resized prior to being uploaded using '
+									. 'the upload tool.', 'gallery_hierarchy'),
+							'type' => 'boolean',
+							'default' => 'true'
+						),
+						'local_limit' => array(
+							'title' => __('Enforce Limit During Upload',
+									'gallery_hierarchy'),
+							'description' => __('If this option is checked, a '
+									. 'maximum size limit will be enforced of ' /*either '
+									. 'the size limit specified below, or */ . 'the size limit '
+									. 'in the PHP configuration.', 'gallery_hierarchy'),
+							'type' => 'boolean',
+							'default' => 'true'
+						),
+						/** @todo 'size_limit' => array(
+							'title' => __('Image Size Limit', 'gallery_hierarchy'),
+							'description' => __('Size limit to be enforcedper '
+									. 'page to show in the gallery view. Set to 0 '
+									. 'for all of the images (could be really '
+									. 'slow).', 'gallery_hierarchy'),
+							'type' => 'number',
+							'default' => 50,
+						),*/
+						'db_version' => array(
+							'title' => __('Database Version', 'gallery_hierarchy'),
+							'description' => __('Stores the current database '
+									. 'version to know when the database needs to be '
+									. 'upgraded.', 'gallery_hierarchy'),
+							'type' => 'internal',
+						),
+					)
 				)
+			)
 		);
 		static::$settings = new WPSettings($options);
 
@@ -966,6 +1003,31 @@ class GHierarchy {
 				'gallery_hierarchy') . '</h2>';
 		echo '<p>' . __('Choose where you want to upload them and upload them '
 				. 'using the form below.', 'gallery_hierarchy') . '</p>';
+		/// @todo Insert folder selector
+		$id = uniqid();
+		echo '<div id="' . $id . '"><p>' . __('I\'m sorry. Your browser doesn\'t '
+				. 'support any of our file uploaders at the moment. Please let us '
+				. 'what browser you are using so we can add support (it may be you '
+				. 'don\'t have javascript enabled).', 'gallery_hierarchy')
+				. '</p></div>'
+				. '<script src="' . plugins_url('/plupload/js/moxie.min.js',
+				__FILE__) . '"></script>'
+				. '<script src="' . plugins_url('/plupload/js/plupload.full.min.js',
+				__FILE__) . '"></script>'
+				. '<script src="' . plugins_url('/plupload/js/jquery.plupload.queue/'
+				. 'jquery.plupload.queue.min.js', __FILE__) . '"></script>'
+				. '<script src="' . plugins_url('/plupload/js/i18n/en.js',
+				__FILE__) . '"></script>'
+				. '<script>' . "\n"
+				. '(function ($) { $(function() {' . "\n"
+				. 'console.log("running");'
+				. '$(\'#' . $id . '\').pluploadQueue({' . "\n" 
+				. 'runtimes: \'html5,html4\','
+				. 'url: \'/test/test\','
+				. 'dragdrop: true,'
+				. '});' . "\n" 
+				. '})})(jQuery);' . "\n" 
+				. '</script>';
 	}
 
 	/**
