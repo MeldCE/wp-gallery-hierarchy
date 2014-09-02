@@ -535,6 +535,7 @@ class GHierarchy {
 	/**
 	 * Handles AJAX calls from the gallery javascript
 	 * @todo Look at merging some of the code with doShortcode
+	 * @todo Add nonce
 	 */
 	static function ajaxGallery() {
 		global $wpdb;
@@ -671,6 +672,52 @@ class GHierarchy {
 		}
 
 		echo __('Images updated successfully', 'gallery_hierarchy');
+		exit;
+	}
+
+
+	static function ajaxFolder() {
+		$me = static::instance();
+		$s = DIRECTORY_SEPARATOR;
+
+		$checkbox = ( isset($_POST['multiSelect'])
+				&& $_POST['multiSelect'] == 'true' ) ? "<input type='checkbox' />"
+				: null;
+		
+		if (($dir = urldecode((isset($_POST['dir']) ? $_POST['dir'] : null )))) {
+			// Remove bad stuff from $dir
+			$dir = str_replace('..' . $s, '', $dir);
+			$dir = str_replace('//' . $s . $s, $s, $dir);
+
+			if (strpos($dir, $s) !== 0) {
+				$dir = $s . $dir;
+			}
+
+			$dir = $me->imageDir . $dir;
+
+			// Check if the folder exists
+			if (file_exists($dir) && is_dir($dir)) {
+				$html = '';
+
+				$files = scandir($dir);
+				natcasesort($files);
+
+				foreach ($files as $file) {
+					if (strpos($file, '.') !== 0) {
+						if (is_dir($dir . $file)) {
+							$html .= '<li class="directory collapsed">' . $checkbox
+									. '<a rel="' . htmlentities($dir . $file) . '/">'
+									. htmlentities($file) . "</a></li>";
+						}
+					}
+				}
+
+				if ($html) {
+					echo '<ul class="jqueryFileTree">' . $html . '</ul>';
+				}
+			}
+		}
+
 		exit;
 	}
 
@@ -855,6 +902,7 @@ class GHierarchy {
 		// Photo div
 		echo '<div id="' . $id . 'pad" class="gHpad'
 				. ($insert ? ' builderOn' : '') . '"></div>';
+		/// @todo Add admin_url('admin-ajax.php')
 		echo '<script>gH.gallery(\'' . $id . '\', \'' . $this->imageUrl . '\', \''
 				. $this->cacheUrl . '\', ' . ($insert ? 1 : 0) . ');</script>';
 	}
@@ -1005,7 +1053,10 @@ class GHierarchy {
 				. 'using the form below.', 'gallery_hierarchy') . '</p>';
 		/// @todo Insert folder selector
 		$id = uniqid();
-		echo '<div id="' . $id . '"><p>' . __('I\'m sorry. Your browser doesn\'t '
+		echo '<div><span id="' . $id . 'folder">' . __('Choose a folder to upload '
+				. 'you images to', 'gallery_hierarchy') . '</span><div id="' . $id
+				. '"></div></div>'
+				. '<div id="' . $id . '"><p>' . __('I\'m sorry. Your browser doesn\'t '
 				. 'support any of our file uploaders at the moment. Please let us '
 				. 'what browser you are using so we can add support (it may be you '
 				. 'don\'t have javascript enabled).', 'gallery_hierarchy')
@@ -1018,9 +1069,13 @@ class GHierarchy {
 				. 'jquery.plupload.queue.min.js', __FILE__) . '"></script>'
 				. '<script src="' . plugins_url('/plupload/js/i18n/en.js',
 				__FILE__) . '"></script>'
+				. '<script src="' . plugins_url('/jqueryfiletree/jqueryFileTree.js',
+				__FILE__) . '"></script>'
 				. '<script>' . "\n"
 				. '(function ($) { $(function() {' . "\n"
-				. 'console.log("running");'
+				. '$(\'#' .  $id . '\').fileTree({'
+				. 'script: \'' . admin_url('admin-ajax.php?action=gh_folder') . '\','
+				. '});'
 				. '$(\'#' . $id . '\').pluploadQueue({' . "\n" 
 				. 'runtimes: \'html5,html4\','
 				. 'url: \'/test/test\','
@@ -1465,7 +1520,7 @@ class GHierarchy {
 						. (isset($atts['end']) ? $atts['end'] : ''));
 			}
 
-			$parts = ['name', 'title', 'comment', 'tags'];
+			$parts = array('name', 'title', 'comment', 'tags');
 			foreach ($parts as $p) {
 				if (isset($atts[$p])) {
 					$filter[] = $p . '=' . $atts[$p];
