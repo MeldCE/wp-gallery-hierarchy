@@ -176,6 +176,15 @@ class GHierarchy {
 				'gHDisplay' => array(
 					'title' => __('Display Options', 'gallery_hierarchy'),
 					'fields' => array(
+						'use_included_styles' => array(
+							'title' => __('Use Included Styles', 'gallery_hierarchy'),
+							'description' => __('If this option is selected, the '
+									. 'shortcode images will be styled with the '
+									. 'included styles and classes.'
+							'gallery_hierarchy'),
+							'type' => 'boolean',
+							'default' => true
+						),
 						'add_title' => array(
 							'title' => __('Add Title', 'gallery_hierarchy'),
 							'description' => __('If this option is selected, the '
