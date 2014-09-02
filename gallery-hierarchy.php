@@ -2,11 +2,11 @@
 
 /**
  * Plugin Name: Gallery Hierarchy
- * Plugin URI: http://github.com/weldstudio/wp-gallery-hierarchy
+ * Plugin URI: http://www.weldce.com/gallery-hierarchy
  * Description: A simple image gallery where images are stored in hierarchical folders
- * Author: Meld Computer Engineering
- * Author URI: http://www.meldce.com
- * Version: 0.1
+ * Author: Weld Computer Engineering
+ * Author URI: http://www.weldce.com
+ * Version: 0.1.4
  */
 
 if (!class_exists('GHierarchy')) {
@@ -21,6 +21,9 @@ if (!class_exists('GHierarchy')) {
 		//}
 
 		if (is_plugin_active('gallery-hierarchy/gallery-hierarchy.php')) {
+			// Check database version is correct
+			GHierarchy::checkDatabase();
+
 			// Shortcodes
 			add_shortcode('ghalbum', array('GHierarchy', 'doShortcode'));
 			add_shortcode('ghthumb', array('GHierarchy', 'doShortcode'));
@@ -39,11 +42,19 @@ if (!class_exists('GHierarchy')) {
 			if (is_admin()) {
 				// Initialise
 				add_action('init', array('GHierarchy', 'adminInit'));
+
+				add_filter('media_upload_tabs', array('GHierarchy', 'uploadTabs'));
 			}
 		}
 	}
 
+	// Add links to plugin meta
+	add_filter( 'plugin_row_meta', array('GHierarchy', 'pluginMeta'), 10, 2);
+
 	add_action('plugins_loaded', 'gHierarchySetup');
+	
+	//add_action('media_upload_ghierarchy', 'gHierarchyAddMediaTab');
+	add_action('media_upload_ghierarchy', array('GHierarchy', 'addMediaTab'));
 
 	// Action for rescan job
 	add_action('gh_rescan', array('GHierarchy', 'scan'));

@@ -37,6 +37,14 @@ interface GHAlbum {
 	static function enqueue();
 
 	/**
+	 * Returns an associative array of attribute and descriptions of attributes
+	 * specific to this album. Is used to generate options on the gallery
+	 * builder. Each attribute key should have an array value containing the
+	 * type, a label and a description.
+	 */
+	static function attributes();
+
+	/**
 	 * Generates the album for the given images and options. The options will
 	 * be the options built from the options in the shortcode and the defaults
 	 * set in the plugin options.
