@@ -48,5 +48,13 @@ interface GHAlbum {
 	 * @param $options array Array containing the options built for the shortcode
 	 * @return string The HTML for the album
 	 */
-	 static function printAlbum(&$images, &$options);
+	static function printAlbum(&$images, &$options);
+
+	/**
+	 * Prints the CSS used to style the album when the option include inbuilt
+	 * style is selected. It should try and use unique classnames that should
+	 * be included by printAlbum only when the option is selected.
+	 * @see GHierarchy::printStyle For the generic styles that can be reused.
+	 */
+	static function printStyle();
 }

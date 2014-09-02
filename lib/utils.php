@@ -49,6 +49,31 @@ function gHisInt($text) {
 }
 
 /**
+ * Scans through a given directory and includes all php files with a given
+ * extension
+ */
+function gHIncludeFiles ($path, $extension='.php') {
+	$files = scandir($path);
+	$extLength = strlen($extension);
+
+	foreach ($files as $include) {
+		if (strpos($include, '.') !== 0) { // ignores dotfiles and self/parent directories
+			if (is_dir($include)) { // if a directory, iterate into
+				$newPath = $currentPath . $include . '/';
+				includeFiles($path, $extension);
+			} else {
+				if (!$extLength || substr($include, -$extLength) === $extension) {
+					try {
+						require_once($path.$include);
+					} catch (Exception $e) { // Silently fail if the import fails
+					}
+				}
+			}
+		}
+	}
+}
+
+/**
  * Converts a datetime of a given format into a datetime that can be inserted
  * into MySQL, because I am yet to find anything that can do it, even though
  * you would thinnk it would be a standard thing to do!

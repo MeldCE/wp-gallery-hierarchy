@@ -154,6 +154,15 @@ class GHierarchy {
 						'gHDisplay' => array(
 								'title' => __('Display Options', 'gallery_hierarchy'),
 								'fields' => array(
+										'gh_use_included_styles' => array(
+												'title' => __('Use Included Styles', 'gallery_hierarchy'),
+												'description' => __('If this option is selected, the '
+														. 'shortcode images will be styled with the '
+														. 'included styles and classes.'
+														'gallery_hierarchy'),
+												'type' => 'boolean',
+												'default' => true
+										),
 										'gh_add_title' => array(
 												'title' => __('Add Title', 'gallery_hierarchy'),
 												'description' => __('If this option is selected, the '
@@ -2034,5 +2043,37 @@ class GHierarchy {
 		$sql .= ') ' . $charset_collate . ';';
 
 		return $sql;
+	}
+
+	/**
+	 * @see GHAlbum::printAlbum()
+	 */
+	static function printStyle() {
+?>
+/* Float left easy class */
+.gh.right {
+	float: right;
+}
+
+/* Float right easy class */
+.gh.left {
+	float: left;
+}
+
+/* Style the image caption */
+.gh span {
+	display:block;
+	font-size: 12px;
+	font-style: italic;
+	text-align: center;
+}
+
+/* Style ghimage shortcode images */
+.gh.ghimage img {
+	max-width: 100%;
+	height: auto;
+}
+
+<?php
 	}
 }

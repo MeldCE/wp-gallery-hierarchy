@@ -86,4 +86,21 @@ class GHThumbnails implements GHAlbum {
 
 		return $html;
 	}
+
+	static function printStyle() {
+?>
+.gh.ghthumbnail {
+	text-align: center;
+}
+
+.gh.ghthumbnail a {
+	display: inline-block;
+	border: solid 1px #ccc;
+	box-shadow: 3px 3px 3px #999;
+	margin: 5px;
+	padding: 5px;
+}
+
+<?php
+	}
 }
