@@ -13,3 +13,15 @@
 [submodule "lib/jquery-ui-timepicker"]
 	path = lib/jquery-ui-timepicker
 	url = https://github.com/trentrichardson/jQuery-Timepicker-Addon.git
+[submodule "lib/camanjs"]
+	path = lib/camanjs
+	url = https://github.com/meltingice/CamanJS.git
+[submodule "lib/plupload"]
+	path = lib/plupload
+	url = https://github.com/moxiecode/plupload.git
+[submodule "lib/simplefadeslideshow"]
+	path = lib/simplefadeslideshow
+	url = https://github.com/pascalbajorat/simplefadeslideshow.git
+[submodule "lib/jqueryfiletree"]
+	path = lib/jqueryfiletree
+	url = https://github.com/daverogers/jQueryFileTree.git
