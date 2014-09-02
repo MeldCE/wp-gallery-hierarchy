@@ -26,7 +26,7 @@ albumFiles = $(wildcard albums/*.php)
 albums: $(albumFiles)
 
 css/basicStyle.css: albums/thumbnails.php
-	php createBasicStyle.php
+	php createBasicStyle.php > css/basicStyle.css
 
 
 # Submodules

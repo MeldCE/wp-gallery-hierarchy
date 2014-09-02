@@ -176,6 +176,15 @@ class GHierarchy {
 				'gHDisplay' => array(
 					'title' => __('Display Options', 'gallery_hierarchy'),
 					'fields' => array(
+						'use_included_styles' => array(
+							'title' => __('Use Included Styles', 'gallery_hierarchy'),
+							'description' => __('If this option is selected, the '
+									. 'shortcode images will be styled with the '
+									. 'included styles and classes.',
+									'gallery_hierarchy'),
+							'type' => 'boolean',
+							'default' => true
+						),
 						'add_title' => array(
 							'title' => __('Add Title', 'gallery_hierarchy'),
 							'description' => __('If this option is selected, the '
@@ -448,11 +457,17 @@ class GHierarchy {
 	 * Enqueues scripts and stylesheets used by Gallery Hierarchy.
 	 */
 	static function enqueue() {
+		$me = static::instance();
+
 		// Enqueue lightbox script
 		wp_enqueue_script('lightbox', 
 				plugins_url('/lib/lightbox2/js/lightbox.min.js', dirname(__FILE__)));
 		wp_enqueue_style('lightbox',
 				plugins_url('/lib/lightbox2/css/lightbox.css', dirname(__FILE__)));
+		if (static::$settings->use_included_styles) {
+			wp_enqueue_style('gallery_hierarchy-basic',
+					plugins_url('/css/basicStyle.min.css', dirname(__FILE__)));
+		}
 	}
 
 	/**
@@ -1110,7 +1125,7 @@ class GHierarchy {
 				}
 			}
 		}
-		
+	
 		return static::$albums;
 	}
 
@@ -1221,7 +1236,7 @@ class GHierarchy {
 			$tag = $atts['tag'];
 		}
 
-		if (!$tag || !in_array($atts['type'], static::$shortcodes)) {
+		if (!$tag || !in_array($tag, static::$shortcodes)) {
 			return '';
 		}
 
@@ -1404,13 +1419,21 @@ class GHierarchy {
 
 		// `class="<class1> <class2> ...` - additional classes to put on the images
 		// (`ghthumbnail` `ghimage`)
-		if (!isset($atts['class'])
-				|| static::$settings->get_option($classAO)) {
+		if (!isset($atts['class']) || static::$settings->get_option($classAO)) {
+			if (isset($atts['class']) && $atts['class']) {
+				$atts['class'] .= ' ';
+			} else {
+				$atts['class'] = '';
+			}
+			$atts['class'] .= static::$settings->get_option($classO);
+		}
+		
+		if (static::$settings->use_included_styles) {
 			if (!isset($atts['class'])) {
 				$atts['class'] = '';
 			}
 
-			$atts['class'] .= ' ' . static::$settings->get_option($classO);
+			$atts['class'] .= ($atts['class'] ? ' ' : '') . 'gh ' . $tag;
 		}
 
 		// `caption="(none|title|comment)"` - Type of caption to show. Default set
@@ -2494,5 +2517,37 @@ class GHierarchy {
 		$sql .= ') ' . $charset_collate . ';';
 
 		return $sql;
+	}
+
+	/**
+	 * @see GHAlbum::printAlbum()
+	 */
+	static function printStyle() {
+?>
+/* Float left easy class */
+.gh.right {
+	float: right;
+}
+
+/* Float right easy class */
+.gh.left {
+	float: left;
+}
+
+/* Style the image caption */
+.gh a span {
+	display:block;
+	font-size: 12px;
+	font-style: italic;
+	text-align: center;
+}
+
+/* Style ghimage shortcode images */
+.gh.ghimage img {
+	max-width: 100%;
+	height: auto;
+}
+
+<?php
 	}
 }
