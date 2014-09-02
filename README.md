@@ -145,6 +145,9 @@ from the root directory.
 - [wp-settings](https://github.com/weldstudio/wp-settings)
 - [jquery-ui-multiselect-widget](https://github.com/ehynds/jquery-ui-multiselect-widget)
 - [jquery-Timepicker-Addon](https://github.com/trentrichardson/jQuery-Timepicker-Addon)
+You will also need to generate minified versions of the Javascript and CSS
+files by running the command
+`make minify`
 
 ## Use
 Once the plugin is activated in Wordpress, a Gallery Hierarchy menu will
