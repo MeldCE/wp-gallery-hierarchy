@@ -21,6 +21,9 @@ if (!class_exists('GHierarchy')) {
 		//}
 
 		if (is_plugin_active('gallery-hierarchy/gallery-hierarchy.php')) {
+			// Include album files
+			gHIncludeFiles(plugin_dir_path(__FILE__) . 'albums/');
+
 			// Check database version is correct
 			GHierarchy::checkDatabase();
 
@@ -29,9 +32,6 @@ if (!class_exists('GHierarchy')) {
 			add_shortcode('ghthumb', array('GHierarchy', 'doShortcode'));
 			add_shortcode('ghimage', array('GHierarchy', 'doShortcode'));
 			
-			// Include album files
-			gHIncludeFiles(plugin_dir_path(__FILE__) . 'albums/');
-
 			add_action('wp_enqueue_scripts', array('GHierarchy', 'enqueue'));
 			add_action('admin_enqueue_scripts', array('GHierarchy', 'adminEnqueue'));
 			

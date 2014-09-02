@@ -92,11 +92,11 @@ class GHThumbnails implements GHAlbum {
 
 	static function printStyle() {
 ?>
-.gh.ghthumbnail {
+.gh.ghthumb {
 	text-align: center;
 }
 
-.gh.ghthumbnail a {
+.gh.ghthumb a {
 	display: inline-block;
 	border: solid 1px #ccc;
 	box-shadow: 3px 3px 3px #999;
