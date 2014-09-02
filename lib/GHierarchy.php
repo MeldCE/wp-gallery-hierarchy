@@ -1488,7 +1488,7 @@ class GHierarchy {
 						. (isset($atts['end']) ? $atts['end'] : ''));
 			}
 
-			$parts = ['name', 'title', 'comment', 'tags'];
+			$parts = array('name', 'title', 'comment', 'tags');
 			foreach ($parts as $p) {
 				if (isset($atts[$p])) {
 					$filter[] = $p . '=' . $atts[$p];
