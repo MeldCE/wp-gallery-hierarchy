@@ -42,6 +42,74 @@
 	background-color: #0F0;
 }
 
+/*.gHUploader {*/
+div.folderSelect > span {
+	display: inline-block;
+	padding: 2px 5px;
+	background-color: #f7f7f7;
+	border: solid 1px #ccc;
+	border-radius: 3px;
+}
+
+div.folderSelect {
+	display: inline-block;
+}
+
+div.folderSelect > div {
+	position: absolute;
+	display:none;
+	background-color: #f7f7f7;
+	padding: 0px;
+	z-index: 100;
+	border-style: solid;
+	border-width: 1px 1px 1px 1px;
+	border-color: #ccc;
+}
+
+div.folderSelect > div ul {
+	margin: 0px;
+}
+
+div.folderSelect > div li {
+	cursor: pointer;
+	margin: 0px;
+	padding: 2px 10px;
+}
+
+div.folderSelect > div ul ul {
+	display: none;
+}
+
+div.folderSelect > div li.open > ul {
+	display: initial;
+}
+
+div.folderSelect > div li span {
+	color: #666;
+	font-weight: bold;
+	margin-left: 5px;
+	display: inline-block;
+}
+
+div.folderSelect > div li a {
+	display: block;
+	color: #333;
+}
+
+div.folderSelect > div li a:hover {
+	cursor: pointer;
+	color: #000;
+}
+
+div.folderSelect > div li a:before {
+	content: "\f318 ";
+	font-family: "dashicons";
+}
+
+div.folderSelect:hover > div {
+	display: block;
+}
+
 .exclude,
 .select {
 	font-family: "dashicons";

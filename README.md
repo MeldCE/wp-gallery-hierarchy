@@ -194,10 +194,29 @@ the red X on the bottom left of the image. Be sure to click the Save button to
 save any changed exclusion settings.
 
 ### Including Image in Your Posts and Pages
-Currently, the only way to include images in your posts and pages is to either
-manually generate a shortcode, or use the shortcode builder in the Image
-Gallery. Don't worry, in the not too distant future, you will be able to do
-this from the edit page.
+You can include images in your posts and pages by either manually inserting a
+shortcode or by using the Insert Media dialog:
+- Click on the `Add Media` button just above the main text editor. This will
+  open the Insert Media dialog.
+- Click on the `Gallery Hierarchy` link to in the left hand column of the
+  Insert Media dialog. This will bring up the Gallery Hierarchy image browser.
+- Configure any or none of the filters to select certain images, including what
+  folders you want images to be displayed from, and click the `Filter` button.
+	This will retrieve the images you selected.
+- If you want to insert all the images you selected, simply click the `Insert
+  Images` button.
+- If you want to use only certain images from the ones shown, mouse over the
+  images you want to use and a green circle with a plus in it will be displayed
+	on the bottom right of the image. Click this to select the image for use.
+- Once you have selected all the images you want to use (you can select from
+  multiple pages and from multiple filters, you can preview all the images
+	that are selected by clicking on the `Show shortcode options` link, above the
+	`Filter` button and clicking the `Show currently selected link`.
+- You can rearrange your selection by clicking on the left and right buttons
+  on the top right of every selected image - the number displays what position
+	the image will be displayed.
+- To change how the images will be displayed, use the options displayed
+  when you click on the `Show shortcode options` link.
 
 ## Future Features (Todos)
 https://github.com/weldstudio/wp-gallery-hierarchy/issues

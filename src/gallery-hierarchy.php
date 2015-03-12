@@ -1,14 +1,4 @@
 <?php
-
-/**
- * Plugin Name: Gallery Hierarchy
- * Plugin URI: http://www.weldce.com/gallery-hierarchy
- * Description: A simple image gallery where images are stored in hierarchical folders
- * Author: Weld Computer Engineering
- * Author URI: http://www.weldce.com
- * Version: 0.1.4
- */
-
 if (!class_exists('GHierarchy')) {
 	require_once('lib/GHierarchy.php');
 	require_once('lib/GHAlbum.php');
@@ -34,12 +24,15 @@ if (!class_exists('GHierarchy')) {
 			
 			add_action('wp_enqueue_scripts', array('GHierarchy', 'enqueue'));
 			add_action('admin_enqueue_scripts', array('GHierarchy', 'adminEnqueue'));
-			
+			add_action('admin_print_scripts', array('GHierarchy', 'adminPrintInit'));
+
 			// Handle AJAX requests (from image browser)
 			add_action('wp_ajax_gh_gallery', array('GHierarchy', 'ajaxGallery'));
 			add_action('wp_ajax_gh_save', array('GHierarchy', 'ajaxSave'));
 			// Handle folder request
 			add_action('wp_ajax_gh_folder', array('GHierarchy', 'ajaxFolder'));
+			add_action('wp_ajax_gh_scan', array('GHierarchy', 'ajaxScan'));
+			add_action('wp_ajax_gh_upload', array('GHierarchy', 'ajaxUpload'));
 		
 			if (is_admin()) {
 				// Initialise

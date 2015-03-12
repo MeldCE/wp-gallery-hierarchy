@@ -35,6 +35,12 @@
     "gulp-jsvalidate": "~1.0.1",
     "gulp-rename": "~1.2.0",
     "gulp-css-validator": "0.0.4",
-    "gulp-insert": "~0.4.0"
+    "gulp-insert": "~0.4.0",
+    "gulp-shell": "~0.2.11"
+  },
+  "dependencies": {
+    "gulp-inlining-node-require": "0.0.3",
+    "gulp-streamify": "0.0.5",
+    "gulp-include": "~1.1.1"
   }
 }

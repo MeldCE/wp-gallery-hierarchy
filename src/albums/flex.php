@@ -32,7 +32,7 @@ class GHFlexbox implements GHAlbum {
 					. ((isset($options['direction'])
 					&& in_array($options['direction'], array('column', 'row-reverse',
 					'column_reverse'))) ? 'flex-direction: ' . $options['direction'] : '')
-					. '}'
+					. '}' /// @todo Add fixed width/height depending on column or row flex
 					. '</style>'
 					. '<div class="flex">';
 			foreach ($images as &$image) {

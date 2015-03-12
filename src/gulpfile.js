@@ -1,0 +1,232 @@
+var gulp = require('gulp');
+var path = require('path');
+var rename = require('gulp-rename');
+
+var fs = require('fs');
+
+var uglify = require('gulp-uglify');
+var cssMinify = require('gulp-mini-css');
+var lessCss = require('gulp-less');
+var jsValidate = require('gulp-jsvalidate');
+var cssValidate = require('gulp-css-validator');
+var insert = require('gulp-insert');
+var shell = require('gulp-shell');
+var inlining = require('gulp-inlining-node-require');
+//var concat = require('gulp-concat');
+var package = require('./package.json');
+//var watchify = require('gulp-watchify');
+//var streamify = require('gulp-streamify');
+var include = require('../../gulp-include');
+
+var paths = {
+	dist: '../dist/',
+	build: '../build/',
+	ext: {},
+	int: ['readme.txt', 'README.md', 'LICENSE', 'lib/GHierarchy.php', 'lib/GHAlbum.php', 'lib/utils.php'],
+	albumsSrc: 'albums/*.php',
+	main: 'gallery-hierarchy.php',
+	jsSrc: 'js/ghierarchy.js',
+	cssSrc: 'css/{jquery.plupload.queue.css,ghierarchy.less}',
+	basicStylesScript: 'createBasicStyle.php',
+	basicSrc: 'js/basicStyle.css'
+};
+//paths.albums = path.join(paths.dist, 'albums');
+paths.allJsSrc = include.files(paths.jsSrc);
+paths.js = path.join(paths.dist, 'js');
+paths.css = path.join(paths.dist, 'css');
+paths.builtJsDir = path.join(paths.build, 'js');
+paths.builtCssDir = path.join(paths.build, 'css');
+paths.builtCss = path.join(paths.builtCssDir, '*.css');
+paths.builtJs = path.join(paths.build, paths.jsSrc);
+
+// WP Settings
+paths.ext.wpsettings = {
+	js: 'lib/wp-settings/js/wpsettings.min.js',
+	css: 'lib/wp-settings/css/wpsettings.min.css',
+	lib: 'lib/wp-settings/WPSettings.php'
+};
+
+// JQuery Timepicker
+paths.ext.timepicker = {
+	js: 'lib/jquery-ui-timepicker/src/jquery-ui-timepicker-addon.js',
+	css: 'lib/jquery-ui-timepicker/src/jquery-ui-timepicker-addon.css'
+};
+
+// Lightbox 2
+paths.ext.lightbox = {
+	js: 'lib/lightbox2/js/lightbox.min.js',
+	css: 'lib/lightbox2/css/*',
+	imgs: 'lib/lightbox2/img/*.{png,gif}',
+};
+
+// Jquery UI
+paths.ext.ui = {
+	css: 'css/jquery-ui/{jquery-ui.min.css,jquery-ui.structure.min.css,jquery-ui.theme.min.css}',
+	imgs: 'css/jquery-ui/images/*'
+};
+
+// Jquery Folders
+paths.ext.folders = {
+	js: 'lib/jquery-folders/dist/js/folders.js',
+	css: 'lib/jquery-folders/dist/css/folders.css'
+};
+
+// PLupload
+paths.ext.plupload = {
+	i18n: 'lib/plupload/js/i18n/*',
+	js: 'lib/plupload/js/{moxie.min.js,plupload.full.min.js,jquery.plupload.queue/jquery.plupload.queue.min.js}',
+	css: 'css/jquery.plupload.queue.css'
+};
+
+gulp.task('markupMainPhp', [], function() {
+			return gulp.src(paths.main)
+					.pipe(insert.prepend('<?php\n/**\n'
+							+ 'Plugin Name: ' + package.title + '\n'
+							+ 'Plugin URI: ' + package.homepage + '\n'
+							+ 'Version: ' + package.version + '\n'
+							+ 'Description: ' + package.description + '\n'
+							+ 'Author: ' + package.author.name + '\n'
+							+ 'Author URI: ' + package.author.url + '\n'
+							+ 'Text Domain: gallery-hierarchy\n'
+							+ 'Tags: ' + package.keywords.join(',') + '\n'
+							+ 'Licence: ' + package.licence + '\n'
+							+ '*/\n?>\n'
+					))
+					.pipe(gulp.dest(paths.dist));
+		});
+
+/*gulp.task('buildJs', [], function() {
+	return gulp.src(paths.jsSrc)
+			.pipe(inlining())
+			.pipe(gulp.dest(paths.builtJsDir));
+});
+
+gulp.task('validateJs', ['buildJs'], function() {
+			return gulp.src(paths.builtJs)
+					.pipe(jsValidate());
+		});
+
+gulp.task('js', ['validateJs'], function() {
+	return gulp.src(paths.builtJs)
+			.pipe(gulp.dest(paths.js))
+			.pipe(uglify({
+				preserveComments: 'some'
+			}))
+			.pipe(rename(function (path) {
+						path.extname = '.min.js'
+					}))
+			.pipe(gulp.dest(paths.js));
+});*/
+
+/*gulp.task('js', [], watchify(function(watchify) {
+	return gulp.src(paths.jsSrc)
+			.pipe(watchify({
+				watch: true
+			}))
+			.pipe(gulp.dest(paths.js))
+			.pipe(streamify(uglify({
+				preserveComments: 'some'
+			})))
+			.pipe(rename(function (path) {
+						path.extname = '.min.js'
+					}))
+			.pipe(gulp.dest(paths.js));
+}));*/
+
+gulp.task('validateJs', [], function() {
+	return gulp.src(paths.allJsSrc)
+			.pipe(jsValidate());
+});
+
+gulp.task('js', ['validateJs'], function() {
+	return gulp.src(paths.jsSrc)
+			.pipe(include())
+			.pipe(gulp.dest(paths.js))
+			.pipe(uglify({
+				preserveComments: 'some'
+			}))
+			.pipe(rename(function (path) {
+						path.extname = '.min.js'
+					}))
+			.pipe(gulp.dest(paths.js));
+});
+
+gulp.task('validateCss', ['buildCss'], function() {
+			return gulp.src(paths.builtCss)
+					.pipe(cssValidate());
+		});
+
+gulp.task('buildCss', [], function() {
+			return gulp.src(paths.cssSrc)
+					.pipe(lessCss())
+					.pipe(gulp.dest(paths.builtCssDir));
+		});
+
+//gulp.task('css', ['validateCss'], function() {
+gulp.task('css', ['buildCss'], function() {
+			return gulp.src(paths.builtCss)
+					.pipe(rename(function (path) {
+								path.extname = '.css'
+							}))
+					.pipe(gulp.dest(paths.css))
+					.pipe(cssMinify())
+					.pipe(rename(function (path) {
+								path.extname = '.min.css'
+							}))
+					.pipe(gulp.dest(paths.css));
+		});
+
+gulp.task('createBasicStyle', [], shell.task([
+			'php ' + paths.basicStylesScript + ' > ' + paths.basicSrc
+		]));
+
+gulp.task('basicStyle', ['createBasicStyle'], function() {
+			return gulp.src(paths.basicSrc)
+					.pipe(cssMinify())
+					.pipe(rename(function (path) {
+								path.extname = '.min.css'
+							}))
+					.pipe(gulp.dest(paths.css));
+		});
+
+gulp.task('intFiles', [], function() {
+			return gulp.src(paths.int, {base: './'})
+					.pipe(gulp.dest(paths.dist));
+		});
+
+gulp.task('albumFiles', [], function() {
+			return gulp.src(paths.albumsSrc, {base: './'})
+					.pipe(gulp.dest(paths.dist));
+		});
+
+gulp.task('html', [], function() {
+		});
+
+for (e in paths.ext) {
+	gulp.task(e, [], (function(e) { return function() {
+		var p;
+		for (p in paths.ext[e]) {
+			gulp.src(paths.ext[e][p], {base: './'})
+					.pipe(rename({dirname: path.join('lib', p)}))
+					.pipe(gulp.dest(paths.dist));
+		}
+	}})(e));
+}
+
+gulp.task('watch', function() {
+			gulp.watch(paths.main, ['markupMainPhp']);
+			console.log(paths.allJsSrc);
+			gulp.watch(paths.allJsSrc, ['js']);
+			gulp.watch(paths.cssSrc, ['css']);
+			gulp.watch(paths.int, ['intFiles']);
+			gulp.watch(paths.albumsSrc, ['albumFiles', 'basicStyle']);
+			for (e in paths.ext) {
+				var f, files = [];
+				for (f in paths.ext[e]) {
+					files.push(paths.ext[e][f]);
+				}
+				gulp.watch(files, [e]);
+			}
+		});
+
+gulp.task('default', ['markupMainPhp', 'css', 'js', 'intFiles', 'albumFiles', 'basicStyle', 'watch'].concat(Object.keys(paths.ext)));

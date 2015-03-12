@@ -1,20 +1,273 @@
-var gH = (function () {
-	var g = {};
-	var $ = jQuery;
-	var hideClass = 'hide';
-	var imageUrl;
-	var cacheUrl;
-	var imageData;
+gH = (function ($) {
+	var g = {},
+			scanner = {},
+			uploaders = {},
+			$ = jQuery,
+			hideClass = 'hide',
+			imageUrl,
+			cacheUrl,
+			imageData,
+			options;
 
-	return {
-		gallery: function(id, imageUrl, cacheUrl, insertOnly) {
+	//= include editor.js
+	//= include upload.js
+
+	/**
+	 * To use with array.sort
+	 * arr.sort(function(o1, o2) {
+   *   return naturalSorter(o1.t, o2.t);
+	 * });
+	 * http://stackoverflow.com/questions/19247495/alphanumeric-sorting-an-array-in-javascript
+	 * http://jsfiddle.net/MikeGrace/Vgavb/
+	 */
+	function naturalSorter(as, bs){
+    var a, b, a1, b1, i= 0, n, L,
+    rx=/(\.\d+)|(\d+(\.\d+)?)|([^\d.]+)|(\.\D+)|(\.$)/g;
+    if(as=== bs) return 0;
+    a= as.toLowerCase().match(rx);
+    b= bs.toLowerCase().match(rx);
+    L= a.length;
+    while(i<L){
+			if(!b[i]) return 1;
+			a1= a[i],
+			b1= b[i++];
+			if(a1!== b1){
+				n= a1-b1;
+				if(!isNaN(n)) return n;
+				return a1>b1? 1:-1;
+			}
+    }
+
+    return b[i]? -1:0;
+	}
+
+	function rFunc(func, context, add) {
+		var a = Array.prototype.slice.call(arguments);
+		// Remove known arguments off array
+		a.splice(0, 3);
+		return function () {
+			if (add) {
+				var b = [].concat(a);
+				b = b.concat(Array.prototype.slice.call(arguments));
+				func.apply(context, b);
+			} else {
+				func.apply(context, a);
+			}
+		};
+	}
+
+	function updateScanStatus(currentStatus) {
+		if (currentStatus.startTime) { // Have scan running
+			scanner.status.html('<b>Current scan status: </b>');
+
+			scanner.scanBtn.addClass('disabled');
+			scanner.fullScanBtn.addClass('disabled');
+		} else {
+			scanner.status.html('<b>Previous scan\'s last status: </b>');
+
+			scanner.scanBtn.removeClass('disabled');
+			scanner.fullScanBtn.removeClass('disabled');
+		}
+		if (currentStatus.status) {
+			scanner.status.append(currentStatus.status);
+
+			if (currentStatus.time) {
+				scanner.status.append(' (' + currentStatus.time + ')');
+			}
+		} else {
+			scanner.status.append('None');
+		}
+	}
+
+	function refreshScanStatus() {
+		sendScanCommand('status');
+	}
+
+	function sendScanCommand(cmd, data) {
+		if (!data) {
+			data = {};
+		}
+		data.a = cmd;
+		$.post(ajaxurl + '?action=gh_scan', data, receiveScanRefresh);
+	}
+
+	function receiveScanRefresh(data, textStatus, jqXHR) {
+		updateScanStatus(data);
+
+		// Start update job if have a job currently running
+		if (data.startTime) {
+			setTimeout(refreshScanStatus, 10000);
+		}
+	}
+
+
+	function addUploadedFile(id, uploader, file, response) {
+		console.log('addUploadedFile called');
+		// @todo Check for error
+
+		console.log(id);
+		console.log(uploaders);
+
+		if (!uploaders[id]) {
+			return;
+		}
+
+		var data = JSON.parse(response.response);
+
+		console.log(data);
+
+		if (data.error) {
+		}
+
+		if (data.files) {
+			var f, file;
+
+			for (f in data.files) {
+				file = data.files[f];
+
+				switch (file.type) {
+					case 'image': // Print the image and information
+						new editor(uploaders[id].uploadedDiv, file);
+						break;
+				}
+			}
+		}
+	}
+
+	function checkForUploadDir(id, ev) {
+		console.log('id is ' + id);
+		if (uploaders[id]) {
+			console.log('got a valid id ' + id);
+			console.log(uploaders[id]);
+			ev.preventDefault();
+
+			if (!uploaders[id].dirId) {
+					ev.stopImmediatePropagation();
+					alert("Please choose a directory to upload the files into");
+					return false;
+			}
+			else {
+					return true;
+			}
+		}
+	}
+
+	function resetUploader(id) {
+		console.log('resetUploader called');
+		console.log(id);
+		console.log(uploaders[id]);
+		if (!uploaders[id]) {
+			return;
+		}
+
+		console.log('creating timeout');
+		setTimeout(pub.returnFunction(doUploaderReset, true, id), 2000);
+	}
+
+	function doUploaderReset(id) {
+		console.log('kill kill kill');
+		uploaders[id].uploader.destroy();
+		initUploader(id);
+	}
+
+	function initUploader(id) {
+		console.log('initUploader called');
+		uploaders[id].obj.pluploadQueue(uploaders[id].options);
+		
+		var uploader = uploaders[id].obj.pluploadQueue();
+
+		uploaders[id].uploader = uploader;
+
+		// Hook function onto start button to stop upload if don't have a
+		// destination folder
+		var startButton = uploaders[id].obj.find('a.plupload_start');
+		startButton.click(pub.returnFunction(checkForUploadDir, true, id));
+		
+		// Rearrange event handler for start button, to ensure that it has the ability
+		// to execute first
+		var clickEvents = $._data(startButton[0], 'events').click;
+		if (clickEvents.length == 2) clickEvents.unshift(clickEvents.pop());
+
+		// Bind to events
+		uploader.bind('FileUploaded', pub.returnFunction(addUploadedFile, true, id));
+		uploader.bind('UploadComplete', pub.returnFunction(resetUploader, true, id));
+
+		// Set dir_id if we have one
+		if (uploaders[id].dirId) {
+			pub.setUploadDir(id, {id: uploaders[id].dirId});
+		}
+	}
+
+
+	var pub = {
+		init: function(opts) {
+			options = opts;
+			if (opts.imageUrl) imageUrl = opts.imageUrl;
+			if (opts.cacheUrl) cacheUrl = opts.cacheUrl;
+		},
+
+		/**
+		 * Controls the scanning functionality on the Load Images page.
+		 *
+		 * @param dom JQueryDOMObject Object to put scanning functionality into
+		 * @param currentStatus Object Object containing current status
+		 *
+		 * @todo add multilingual support
+		 */
+		scanControl: function(dom, currentStatus) {
+			scanner.dom = dom;
+			dom.append((scanner.status = $('<p></p>')));
+			dom.append((scanner.scanBtn = $('<a class="button">'
+					+ 'Rescan Directories' + '</a>')));
+			scanner.scanBtn.click(this.returnFunction(sendScanCommand, false, 'rescan'));
+			dom.append(' ');
+			dom.append((scanner.fullScanBtn = $('<a class="button">'
+					+ 'Force Rescan of All Images' + '</a>')));
+			scanner.fullScanBtn.click(this.returnFunction(sendScanCommand, false, 'full'));
+
+			receiveScanRefresh(currentStatus);
+		},
+
+		uploader: function(id, obj, options) {
+			console.log('starting uploader');
+			if (id && obj) {
+				console.log('got valid');
+				console.log(options);
+				uploaders[id] = {
+					options: options,
+					obj: obj,
+					dir_id: false,
+					uploadedDiv: $('#' + id + 'uploaded')
+				};
+				
+				initUploader(id);
+			}
+		},
+
+		setUploadDir: function(id, files) {
+			if (id && uploaders[id]) {
+				// Get folder (only first folder)
+				if (files.constructor === Array) {
+					files = files[0];
+				}
+				console.log(files);
+			
+				console.log('setting folder id to ' + files.id);
+				uploaders[id].dirId = files.id;
+
+				// Set the folder parameter on the uploader
+				uploaders[id].uploader.setOption('multipart_params', {
+					dir_id: files.id
+				});
+			}
+		},
+
+		gallery: function(id, insertOnly) {
 			var idO;
 			if ((idO = $('#' + id + 'pad'))) {
 				g[id] = {
 						'insertOnly': insertOnly,
 						'builderOn': (insertOnly ? true : false),
-						'imageUrl': imageUrl,
-						'cacheUrl': cacheUrl,
 						'selected': {}, // Stores the selected images
 						'currentImages': null, // Stores the images displayed in pad
 						'imageIndex': null, // Used to look an image in currentImages based on its id
@@ -27,7 +280,8 @@ var gH = (function () {
 						'pad': idO, // pad DOM element
 						'input': $('#' + id + 'input'), // Input field used when inserting into post/page
 						'form': $('#' + id + 'form'), // Form used when inserting into post/page
-						'folders': $('#' + id + 'folders'), // Field select input
+						'folders': [], // Selected folders array
+						'foldersChanged': false, // Stores whether the folders have been changed
 						'recurse': $('#' + id + 'recurse'), // Recursive checkbox
 						'start': $('#' + id + 'start'), // Start date input
 						'end': $('#' + id + 'end'), // End date input
@@ -68,12 +322,6 @@ var gH = (function () {
 					g[id]['currentLimit'] = 50;
 					g[id]['limit'].val(50);
 				}
-
-				// Initialise folders field
-				g[id]['folders'].multiselect({
-						'noneSelectedText': 'Select folders',
-						'selectedText': '# folders selected'
-						}); // @todo .multiselectfilter();
 
 				// Initialise datetime fields
 				g[id]['start'].datetimepicker({ 
@@ -143,7 +391,7 @@ var gH = (function () {
 		},
 
 		thumbnail: function(image) {
-			return image.replace(/\//g, '_');
+			return cacheUrl + '/' + image.replace(/\//g, '_');
 		},
 
 		/**
@@ -158,7 +406,7 @@ var gH = (function () {
 			if (!g[id]['query']) {
 				g[id]['query'] = {
 						'folders': [],
-						'recurse': false,
+						'recurse': 0,
 						'start': '',
 						'end': '',
 						'name': '',
@@ -173,25 +421,21 @@ var gH = (function () {
 			var changed = false;
 			for (p in g[id]['query']) {
 				if (p == 'folders') {
-					v = g[id][p].val();
-					if (g[id]['query'][p] == null && v == null) {
-						continue;
-					}
-					if (g[id]['query'][p] == null || v == null || g[id]['query'][p].length != v.length) {
-						g[id]['query'][p] = v;
+					if (g[id].foldersChanged) {
+						console.log('folders have changed');
+						g[id].query[p] = g[id].folders;
+						console.log(g[id].query);
 						changed = true;
-					}
-
-					for (i in g[id]['query'][p]) {
-						if (g[id]['query'][p][i] != v[i]) {
-							g[id]['query'][p] = v;
-							changed = true;
-						}
+						g[id].foldersChanged = false;
 					}
 				} else if (g[id][p].prop('type') == 'checkbox') {
 					v = g[id][p].prop('checked');
-					if (g[id]['query'][p] ? v : !v) {
-						g[id]['query'][p] = v;
+					console.log('isChecked? ' + v);
+					if (v && !g[id]['query'][p]) {
+						g[id]['query'][p] = 1;
+						changed = true;
+					} else if (!v && g[id]['query'][p]) {
+						g[id]['query'][p] = 0;
 						changed = true;
 					}
 				} else if (g[id]['query'][p] != (v = g[id][p].val())) {
@@ -203,7 +447,7 @@ var gH = (function () {
 			if (changed) {
 				/// @todo Add localisation
 				g[id]['filterButton'].html('Loading...');
-				$.post(ajaxurl + '?action=gh_gallery', g[id]['query'], this.returnFunction(this.receiveData, id));
+				$.post(ajaxurl + '?action=gh_gallery', g[id]['query'], this.returnFunction(this.receiveData, true, id));
 			}
 		},
 
@@ -354,21 +598,24 @@ var gH = (function () {
 				var o,p,l;
 				// Temporary Image Link
 				d.append((l = $(document.createElement('a'))));
-				l.attr('href', g[id]['imageUrl'] + '/' + g[id]['currentImages'][i]['file']);
+				l.attr('href', imageUrl + '/' + g[id]['currentImages'][i]['path']);
 				l.attr('data-lightbox', 'thumbs');
-				l.attr('data-title', 'ID: ' + g[id]['currentImages'][i]['id'] + '. Title: ' + g[id]['currentImages'][i]['title'] + '. Comment: ' + g[id]['currentImages'][i]['comment']);
+				l.attr('data-title', 'ID: ' + g[id]['currentImages'][i]['id'] + '.'
+						+ (g[id].currentImages[i].title ? '<br>Title: '
+						+ g[id]['currentImages'][i]['title'] + '.' : '')
+						+ (g[id].currentImages[i].comment ? '<br>Comment: '
+						+ g[id].currentImages[i].comment + '.' : ''));
 				// Image
-				l.append((o = $(document.createElement('img'))));
-				o.attr('src', g[id]['cacheUrl'] + '/' + this.thumbnail(g[id]['currentImages'][i]['file']));
+				l.append((o = $('<img src="' + this.thumbnail(g[id]['currentImages'][i]['path']) + '">')));
 				// Excluder
 				d.append((o = $(document.createElement('div'))));
-				o.click(this.returnFunction(this.exclude, id, i));
+				o.click(this.returnFunction(this.exclude, true, id, i));
 				o.addClass('exclude');
 				o.attr('title', 'Exclude from galleries by default');
 				// Selector
 				d.append((o = $(document.createElement('div'))));
 				o.addClass('select');
-				o.click(this.returnFunction(this.select, id, i));
+				o.click(this.returnFunction(this.select, true, id, i));
 				o.attr('title', 'Include in selection');
 
 				// Orderer
@@ -376,17 +623,19 @@ var gH = (function () {
 				o.addClass('orderer');
 				o.append((p = $(document.createElement('div'))));
 				p.addClass('dashicons dashicons-arrow-left-alt');
-				p.click(this.returnFunction(this.order, id, i, -1));
+				p.click(this.returnFunction(this.order, true, id, i, -1));
 				o.append((g[id]['currentImages'][i]['order'] = (p = $(document.createElement('div')))));
 				p.addClass('order');
 				o.append((p = $(document.createElement('div'))));
 				p.addClass('dashicons dashicons-arrow-right-alt');
-				p.click(this.returnFunction(this.order, id, i, 1));
+				p.click(this.returnFunction(this.order, true, id, i, 1));
 				
+				var iId = g[id].currentImages[i].id;
 				// Check for exclusion/selection
 				if (g[id]['currentImages'][i]['exclude'] 
 						&& (g[id]['currentImages'][i]['exclude'] === '1'
-						|| g[id]['currentImages'][i]['exclude'] === true)) {
+						|| (g[id].changed[iId] && g[id].changed[iId].exclude
+						&& g[id].changed[iId].exclude.new === true))) {
 					d.addClass('excluded');
 				}
 				if (g[id]['selected'][g[id]['currentImages'][i]['id']]) {
@@ -408,7 +657,7 @@ var gH = (function () {
 			// First page
 			g[id]['pages'].append((o = $(document.createElement('a'))));
 			if (offset !== 0) {
-				o.click(this.returnFunction(this.printImages, id, 0));
+				o.click(this.returnFunction(this.printImages, true, id, 0));
 			} else {
 				o.addClass('disabled');
 			}
@@ -421,7 +670,7 @@ var gH = (function () {
 				if ((i = offset - limit) < 0)  {
 					i = 0;
 				}
-				o.click(this.returnFunction(this.printImages, id, i));
+				o.click(this.returnFunction(this.printImages, true, id, i));
 			} else {
 				o.addClass('disabled');
 			}
@@ -434,7 +683,7 @@ var gH = (function () {
 			o.addClass('current-page');
 			o.attr('title', 'Current Page');
 			o.val(Math.ceil(offset / g[id]['currentLimit']) + 1);
-			o.change(this.returnFunction(this.changePage, id));
+			o.change(this.returnFunction(this.changePage, true, id));
 
 			// Of
 			g[id]['pages'].append(document.createTextNode(' of '));
@@ -453,7 +702,7 @@ var gH = (function () {
 				if ((i = offset + g[id]['currentLimit']) > lastOffset)  {
 					i = lastOffset;
 				}
-				o.click(this.returnFunction(this.printImages, id, i));
+				o.click(this.returnFunction(this.printImages, true, id, i));
 			} else {
 				o.addClass('disabled');
 			}
@@ -463,12 +712,30 @@ var gH = (function () {
 			// Last page
 			g[id]['pages'].append((o = $(document.createElement('a'))));
 			if (offset !== lastOffset) {
-				o.click(this.returnFunction(this.printImages, id, lastOffset));
+				o.click(this.returnFunction(this.printImages, true, id, lastOffset));
 			} else {
 				o.addClass('disabled');
 			}
 			o.html('&raquo;');
 			o.addClass('last-page');
+		},
+
+		changeFolder: function(id, files) {
+			if (!g[id]) {
+				return;
+			}
+
+			// Restart array
+			g[id].folders = [];
+			g[id].foldersChanged = true;
+
+			var f;
+			for (f in files) {
+				g[id].folders.push(files[f].id);
+			}
+
+			console.log('folders updated for ' + id);
+			console.log(g[id].folders);
 		},
 
 		setCurrentImages: function(id, images) {
@@ -518,13 +785,20 @@ var gH = (function () {
 			}
 		},
 
-		returnFunction: function(func) {
+		// @todo Move to be a private function
+		returnFunction: function(func, add) {
 			var a = Array.prototype.slice.call(arguments);
+			a.shift();
 			a.shift();
 			var t = this;
 			return function () {
-				a = a.concat(Array.prototype.slice.call(arguments));
-				func.apply(t, a);
+				if (add) {
+					var b = [].concat(a);
+					b = b.concat(Array.prototype.slice.call(arguments));
+					func.apply(t, b);
+				} else {
+					func.apply(t, a);
+				}
 			};
 		},
 
@@ -604,9 +878,8 @@ var gH = (function () {
 			// Add filter
 			if (!g[id]['idsOnly']) {
 				// Folders
-				var folders = g[id]['folders'].val();
-				if (folders) {
-					code['folders'] = folders;
+				if (g[id].folders) {
+					code['folders'] = g[id].folders;
 				}
 
 				// Date
@@ -688,12 +961,9 @@ var gH = (function () {
 
 			var i, v, data = {}, change = false;
 			for (i in g[id]['changed']) {
-				console.log('Change ' + i);
 				for (v in g[id]['changed'][i]) {
-					console.log('Change value ' + v);
 					if (g[id]['changed'][i][v]['new'] !== g[id]['changed'][i][v]['old']) {
 						if (!data[i]) {
-							console.log('Setting new value ' + g[id]['changed'][i][v]['new']);
 							data[i] = {}
 						}
 						data[i][v] = g[id]['changed'][i][v]['new'];
@@ -705,7 +975,7 @@ var gH = (function () {
 			if (change) {
 				// @todo Add localisation
 				g[id]['saveButton'].html('Saving...');
-				$.post(ajaxurl + '?action=gh_save', {'saveData': data}, this.returnFunction(this.confirmSave, id));
+				$.post(ajaxurl + '?action=gh_save', {'saveData': data}, this.returnFunction(this.confirmSave, true, id));
 			}
 		},
 
@@ -714,12 +984,16 @@ var gH = (function () {
 				return;
 			}
 
-			alert(data);
-			if(data.substring( 0, 'Error'.length ) !== 'Error') {
+			if (!(data instanceof Object) || data.error) {
+				alert(data.error);
+			} else {
+				// TODO Apply changes??
 				g[id]['changed'] = {};
+				alert(data.msg);
 			}
 			// @todo Add localisation
 			g[id]['saveButton'].html('Save Image Changes');
+			g[id]['saveButton'].addClass('disabled');
 		},
 
 		/**
@@ -794,24 +1068,36 @@ var gH = (function () {
 			if (g[id]['imageData'][i]) {
 				var iId = g[id]['imageData'][i]['id'];
 
+				// Remove the disabled class from the Save button
+				if (g[id]['saveButton'].hasClass('disabled')) {
+					g[id]['saveButton'].removeClass('disabled');
+				}
+
 				if (!g[id]['changed'][iId]) {
 					g[id]['changed'][iId] =  {};
 				}
 
 				if (!g[id]['changed'][iId]['exclude']) {
+					var val = parseInt(g[id]['imageData'][i]['exclude']);
 					g[id]['changed'][iId]['exclude'] = {
-						'old': g[id]['imageData'][i]['exclude']
+						'old': val,
+						'new': val
 					};
 				}
 
 				if (!g[id]['changed'][iId]['exclude']['new']) {
-					g[id]['changed'][iId]['exclude']['new'] = true;
+					g[id]['changed'][iId]['exclude']['new'] = 1;
+					g[id]['imageData'][i].exclude = "1";
 					g[id]['imageData'][i]['div'].addClass('excluded');
 				} else {
-					g[id]['changed'][iId]['exclude']['new'] = false;
+					g[id]['changed'][iId]['exclude']['new'] = 0;
+					g[id]['imageData'][i].exclude = "0";
 					g[id]['imageData'][i]['div'].removeClass('excluded');
 				}
 			}
 		}
 	};
-})();
+
+	return pub;
+})(jQuery);
+
