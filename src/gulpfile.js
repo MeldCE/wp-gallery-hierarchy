@@ -17,6 +17,7 @@ var package = require('./package.json');
 //var watchify = require('gulp-watchify');
 //var streamify = require('gulp-streamify');
 var include = require('../../gulp-include');
+var spawn = require('child_process').spawn;
 
 var paths = {
 	dist: '../dist/',
@@ -25,19 +26,29 @@ var paths = {
 	int: ['readme.txt', 'README.md', 'LICENSE', 'lib/GHierarchy.php', 'lib/GHAlbum.php', 'lib/utils.php'],
 	albumsSrc: 'albums/*.php',
 	main: 'gallery-hierarchy.php',
-	jsSrc: 'js/ghierarchy.js',
+	//jsSrc: '{js/ghierarchy.js,albums/js/*.js}',
+	jsSrc: ['js/ghierarchy.js', 'albums/js/*.js'],
 	cssSrc: 'css/{jquery.plupload.queue.css,ghierarchy.less}',
 	basicStylesScript: 'createBasicStyle.php',
 	basicSrc: 'js/basicStyle.css'
 };
 //paths.albums = path.join(paths.dist, 'albums');
 paths.allJsSrc = include.files(paths.jsSrc);
+console.log(paths.allJsSrc);
 paths.js = path.join(paths.dist, 'js');
 paths.css = path.join(paths.dist, 'css');
 paths.builtJsDir = path.join(paths.build, 'js');
 paths.builtCssDir = path.join(paths.build, 'css');
 paths.builtCss = path.join(paths.builtCssDir, '*.css');
-paths.builtJs = path.join(paths.build, paths.jsSrc);
+if (paths.jsSrc instanceof Array) {
+	paths.builtJs = [];
+	var i;
+	for (i in paths.jsSrc) {
+		paths.builtJs.push(path.join(paths.build, paths.jsSrc[i]));
+	}
+} else {
+	paths.builtJs = path.join(paths.build, paths.jsSrc);
+}
 
 // WP Settings
 paths.ext.wpsettings = {
@@ -66,9 +77,9 @@ paths.ext.ui = {
 };
 
 // Jquery Folders
-paths.ext.folders = {
-	js: 'lib/jquery-folders/dist/js/folders.js',
-	css: 'lib/jquery-folders/dist/css/folders.css'
+paths.ext.hierarchySelect = {
+	js: 'lib/jquery-hierarchy-select/dist/js/folders.js',
+	css: 'lib/jquery-hierarchy-select/dist/css/folders.css'
 };
 
 // PLupload
@@ -95,43 +106,20 @@ gulp.task('markupMainPhp', [], function() {
 					.pipe(gulp.dest(paths.dist));
 		});
 
-/*gulp.task('buildJs', [], function() {
-	return gulp.src(paths.jsSrc)
-			.pipe(inlining())
-			.pipe(gulp.dest(paths.builtJsDir));
+gulp.task('auto-reload', function() {
+	var process;
+
+	function restart() {
+		if (process) {
+			process.kill();
+		}
+
+		process = spawn('gulp', ['default'], {stdio: 'inherit'});
+	}
+
+	gulp.watch('gulpfile.js', restart);
+	restart();
 });
-
-gulp.task('validateJs', ['buildJs'], function() {
-			return gulp.src(paths.builtJs)
-					.pipe(jsValidate());
-		});
-
-gulp.task('js', ['validateJs'], function() {
-	return gulp.src(paths.builtJs)
-			.pipe(gulp.dest(paths.js))
-			.pipe(uglify({
-				preserveComments: 'some'
-			}))
-			.pipe(rename(function (path) {
-						path.extname = '.min.js'
-					}))
-			.pipe(gulp.dest(paths.js));
-});*/
-
-/*gulp.task('js', [], watchify(function(watchify) {
-	return gulp.src(paths.jsSrc)
-			.pipe(watchify({
-				watch: true
-			}))
-			.pipe(gulp.dest(paths.js))
-			.pipe(streamify(uglify({
-				preserveComments: 'some'
-			})))
-			.pipe(rename(function (path) {
-						path.extname = '.min.js'
-					}))
-			.pipe(gulp.dest(paths.js));
-}));*/
 
 gulp.task('validateJs', [], function() {
 	return gulp.src(paths.allJsSrc)

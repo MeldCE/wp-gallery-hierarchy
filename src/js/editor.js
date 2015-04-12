@@ -24,6 +24,31 @@ var editor = (function() {
 
 		return row;
 	}
+
+	/**
+	 * Confirms actions by receiving the POST response
+	 */
+	function confirmAction(del, data, textStatus, jqXHR) {
+		if (data instanceof Object) {
+			if (data.error) {
+				this.status.html(data.error);
+			} else {
+				this.status.html(data.msg);
+			}
+
+			var t = this;
+
+			setTimeout(function() {
+				if (del) {
+					// Delete me
+					t.div.remove();
+					delete t;
+				} else {
+					t.status.html('');
+				}
+			}, 3000);
+		}
+	}
 	
 	var editor = function(obj, file, editable) {
 		this.obj = obj;
@@ -41,6 +66,7 @@ var editor = (function() {
 			var div, dDiv, iDiv, img;
 			
 			this.obj.append((div = $('<div></div>')));
+			this.div = div;
 			div.addClass('gHEditor');
 
 			div.append('<h5>' + this.file.file + '</h5>');
@@ -101,7 +127,7 @@ var editor = (function() {
 			};
 
 			$.post(ajaxurl + '?action=gh_save', {a: 'save', data: data},
-					rFunc(this._confirmAction, this, true));
+					confirmAction.bind(this, false));
 			this.status.html('Saving...');
 		},
 
@@ -112,7 +138,7 @@ var editor = (function() {
 			if (confirm('Image will be removed from the gallery, but not deleted '
 					+ 'from the server. Continue?')) {
 				$.post(ajaxurl + '?action=gh_save', {a: 'remove', id: this.file.id},
-						rFunc(this._confirmAction, this, true));
+						confirmAction.bind(this, true));
 				this.status.html('Removing...');
 			}
 		},
@@ -124,29 +150,8 @@ var editor = (function() {
 			if (confirm('Image will be removed from the gallery and deleted from '
 					+ 'the server. Continue?')) {
 				$.post(ajaxurl + '?action=gh_save', {a: 'delete', id: this.file.id},
-						rFunc(this._confirmAction, this, true));
+						confirmAction.bind(this, true));
 				this.status.html('Deleting...');
-			}
-		},
-
-		/**
-		 * Confirms actions by receiving the POST response
-		 */
-		_confirmAction: function(data, textStatus, jqXHR) {
-			if (data instanceof Object) {
-				if (data.error) {
-					this.status.html(data.error);
-				} else {
-					this.status.html(data.msg);
-				}
-
-				var t = this;
-
-				setTimeout(function() {
-					if (data.remove) {
-					}
-					t.status.html('');
-				}, 3000);
 			}
 		},
 	};

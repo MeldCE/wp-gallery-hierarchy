@@ -43,7 +43,6 @@ class GHierarchy {
 			'fields' => array(
 				'id' => 'smallint(5) NOT NULL AUTO_INCREMENT',
 				'file' => 'text NOT NULL',
-				'dir' => 'text',
 				'dir_id' => 'smallint(5) unsigned',
 				'width' => 'smallint(5) unsigned NOT NULL',
 				'height' => 'smallint(5) unsigned NOT NULL',
@@ -389,6 +388,15 @@ class GHierarchy {
 							'type' => 'number',
 							'default' => 50,
 						),
+						'upload_chunk_size' => array(
+							'title' => __('File upload chunk size', 'gallery_hierarchy'),
+							'description' => __('Size (in kB) to break files into for '
+									. 'upload. Can be used to work around server maximum upload '
+									. 'file size settings. Set to 0 not chunk files to upload.',
+									'gallery_hierarchy'),
+							'type' => 'number',
+							'default' => 1024,
+						),
 						'local_resize' => array(
 							'title' => __('Resize Locally During Upload',
 									'gallery_hierarchy'),
@@ -405,18 +413,6 @@ class GHierarchy {
 									'gallery_hierarchy'),
 							'type' => 'number',
 							'default' => 10,
-						),
-						'store_dir_ref_only' => array(
-							'title' => __('Store directory reference only with image',
-									'gallery_hierarchy'),
-							'description' => __('If this option is checked, only a '
-									. 'reference to the image directory will be stored with the '
-									. 'image rather than the full path of the directory. This '
-									. 'will stop the full path being stored for each folder, '
-									. 'but will mean a few more operations have to be completed '
-									. 'to retrieve the image.', 'gallery_hierarchy'),
-							'type' => 'boolean',
-							'default' => 'false'
 						),
 						'load_full_tree' => array(
 							'title' => __('Load the full directory structure',
@@ -505,22 +501,19 @@ class GHierarchy {
 			wp_enqueue_style('plupload',
 					plugins_url('/lib/css/jquery.plupload.queue.css', dirname(__FILE__)));
 		}
+		if ($hook_suffix == 'gallery-hierarchy_page_gHOptions') {
+			wp_enqueue_style('wpsettings',
+					plugins_url('/css/wpsettings.min.css', dirname(__FILE__)));
+			wp_enqueue_script('wpsettings', 
+					plugins_url('/js/wpsettings.min.js', dirname(__FILE__)),
+					array('jquery'));
+		}
 		/// @todo @see http://codex.wordpress.org/I18n_for_WordPress_Developers
 		wp_enqueue_script('ghierarchy', 
 				plugins_url('/js/ghierarchy.js', dirname(__FILE__)));
 		//wp_enqueue_style( 'dashicons' );
 		wp_enqueue_style('ghierarchy',
 				plugins_url('/css/ghierarchy.min.css', dirname(__FILE__)), array('dashicons'));
-		wp_enqueue_script('jquery-ui-multiselect', 
-				plugins_url('/lib/js/jquery.multiselect.min.js', dirname(__FILE__)),
-				array('jquery', 'jquery-ui-core'));
-		wp_enqueue_script('jquery-ui-multiselect-filter', 
-				plugins_url('/lib/js/jquery.multiselect.filter.min.js', dirname(__FILE__)),
-				array('jquery', 'jquery-ui-core', 'jquery-ui-multiselect'));
-		wp_enqueue_style('jquery-ui-multiselect',
-				plugins_url('/lib/css/jquery.multiselect.css', dirname(__FILE__)));
-		wp_enqueue_style('jquery-ui-multiselect-filter',
-				plugins_url('/lib/css/jquery.multiselect.filter.css', dirname(__FILE__)));
 		wp_enqueue_script('media-upload');
 		wp_enqueue_script('jquery-ui-timepicker', 
 				plugins_url('/lib/js/jquery-ui-timepicker-addon.js', dirname(__FILE__)),
@@ -669,40 +662,19 @@ class GHierarchy {
 				}
 			}
 			if ($_POST['folders']) {
-				if (static::$settings->store_dir_ref_only) {
-					if ($_POST['recurse']) {
-						// Get all the directories under the selected directories
-						if ($folders = $wpdb->get_col('SELECT id FROM ' . $me->dirTable 
-								. ' WHERE dir IN (SELECT dir FROM ' . $me->dirTable 
-								. ' WHERE id IN (' . join(', ', $_POST['folders']) . ')')) {
-						} else {
-							// @todo Handle error?
-							$folders = false;
-						}
-					} else {
-						$folders = $_POST['folders'];
-					}
-
-					if ($folders) {
-						$parts[] = 'dir_id IN (' . join(', ', $folders) . ')';
-					}
+				if ($_POST['recurse']) {
+					$fids = $wpdb->get_col('SELECT id FROM ' . $me->dirTable
+							. ' WHERE dir REGEXP CONCAT(\'^\', (SELECT '
+							. 'GROUP_CONCAT(dir SEPARATOR \'|\') FROM '
+							. $me->dirTable . ' WHERE id IN ('
+							. join(', ', $_POST['folders']) . ')))');
 				} else {
-					if (($result = $wpdb->get_col('SELECT dir FROM '
-							. $me->dirTable . ' WHERE id IN (' . join(',', $_POST['folders'])
-							. ')'))) {
-						
-						
-						$q = array();
-						if ($_POST['recurse']) {
-							foreach ($result as &$f) {
-								$q[] = 'dir LIKE (\''
-										. preg_replace('/([%\\\'])/', '\\\1', $f) . '%\')';
-							}
-							$parts[] = join(' OR ', $q);
-						} else {
-							$parts[] = 'dir IN (\'' . join('\', \'', $result) . '\')';
-						}
-					}
+					$fids = $wpdb->get_col('SELECT id FROM ' . $me->dirTable
+							. ' WHERE id IN (' . join(', ', $_POST['folders']) . ')');
+				}
+				
+				if ($fids) {
+					$parts[] = 'dir_id IN (' . join(', ', $fids) . ')';
 				}
 			}
 		}
@@ -757,12 +729,11 @@ class GHierarchy {
 		}
 
 		// Build Query
-		if (static::$settings->store_dir_ref_only) {
-		} else {
-			$q = 'SELECT *, CONCAT(dir, \'' . DIRECTORY_SEPARATOR . '\', file) '
-					. 'AS path FROM ' . $me->imageTable . ($parts ? ' WHERE (('
-					.join(') AND (', $parts) . ')' . ')' : '');
-		}
+		$q = 'SELECT *, CONCAT((SELECT dir FROM ' . $me->dirTable . ' WHERE id = '
+				.'dir_id), \'' . DIRECTORY_SEPARATOR . '\', file) '
+				. 'AS path FROM ' . $me->imageTable . ($parts ? ' WHERE (('
+				.join(') AND (', $parts) . ')' . ')' : '');
+	
 		$images = $wpdb->get_results($q, ARRAY_A);
 
 		header('Content-Type: application/json');
@@ -776,61 +747,121 @@ class GHierarchy {
 		global $wpdb;
 
 		$me = static::instance();
-
-		switch($_REQUEST['a']) {
-			case 'save':
-				// Go through data to see if we have valid changes
-				if (is_array($_POST['data'])) {
-					foreach ($_POST['data'] as $i => &$data) {
-						if (gHisInt($i)) {
-							$parts = array();
-							foreach ($data as $f => &$v) {
-								switch ($f) {
-									case 'exclude':
-										if ($v) {
-											$v = 1;
-										} else {
-											$v = 0;
-										}
-										break;
-									case 'taken':
-									case 'title':
-									case 'comment':
-									case 'tags':
-									case 'exclude':
-									default:
-										continue;
+		if (current_user_can('edit_others_pages')) {
+			switch($_REQUEST['a']) {
+				case 'save':
+					// Go through data to see if we have valid changes
+					if (is_array($_POST['data'])) {
+						foreach ($_POST['data'] as $i => &$data) {
+							if (gHisInt($i)) {
+								$parts = array();
+								foreach ($data as $f => &$v) {
+									switch ($f) {
+										case 'exclude':
+											if ($v) {
+												$v = 1;
+											} else {
+												$v = 0;
+											}
+											break;
+										case 'taken':
+										case 'title':
+										case 'comment':
+										case 'tags':
+										case 'exclude':
+										default:
+											continue;
+									}
+									$parts[$f] = $v;
 								}
-								$parts[$f] = $v;
-							}
 
-							if ($parts) {
-								if (!$wpdb->update($me->imageTable, $parts, array('id' => $i))) {
-									$response = array(
-										'error' => __('There was an error updating the images. '
-												. 'Please try again', 'gallery_hierarchy') //$wpdb->last_error;
-									);
-									break;
+								if ($parts) {
+									if (!$wpdb->update($me->imageTable, $parts, array('id' => $i))) {
+										$response = array(
+											'error' => __('There was an error updating the images. '
+													. 'Please try again', 'gallery_hierarchy') //$wpdb->last_error;
+										);
+										break;
+									}
 								}
 							}
 						}
 					}
-				}
-				
-				$response = array(
-					'msg' => __('Images updated successfully', 'gallery_hierarchy')
-				);
+					
+					$response = array(
+						'msg' => __('Images updated successfully', 'gallery_hierarchy')
+					);
 
-				break;
-			case 'delete':
-				break;
-			case 'remove':
-				break;
-			default:
-				$response = array(
-					'error' => __('Unknown action', 'gallery_hierarchy')
-				);
+					break;
+				case 'remove':
+				case 'delete':
+					if (!isset($_REQUEST['id']) || !gHisInt($_REQUEST['id'])) {
+						$response = array(
+							'error' => __('Invalid image',
+									'gallery_hierarchy')
+						);
+						break;
+					}
+
+					// Get the directory
+					if (!($file = $wpdb->get_var($wpdb->prepare('SELECT CONCAT((SELECT '
+							. 'dir FROM ' . $me->dirTable . ' WHERE id = dir_id), %s, '
+							. 'file) FROM ' . $me->imageTable . ' WHERE id = %d',
+							DIRECTORY_SEPARATOR, $_REQUEST['id'])))) {
+						$response = array(
+							'error' => __('Didn\'t receive a valid image to remove/delete.',
+									'gallery_hierarchy'),
+							'cmd' => $wpdb->prepare('SELECT CONCAT((SELECT '
+							. 'dir FROM ' . $me->dirTable . ' WHERE id = dir_id), %s, '
+							. 'file) FROM ' . $me->imageTable . ' WHERE id = %d',
+							DIRECTORY_SEPARATOR, $_REQUEST['id'])
+						);
+						break;
+					}
+
+					// Delete if we need to
+					if ($_REQUEST['a'] == 'delete') {
+						// Find and delete files
+						$path = gHPath($me->imageDir, $file);
+						if (is_file($path)) {
+							unlink($path);
+						}
+
+						$me->delCacheFiles($path);
+					}
+
+					// Remove from database
+					if ($wpdb->delete($me->imageTable, array('id' => $_REQUEST['id']))) {
+						if ($_REQUEST['a'] == 'delete') {
+							$response = array(
+								'msg' => __('Image deleted successfully', 'gallery_hierarchy')
+							);
+						} else {
+							$response = array(
+								'msg' => __('Image removed successfully', 'gallery_hierarchy')
+							);
+						}
+
+						break;
+					} else {
+						$response = array(
+							'error' => __('Could not confirm the removal of the image from '
+									. 'the database. Please try again.', 'gallery_hierarchy')
+						);
+					}
+					break;
+				default:
+					$response = array(
+						'error' => __('Unknown action', 'gallery_hierarchy')
+					);
+			}
+		} else {
+			$response = array(
+				'error' => __('Permission Denied', 'gallery_hierarchy')
+			);
+			break;
 		}
+
 
 		header('Content-Type: application/json');
 		
@@ -1093,6 +1124,15 @@ class GHierarchy {
 		return $html;
 	}
 
+	protected static function delTree($dir) { 
+   $files = array_diff(scandir($dir), array('.','..')); 
+    foreach ($files as $file) { 
+			$path = $dir . DIRECTORY_SEPARATOR . $file;
+      (is_dir($path)) ? static::delTree($path) : unlink($path); 
+    } 
+    return rmdir($dir); 
+  }
+
 	/**
 	 * Handle Requests coming from JQuery-folders
 	 */
@@ -1108,6 +1148,13 @@ class GHierarchy {
 
 		switch($action) {
 			case 'create':
+				if (!current_user_can('edit_others_pages')) {
+					$response = array(
+						'error' => __('Permission Denied', 'gallery_hierarchy')
+					);
+					break;
+				}
+
 				if (!isset($_REQUEST['name'])) {
 					$response = array(
 						'error' => __('Didn\'t receive a name for the new folder',
@@ -1165,6 +1212,65 @@ class GHierarchy {
 
 				$response = array(
 					'id' => $id
+				);
+
+				break;
+			case 'delete':
+				if (!current_user_can('edit_others_pages')) {
+					$response = array(
+						'error' => __('Permission Denied', 'gallery_hierarchy')
+					);
+					break;
+				}
+
+				if (!isset($_REQUEST['id']) || !gHisInt($_REQUEST['id'])) {
+					$response = array(
+						'error' => __('Didn\'t receive a valid folder to delete',
+								'gallery_hierarchy')
+					);
+					break;
+				}
+			
+				// Get dir path
+				if (!($dir = $wpdb->get_var('SELECT dir FROM ' . $me->dirTable
+						. ' WHERE id = \'' . $_REQUEST['id'] . '\''))) {
+					$response = array(
+						'error' => __('Couldn\'t find the folder to delete',
+								'gallery_hierarchy')
+					);
+					break;
+				}
+
+				// Get sub-directories
+				if (($ids = $wpdb->get_col('SELECT id FROM ' . $me->dirTable
+						. ' WHERE  dir LIKE \'' . $dir . DIRECTORY_SEPARATOR . '%\''))) {
+					$ids[] = $_REQUEST['id'];
+					$where = 'IN (' . join($ids, ', ') . ')';
+				} else {
+					$where = '= ' . $_REQUEST['id'];
+				}
+
+				// Physically delete
+				$me::delTree(gHPath($me->imageDir, $dir));
+
+				// @todo Delete all thumbnails
+				$me->delCacheFiles($dir);
+
+				// Delete images
+				$wpdb->query('DELETE FROM ' . $me->imageTable . ' WHERE dir_id '
+						. $where);
+
+				$imagesNum = $wpdb->rows_affected;
+
+				// Delete folders
+				$wpdb->query('DELETE FROM ' . $me->dirTable . ' WHERE id '
+						. $where);
+
+				$foldersNum = $wpdb->rows_affected;
+
+				$response = array(
+					'msg' => __("$imagesNum images deleted and $foldersNum folders "
+							. "deleted", 'gallery_hierarchy')
 				);
 
 				break;
@@ -1320,13 +1426,13 @@ class GHierarchy {
 		}
 
 		// Folders field
-		echo '<p><label for="' . $id . 'folder">' . __('Folders:',
+		echo '<div><label for="' . $id . 'folder">' . __('Folders:',
 				'gallery_hierarchy') . '</label> '
 				. $this->createFolderSelect($id . 'folder', array(
 					'multiple' => true,
 					'selection' => 'function (files) { gH.changeFolder(\'' . $id
 							. '\', files); }'
-				)) . '</p>';
+				)) . '</div>';
 
 		echo '<p><label for="' . $id . 'recurse">' . __('Include Subfolders:',
 				'gallery_hierarchy') . '</label> <input type="checkbox" name="' . $id
@@ -1428,15 +1534,14 @@ class GHierarchy {
 		echo '</p>';
 
 		// Pagination
-		echo '<p class="tablenav"><label for="' . $id . 'limit">' . __('Images per page:',
+		/** @xxx echo '<p class="tablenav"><label for="' . $id . 'limit">' . __('Images per page:',
 				'gallery_hierarchy') . '</label> <input type="number" name="' . $id
 				. 'limit" id="' . $id. 'limit" onchange="gH.repage(\'' . $id
 				. '\');" value="' . static::$settings->num_images . '"><span id="'
-				. $id . 'pages" class="tablenav-pages"></span></p>';
+				. $id . 'pages" class="tablenav-pages"></span></p>';*/
 
 		// Photo div
-		echo '<div id="' . $id . 'pad" class="gHpad'
-				. ($insert ? ' builderOn' : '') . '"></div>';
+		echo '<div id="' . $id . 'pad"></div>';
 		/// @todo Add admin_url('admin-ajax.php')
 		echo '<script>gH.gallery(\'' . $id . '\', ' . ($insert ? 1 : 0) . ');</script>';
 	}
@@ -1569,7 +1674,11 @@ class GHierarchy {
 
 		$options['ajaxScript'] = '\''
 				. admin_url('admin-ajax.php?action=gh_folder') . '\'';
-				
+		
+		if (($size = static::$settings->upload_chunk_size)) {
+			$options['chunk_size'] = "'${size}kb'";
+		}
+
 		$parts = array();
 		foreach ($options as $o => $v) {
 			if (is_array($v)) {
@@ -1775,7 +1884,6 @@ class GHierarchy {
 				if (isset($part[1]) && $part[1]) {
 					switch($part[0]) {
 						case 'rfolder':
-							$like = true;
 						case 'folder':
 							$fids = explode('|', $part[1]);
 							// Make sure fids are only numbers
@@ -1787,10 +1895,20 @@ class GHierarchy {
 									$f++;
 								}
 							}
-							if ($fids && ($result = $wpdb->get_col('SELECT dir FROM '
-									. $me->dirTable . ' WHERE id IN (' . join(',', $fids)
-									. ')'))) {
-								$folders = array_merge($folders, $result);
+							if ($part[0] == 'rfolder') {
+								$fids = $wpdb->get_col('SELECT id FROM ' . $me->dirTable
+										. ' WHERE dir REGEXP CONCAT(\'^\', (SELECT '
+										. 'GROUP_CONCAT(dir SEPARATOR \'|\') FROM '
+										. $me->dirTable . ' WHERE id IN (' . join(', ', $fids)
+										. ')))');
+							} else {
+								$fids = $wpdb->get_col('SELECT id FROM ' . $me->dirTable
+										. ' WHERE id IN (' . join(', ', $fids) . ')');
+							}
+							
+							if ($fids) {
+								$folders[] = 'dir_id IN ('
+										. join(', ', array_unique($fids)) . ')';
 							}
 							break;
 						case 'taken':
@@ -1850,12 +1968,7 @@ class GHierarchy {
 
 		// Build Folders
 		if ($folders) {
-			$q = array();
-			foreach ($folders as &$f) {
-				$q[] = 'file LIKE (\'' . preg_replace('/([%\\\'])/', '\\\1', $f)
-						. DIRECTORY_SEPARATOR . '%\')';
-			}
-			$query['folders'] = join(' OR ', $q);
+			$query['folders'] = '(' . join(' OR ', $folders) . ')';
 		}
 
 		if ($query) {
@@ -1863,10 +1976,13 @@ class GHierarchy {
 			. (isset($atts['include_excluded']) && $atts['include_excluded']
 			? ' AND excluded=0' : '') . ')';
 		}
-		$q = 'SELECT * FROM ' . $me->imageTable 
+		$q = 'SELECT f.*, CONCAT(d.dir, \'/\', f.file) AS path FROM '
+				. $me->imageTable . ' AS f JOIN ' . $me->dirTable
+				. ' AS d ON d.id = f.dir_id '
 				. ($w ? ' WHERE ' . join(' OR ', $w) : '');
+		echo "command is $q\n";
 		$images = $wpdb->get_results($q, OBJECT_K);
-
+		
 		// Rebuild array if based on ids @todo Implement attribute for this
 		// Determine position of specified images based on positional weighting
 		if ($ids) {
@@ -1989,7 +2105,8 @@ class GHierarchy {
 					$atts['type'] = static::$settings->thumb_album;
 				}
 
-				if (isset($atts['type']) && isset($albums[$atts['type']])) {
+				if (isset($albums[$atts['type']])) {
+					$albums[$atts['type']]['class']::enqueue();
 					$html = $albums[$atts['type']]['class']::printAlbum($images, $atts);
 				}
 				break;
@@ -2268,7 +2385,6 @@ class GHierarchy {
 
 
 			// Add images
-			$storeDirRefOnly = static::$settings->store_dir_ref_only;
 			
 			//Get current images
 			$images = $wpdb->get_results('SELECT id,file,dir,dir_id,updated FROM ' 
@@ -2361,20 +2477,9 @@ class GHierarchy {
 
 		print "trying to find $dir $file\n";
 
-		if ($storeDirRefOnly) {
-			print "Stored ref only";
-			if (($dir = $this->getDirectoryId($dir))) {
-				foreach ($images as $id => &$image) {
-					if ($image->file == $file && $image->dir_id == $dir) {
-						print "Found $id";
-						return $id;
-					}
-				}
-			}
-		} else {
-			print "Stored path";
+		if (($dir = $this->getDirectoryId($dir))) {
 			foreach ($images as $id => &$image) {
-				if ($image->file == $file && $image->dir == $dir) {
+				if ($image->file == $file && $image->dir_id == $dir) {
 					print "Found $id";
 					return $id;
 				}
@@ -2584,6 +2689,19 @@ class GHierarchy {
 		return null;
 	}
 
+	protected function delCacheFiles($path) {
+		$name = str_replace(DIRECTORY_SEPARATOR, '_', $path);
+
+		$path = gHPath($this->cacheDir, $path . '*');
+
+		$files = glob($path);
+		foreach($files as $file){
+			if(is_file($file)) {
+				unlink($file);
+			}
+		}
+	}
+
 	/**
 	 * Returns the path to the cached image for a specific image and
 	 * width and height
@@ -2603,12 +2721,8 @@ class GHierarchy {
 			$ext = array_pop($file);
 			$file = join('.', $file);
 
-			if (static::$settings->store_dir_ref_only) {
-				if (($dir = $me->getDirectory($image->dir_id)) !== false) {
-					$file = gHpath($dir, $image->file);
-				}
-			} else {
-				$file = gHpath($image->dir, $image->file);
+			if (($dir = $this->getDirectory($image->dir_id)) !== false) {
+				$file = gHpath($dir, $image->file);
 			}
 		}
 
@@ -2632,13 +2746,14 @@ class GHierarchy {
 	static function getImageURL(stdClass &$image) {
 		$me = static::instance();
 
-		if (static::$settings->store_dir_ref_only) {
-			if (($dir = $me->getDirectory($image->dir_id)) !== false) {
-				return gHurl($me->imageUrl, $dir, $image->file);
-			}
+		if (isset($image->path)) {
+			return gHurl($me->imageUrl, $image->path);
+		}
+		if (($dir = $me->getDirectory($image->dir_id)) !== false) {
+			return gHurl($me->imageUrl, $dir, $image->file);
 		}
 
-		return gHurl($me->imageUrl, $image->dir, $image->file);
+		return null;
 	}
 
 	/**
@@ -2684,6 +2799,21 @@ class GHierarchy {
 	protected function createThumbnail($image, &$imagick = null) {
 		$thumbnailSize = static::$settings->thumbnail_size;
 		$crop = static::$settings->crop_thumbnails;
+
+		if (!$imagick) {
+			$write = true;
+			$iPath = gHpath($this->imageDir, $image);
+
+			// Check we have a valid image
+			if (!is_file($iPath) || !in_array(finfo_file($this->finfo,
+					$iPath), $this->imageMimes)) {
+				return false; /// @todo Do something worse
+			}
+
+			// Create an image (for resizing, rotating and thumbnail)
+			$imagick = new Imagick();
+			$imagick->readImage($iPath);
+		}
 
 		$this->resizeImage($image, $imagick, $thumbnailSize, $crop);
 
@@ -3048,16 +3178,11 @@ class GHierarchy {
 		);
 		
 		// Build file and dir
-		if (static::$settings->store_dir_ref_only) {
-			if (($dir_id = $this->getDirectoryId(dirname($img)))) {
-				$data['dir_id'] = $dir_id;
-			} else {
-				// @todo Folder does not exist....? Could move directory registration
-				// to here...
-			}
-			$data['dir_id'] = $dir_id;
+		if (($dirId = $this->getDirectoryId(dirname($img)))) {
+			$data['dir_id'] = $dirId;
 		} else {
-			$data['dir'] = dirname($img);
+			// @todo Folder does not exist....? Could move directory registration
+			// to here...
 		}
 		
 		if ($taken) $data['taken'] = $taken;
@@ -3114,10 +3239,10 @@ class GHierarchy {
 		
 		if ($this->directories === false) {
 			$dirObjects = $wpdb->get_results('SELECT id, dir FROM '
-					. $this->dirTable, ARRAY_K);
-			$this->directories = array();
-
+					. $this->dirTable, OBJECT_K);
 			if ($dirObjects) {
+				$this->directories = array();
+
 				foreach ($dirObjects as &$dir) {
 					$this->directories[$dir->id] = $dir->dir;
 				}
@@ -3169,22 +3294,55 @@ class GHierarchy {
 			$cols = static::getTableColumns($me->imageTable);
 
 			// Add columns if they don't exist
-			if (!isset($cols['dir'])) {
-				$wpdb->query('ALTER TABLE ' . $me->imageTable . ' ADD dir '
-						. static::$imageTableFields['fields']['dir']);
-			}
 			if (!isset($cols['dir_id'])) {
 				$wpdb->query('ALTER TABLE ' . $me->imageTable . ' ADD dir_id '
 						. static::$imageTableFields['fields']['dir_id']);
 			}
 
-			static::changeFolderStorageMethod();
+			// Redo all image file and directory fields
+			if (($folders = $me->getDirectories())) {
+				// Get all the images
+				if ($images = $wpdb->get_results('SELECT id, file, dir, dir_id FROM '
+						. $me->imageTable, ARRAY_A)) {
+
+					$s = DIRECTORY_SEPARATOR;
+					foreach ($images as &$image) {
+						$newData = array();
+						// Check if we have a valid folder
+						if (($ref = array_search(dirname($image['file']), $folders)) !== false) {
+							$newData = array(
+								'dir_id' => $ref,
+								'file' => basename($image['file'])
+							);
+						} else {
+							trigger_error('Unknown folder ' . dirname($image['file'])
+									. ' for image ' . $image['file']);
+						}
+
+						$parts = array();
+						foreach ($newData as $n => $v) {
+							if (is_null($v)) {
+								array_push($parts, $n . ' = NULL');
+							} else {
+								array_push($parts, $n . ' = \'' . esc_sql($v)
+										. '\'');
+							}
+						}
+
+						// @todo Test with using $wpdb->update - will need to check if can
+						// handle NULL values
+						$cmd = 'UPDATE ' . $me->imageTable . ' SET ' . join($parts, ', ')
+								. ' WHERE id = \'' . $image['id'] . '\'';
+						$wpdb->query($cmd);
+					}
+				}
+			}
 		}
 
 		if ($current < 4) {
 			/**
 			 * Update version 4 - added the parent field to the directory table so
-			 * that the child folders can be looked up a little easier/faster
+			 * that the folder hierarchy can be looked up a little easier/faster
 			 */
 			// Get columns of current table
 			$cols = static::getTableColumns($me->dirTable);
@@ -3235,107 +3393,6 @@ class GHierarchy {
 		dbDelta($sql);
 
 		static::$settings->db_version = static::$dbVersion;
-	}
-
-	static protected function changeFolderStorageMethod() {
-		global $wpdb;
-		$me = static::$instance;
-		$s = DIRECTORY_SEPARATOR;
-		
-		$storeRefOnly = static::$settings->store_dir_ref_only;
-		
-		// Get the current folders
-		if (($folders = $me->getDirectories())) {
-			// Get all the images
-			$images = $wpdb->get_results('SELECT id, file, dir, dir_id FROM '
-					. $me->imageTable, ARRAY_A);
-
-			foreach ($images as &$image) {
-				$newData = array();
-				// Check if there are directory separators in the file name
-				if (strstr($image['file'], $s) !== FALSE) {
-					// Check if we have a valid folder
-					if (($ref = array_search(dirname($image['file']), $folders)) !== false) {
-						if ($storeRefOnly) {
-							$newData = array(
-								'dir' => null,
-								'dir_id' => $ref
-							);
-						} else {
-							$newData = array(
-								'dir' => dirname($image['file']),
-								'dir_id' => null
-							);
-						}
-						$newData['file'] = basename($image['file']);
-					} else {
-						trigger_error('Unknown folder ' . dirname($image['file'])
-								. ' for image ' . $image['file']);
-					}
-
-					basename($image['file']);
-				} else {
-					// Find the current reference to the folder
-					if ($image['dir']) {
-						if ($storeRefOnly) {
-							if (($ref = array_search($image['dir'], $folders)) !== false) {
-								$newData = array(
-									'dir' => null,
-									'dir_id' => $ref
-								);
-							} else {
-								trigger_error('Unknown folder ' . dirname($image['file'])
-										. ' for image ' . $image['file']);
-							}
-						} else {
-							if ($image['dir_id']) {
-								$newData = array(
-									'dir_id' => null
-								);
-							}
-						}
-					} else if ($image['dir_id']) {
-						if (!$storeRefOnly) {
-							if (isset($folders[$image['dir_id']])) {
-								$newData = array(
-									'dir' => $folders[$image['dir_id']],
-									'dir_id' => null
-								);
-							} else {
-								trigger_error('Unknown folder ref ' . $image['dir_id']
-										. ' for image ' . $image['file']);
-							}
-						} else {
-							if ($image['dir']) {
-								$newData = array(
-									'dir' => null
-								);
-							}
-						}
-					} else {
-						trigger_error('Orphaned image ' . $image['file']);
-					}
-				}
-
-				if ($newData) {
-					$parts = array();
-					foreach ($newData as $n => $v) {
-						if (is_null($v)) {
-							array_push($parts, $n . ' = NULL');
-						} else {
-							array_push($parts, $n . ' = \'' . esc_sql($v)
-									. '\'');
-						}
-					}
-
-					// @todo Test with using $wpdb->update - will need to check if can
-					// handle NULL values
-					$cmd = 'UPDATE ' . $me->imageTable . ' SET ' . join($parts, ', ')
-							. ' WHERE id = \'' . $image['id'] . '\'';
-					$wpdb->query($cmd);
-				}
-			}
-		}
 	}
 
 	/**

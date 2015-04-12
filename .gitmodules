@@ -28,3 +28,6 @@
 [submodule "src/lib/jquery-folders"]
 	path = src/lib/jquery-folders
 	url = https://github.com/MeldCE/jquery-folders.git
+[submodule "src/lib/jquery-hierarchy-select"]
+	path = src/lib/jquery-hierarchy-select
+	url = https://github.com/MeldCE/jquery-hierarchy-select

@@ -3,3 +3,6 @@
 - For featured gallery, have the ability to use the post images/queries as the
 	feature gallery.
 - Use a PHP to deliver image files instead of directly accessing images
+- Add md5 hash to database to check for file movements?
+- Added uploaded by user to images and directory tables so can start doing
+  permissions on stuff
