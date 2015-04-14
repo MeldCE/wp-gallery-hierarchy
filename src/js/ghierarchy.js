@@ -1,3 +1,7 @@
+
+// @todo Remove
+//= include floater.js
+
 gH = (function ($) {
 	var g = {},
 			scanner = {},
@@ -14,6 +18,12 @@ gH = (function ($) {
 	//= include scanner.js
 	//= include browser.js
 
+	$.viewer.option('gHBrowser', {
+		generators: {
+			imageEditor: displayImageEditor.bind(this)
+		},
+		default: 'imageEditor'
+	});
 
 	/**
 	 * Create html to display an image into a given JQueryDOMObject
@@ -22,13 +32,54 @@ gH = (function ($) {
 	 * @param file Object Object containing information on the file
 	 */
 	function displayImage(id, obj, file) {
-		obj.append($('<a href="' + imageUrl + '/' + file.path + '" data-lightbox="' + id
-				+ '" data-title="ID: ' + file.id + '.'
-				+ (file.title ? '<br>Title: '
-				+ file.title + '.' : '')
-				+ (file.comment ? '<br>Comment: '
-				+ file.comment + '.' : '') + '"><img src="'
-				+ this.thumbnail(file.path) + '"></a>'));
+		obj.append($('<a href="' + imageUrl + '/' + file.path
+				+ '" target="_blank"><img src="'
+				+ this.thumbnail(file.path) + '"></a>')
+				.viewer(null, 'gHBrowser').data('imageData', file));
+	}
+
+	function displayImageEditor(link, objects) {
+		console.log('in displayer');
+		console.log(link);
+		console.log(link.data());
+		var editor = new Editor(objects.div, link.data('imageData'), {
+			fullImage: true
+		});
+
+		editor.img.ready(function() {
+			//calculateImageHeight.call(this);
+			calculateImageHeight(objects, editor);
+
+			window.addEventListener('resize',
+					calculateImageHeight.bind(this, objects, editor));
+		}.bind(this));
+	}
+
+	function calculateImageHeight(objects, editor) {
+		var oWidth = editor.img.prop('naturalWidth');
+		var oHeight = editor.img.prop('naturalHeight');
+
+		console.log('orig w' + oWidth + ' h' + oHeight);
+
+		// Start with window width and height minus padding (2*15px)
+		var width = window.innerWidth - 40;
+		var height = window.innerHeight - 90;
+
+		// Calculate side-by-side
+		var sWidth = width - (objects.div.innerWidth() - editor.img.innerWidth());
+		var sHeight = height - (objects.div.innerHeight() - editor.img.innerHeight());
+
+		// Calculate on top
+		//width -= 
+
+		// Make image best height / width
+		if ((sWidth / oWidth) > (sHeight / oHeight)) {
+			editor.img.height(sHeight);
+			editor.img.width(oWidth / oHeight * sHeight);
+		} else {
+			editor.img.height(oHeight / oWidth * sWidth);
+			editor.img.width(sWidth);
+		}
 	}
 
 	function gallerySelect(gid, ids, files) {
@@ -262,6 +313,10 @@ gH = (function ($) {
 
 		thumbnail: function(image) {
 			return cacheUrl + '/' + image.replace(/\//g, '_');
+		},
+
+		full: function(image) {
+			return imageUrl + '/' + image;
 		},
 
 		/**
@@ -612,5 +667,3 @@ gH = (function ($) {
 	return pub;
 })(jQuery);
 
-// @todo Remove
-//= include floater.js

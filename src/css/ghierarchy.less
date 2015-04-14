@@ -30,11 +30,12 @@
 }
 
 div.gHEditor {
-	border: solid 1px #333;
+	/* @todo border: solid 1px #333;*/
 	
 	> div, /* Image container */
 	>	table { /* Data container */
-		display: table-cell;
+		display: inline-block;
+		vertical-align: middle;
 	}
 
 	> div {
@@ -42,6 +43,8 @@ div.gHEditor {
 	}
 
 	> table {
+		margin: 10px;
+
 		th {
 			text-align: left;
 		}
@@ -200,8 +203,11 @@ div.gHBrowser {
 }
 
 div.fBacking {
-	display: table:
+	display: table;
 	position: fixed;
+	top: 0px;
+	left: 0px;
+	z-index: 10000;
 	width: 100%;
 	height: 100%;
 	background-color: rgba(200, 200, 200, .4);
@@ -209,15 +215,26 @@ div.fBacking {
 	> div {
 		display: table-cell;
 		vertical-align: middle;
+		text-align: center;
 
 		> div {
-			margin: 0px auto;
+			display: inline-block;
+			background-color: #fff;
 			position: relative;
+			border-radius: 5px;
+			box-shadow: 2px 2px 15px #444;
 
 			.close {
+				cursor: pointer;
 				position: absolute;
 				right: 2px;
 				top: 2px;
+				/*font-family: "dashicons";
+				font-weight: bold;
+				font-size: 30px;
+				width: 30px;
+				height:30px;
+				content: "\f153";*/
 			}
 
 			.left {

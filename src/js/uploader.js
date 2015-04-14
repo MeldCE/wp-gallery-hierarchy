@@ -22,7 +22,7 @@ function addUploadedFile(id, uploader, file, response) {
 
 			switch (file.type) {
 				case 'image': // Print the image and information
-					new editor(uploaders[id].uploadedDiv, file);
+					new Editor(uploaders[id].uploadedDiv, file);
 					break;
 			}
 		}

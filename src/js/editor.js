@@ -5,7 +5,7 @@
  * @param obj JQueryDOMObject DOM object for the editor to be appended to
  * @param file Object Object containing the information on the file
  */
-var editor = (function() {
+var Editor = (function() {
 	function drawRow(header, contents) {
 		var td, row = $('<tr></tr>');
 		if (header) {
@@ -50,64 +50,72 @@ var editor = (function() {
 		}
 	}
 	
-	var editor = function(obj, file, editable) {
+	var Editor = function(obj, file, options) {
 		this.obj = obj;
 		this.file = file;
-		this.editable = editable;
+		this.options = $.extend({
+			editable: true,
+			fullImage: false,
+			showFileTitle: true,
+		}, options);
 
 		this.draw();
 	};
 
-	editor.prototype = {
+	Editor.prototype = {
 		/**
 		 * Draws the image editor
 		 */
 		draw: function() {
+			this.parts = {}
 			var div, dDiv, iDiv, img;
 			
 			this.obj.append((div = $('<div></div>')));
 			this.div = div;
 			div.addClass('gHEditor');
 
-			div.append('<h5>' + this.file.file + '</h5>');
+			if (this.options.showFileTitle) {
+				div.append('<h5>' + this.file.file + '</h5>');
+			}
 			div.append((iDiv = $('<div></div>')));
-			iDiv.append((img = $('<img src="'
-					+ pub.thumbnail(this.file.path) + '">')));
-			div.append((details = $('<table></table>')));
+			iDiv.append((this.img = $('<img src="'
+					+ (this.options.fullImage ? pub.full(this.file.path) 
+					: pub.thumbnail(this.file.path)) + '">')));
+			div.append((this.details = $('<table></table>')));
 
 			// Print details
 			// File Name @todo Make so you can change
 			// Image Dimensions
-			details.append(drawRow('Image Dimensions:', 
+			this.details.append(drawRow('Image Dimensions:', 
 					this.file.width + 'x' + this.file.height + 'px'));
 			// Image Title
-			details.append(drawRow('Title:', 
+			this.details.append(drawRow('Title:', 
 					(this.title = $('<input type="text" value="'
 					+ (this.file.title ? this.file.title : '')
 					+ '">'))));
 			// Image Comment
-			details.append(drawRow('Comment:',
+			this.details.append(drawRow('Comment:',
 					(this.comment = $('<textarea>'
 					+ (this.file.comment ? this.file.comment : '') + '</textarea>'))));
 			// Image Tags
-			details.append(drawRow('Tags (comma-separated):', 
+			this.details.append(drawRow('Tags (comma-separated):', 
 					(this.tags = $('<input type="text" value="'
 					+ (this.file.tags ? this.file.tags : '')
 					+ '">'))));
 			// Image Gallery Exclusion
-			details.append(drawRow('Exclude by Default:', 
+			this.details.append(drawRow('Exclude by Default:', 
 					(this.exclude = $('<input type="checkbox"'
 					+ (this.file.exclude ? ' checked' : '') + '>'))));
 
 
 			// Image Actions
-			details.append(drawRow(null, [
+			this.details.append(drawRow(null, [
 				(this.saveLink = $('<a>Save</a>')
-						.click(rFunc(this.save, this, false))),
+						.click(this.save.bind(this))),
 				(this.removeLink = $('<a>Remove</a>')
-						.click(rFunc(this.remove, this, false))),
+						.click(this.remove.bind(this))),
 				(this.delLink = $('<a>Delete</a>')
-						.click(rFunc(this.delete, this, false))),
+						.click(this.delete.bind(this))),
 				(this.status = $('<span></span>'))
 			]));
 		},
@@ -122,7 +130,7 @@ var editor = (function() {
 				id: this.file.id,
 				title: this.title.val(),
 				comment: this.comment.val(),
-				tags: this.comment.val(),
+				tags: this.tags.val().replace(/ *, */, ','),
 				exclude: (this.exclude.attr('checked') ? 1 : 0)
 			};
 
@@ -156,6 +164,6 @@ var editor = (function() {
 		},
 	};
 
-	return editor;
+	return Editor;
 })();
 

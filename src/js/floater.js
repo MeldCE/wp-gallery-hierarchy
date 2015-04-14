@@ -53,23 +53,23 @@
 		autoscroll: 0,
 	};
 
-	function Floater(id, element) {
+	function Viewer(id, element) {
 		this.objects = {};
 		this.options = ((id && options[id]) ? options[id] : defaultOptions);
 
 		// Write floater
 		$('body').append((this.objects.backing = $('<div class="fBacking"></div>')
 				.append($('<div></div>').append((this.objects.box = $('<div></div>')
-				.append((object.div = $('<div></div>'))))))));
+				.append((this.objects.div = $('<div></div>'))))))));
 
 		// Add title and close
 		if (this.options.close) {
 			this.objects.box.prepend($('<div class="close">Close</div>')
-					.click(this.close.bind(this, this.objects)));
+					.click(this.close.bind(this)));
 		}
 
-		if (this.options.backgroudClose) {
-			this.objects.backing.click(this.close.bind(this, this.objects));
+		if (this.options.backgroundClose) {
+			this.objects.backing.click(this.close.bind(this));
 		}
 
 		// Determine if there are other files
@@ -79,7 +79,7 @@
 				// Find current object in group
 				var i = 0;
 				while (i < groups[id].length) {
-					if (groups[id][i].is($(this))) {
+					if (groups[id][i].is(element)) {
 						this.objects.current = i;
 						break;
 					}
@@ -88,7 +88,7 @@
 
 				if (!this.objects.current) {
 					this.objects.current = groups[id].length;
-					groups[id].push($(this));
+					groups[id].push(element);
 				}
 
 				this.objects.box.append((this.objects.left
@@ -113,17 +113,28 @@
 		// @todo Draw div
 		var type = this.options.default;
 		if (this.options.generators[type]) {
-			this.options.generators[type]($(this), this.objects);
+			this.options.generators[type](element, this.objects);
 		} else {
 			/// @todo Error
 		}
 	}
 
-	Floater.prototype = {
+	Viewer.prototype = {
 		/**
 		 * Close the floater stored in the given objects parameter
 		 */
-		close: function() {
+		close: function(ev) {
+			if (ev) {
+				if (!(ev.target === ev.currentTarget
+						|| !$.contains(this.objects.box.get(0), ev.target))) {
+					return;
+				}
+				ev.preventDefault();
+			}
+
+			// Kill myself
+			this.objects.backing.remove();
+			delete this;
 		},
 
 		/**
@@ -153,7 +164,14 @@
 	/**
 	 * Function that handles the actual opening on the div
 	 */
-	function open(id, element) {
+	function open(id, element, ev) {
+		if (ev) {
+			if (ev.defaultPrevented) {
+				return;
+			}
+			ev.preventDefault();
+		}
+
 		if (!element) {
 			if (!$(this)) {
 				return false;
@@ -161,7 +179,7 @@
 			element = $(this);
 		}
 
-		return new Floater(id, element);
+		return new Viewer(id, element);
 	}
 
 	function imageDraw() {
@@ -180,7 +198,7 @@
 				} else {
 					mergeOptions = defaultOptions;
 				}
-				options[id] = $.extend(mergeOptions, opts);
+				options[id] = $.extend({}, mergeOptions, opts);
 			}
 		}
 
@@ -202,19 +220,21 @@
 				groups[group].push($(this));
 
 				// Attach click function
-				$(this).click(open.bind(this, group));
+				$(this).click(open.bind(this, group, $(this)));
 			});
 		}
 	}
 
-	$.extend({
-		gHViewer: function(options, id) {
+	$.fn.extend({
+		viewer: function(options, id) {
 			initialise(options, id, $(this));
+
+			return $(this);
 		},
 	});
 
-	$.fn.extend({
-		gHViewer: {
+	$.extend({
+		viewer: {
 			open: function(data, options) {
 			},
 
@@ -229,6 +249,31 @@
 			 * @param value {any} New value for option
 			 */
 			option: function(id, option, value) {
+				if (option instanceof Object) {
+					if (id) {
+						options[id] = $.extend({},
+								(options[id] ? options[id] : defaultOptions), option);
+					} else {
+						defaultOptions = $.extend({}, defaultOptions, option);
+					}
+				} else {
+					var opts;
+					if (id) {
+						if (!options[id]) {
+							options[id] = $.extend({}, defaultOptions);
+						}
+						opts = options[id];
+					} else {
+						opts = defaultOptions;
+					}
+
+					if (value !== undefined) {
+						opts[option] = value;
+						return value;
+					} else {
+						return opts[option];
+					}
+				}
 			},
 
 			clearGroup: function(id) {
