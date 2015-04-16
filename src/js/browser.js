@@ -78,10 +78,8 @@ var Browser = (function($) {
 	 * @param id string Id of the current gallery
 	 */
 	function printFiles(offset) {
-		console.log('printFiles called');
 		// Stop if we have no images
 		if (!this.currentFiles) {
-			console.log('no files');
 			return;
 		}
 	

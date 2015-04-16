@@ -22,8 +22,7 @@ gH = (function ($) {
 		generators: {
 			imageEditor: displayImageEditor.bind(this)
 		},
-		default: 'imageEditor',
-		orderedSelection: true
+		default: 'imageEditor'
 	});
 
 	/**
@@ -43,9 +42,6 @@ gH = (function ($) {
 	 * Used to diplay the image editor in the floater window
 	 */
 	function displayImageEditor(link, objects) {
-		console.log('in displayer');
-		console.log(link);
-		console.log(link.data());
 		var editor = new Editor(objects.div, link.data('imageData'), {
 			fullImage: true
 		});
@@ -66,8 +62,6 @@ gH = (function ($) {
 	function calculateImageHeight(objects, editor) {
 		var oWidth = editor.img.prop('naturalWidth');
 		var oHeight = editor.img.prop('naturalHeight');
-
-		console.log('orig w' + oWidth + ' h' + oHeight);
 
 		// Start with window width and height minus padding (2*15px)
 		var width = window.innerWidth - 40;
@@ -171,9 +165,7 @@ gH = (function ($) {
 				if (files.constructor === Array) {
 					files = files[0];
 				}
-				console.log(files);
 			
-				console.log('setting folder id to ' + files.id);
 				uploaders[id].dirId = files.id;
 
 				// Set the folder parameter on the uploader
@@ -374,15 +366,12 @@ gH = (function ($) {
 			for (p in g[id]['query']) {
 				if (p == 'folders') {
 					if (g[id].foldersChanged) {
-						console.log('folders have changed');
 						g[id].query[p] = g[id].folders;
-						console.log(g[id].query);
 						changed = true;
 						g[id].foldersChanged = false;
 					}
 				} else if (g[id][p].prop('type') == 'checkbox') {
 					v = g[id][p].prop('checked');
-					console.log('isChecked? ' + v);
 					if (v && !g[id]['query'][p]) {
 						g[id]['query'][p] = 1;
 						changed = true;
@@ -556,8 +545,6 @@ gH = (function ($) {
 				}
 			}
 		
-			console.log(code);
-
 			return code;
 		},
 
@@ -576,9 +563,6 @@ gH = (function ($) {
 			}
 
 			pub.redisplayShortcode(id);
-
-			console.log('folders updated for ' + id);
-			console.log(g[id].folders);
 		},
 
 		/**
@@ -640,10 +624,7 @@ gH = (function ($) {
 		},
 
 		redisplayShortcode: function(id) {
-			console.log('redisplaying shortcode');
-
 			if(!g[id]) {
-				console.log('dont know');
 				return;
 			}
 
