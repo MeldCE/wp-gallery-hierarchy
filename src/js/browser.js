@@ -217,8 +217,8 @@ var Browser = (function($) {
 								.click(exclude.bind(this, f, files, undefined)));
 
 						// Select if selected
-						if (this.selected[f]) {
-							this.fileDoms[f].div.addClass(this.options.selectedClass);
+						if (files[f].exclude == '1') {
+							this.fileDoms[f].div.addClass(this.options.excludedClass);
 						}
 
 						if (files[f].excluded) {
@@ -284,15 +284,23 @@ var Browser = (function($) {
 	 * @param exclude {boolean|undefined} Force exclusion
 	 */
 	function exclude(id, file, exclude) {
-		if (this.fileDoms[id].div.hasClass(this.options.excludedClass)) {
-			this.fileDoms[id].div.removeClass(this.options.excludedClass);
-			excluded = false;
-		} else {
-			this.fileDoms[id].div.addClass(this.options.excludedClass);
-			excluded = true;
+
+		exclude = (exclude === undefined ?
+				!this.fileDoms[id].div.hasClass(this.options.excludedClass) : exclude);
+
+		if (this.fileDoms[id]) {
+			if (exclude) {
+				if (!this.fileDoms[id].div.hasClass(this.options.excludedClass)) {
+					this.fileDoms[id].div.addClass(this.options.excludedClass);
+				}
+			} else {
+				if (this.fileDoms[id].div.hasClass(this.options.excludedClass)) {
+					this.fileDoms[id].div.removeClass(this.options.excludedClass);
+				}
+			}
 		}
-		
-		this.options.exclusion(id, excluded, file);
+
+		this.options.exclusion(id, exclude, file);
 	}
 
 	/**

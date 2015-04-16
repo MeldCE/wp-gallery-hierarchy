@@ -46,7 +46,7 @@ gH = (function ($) {
 			fullImage: true
 		});
 
-		editor.img.ready(function() {
+		editor.img.load(function() {
 			//calculateImageHeight.call(this);
 			calculateImageHeight(objects, editor);
 
@@ -97,24 +97,25 @@ gH = (function ($) {
 	}
 
 	function galleryExclude(gid, id, excluded, file) {
+		console.log('exclusion called');
 		// Remove the disabled class from the Save button
-		if (g[id]['saveButton'].hasClass('disabled')) {
-			g[id]['saveButton'].removeClass('disabled');
+		if (g[gid]['saveButton'].hasClass('disabled')) {
+			g[gid]['saveButton'].removeClass('disabled');
 		}
 		
 		if (!g[gid]['changed'][id]) {
 			g[gid]['changed'][id] =  {};
 		}
 
-		if (!g[gid].changed[iId].exclude) {
+		if (!g[gid].changed[id].exclude) {
 			var val = parseInt(file.exclude);
-			g[gid].changed[iId].exclude = {
+			g[gid].changed[id].exclude = {
 				'old': val,
 			};
 		}
 		
-		g[gid].changed[iId].exclude.new = (excluded ? 1 : 0);
-		file.exclude = (excluded ? 1 : 0);
+		g[gid].changed[id].exclude.new = (excluded ? 1 : 0);
+		file.exclude = (excluded ? '1' : '0');
 	}
 
 	var pub = {
@@ -655,7 +656,7 @@ gH = (function ($) {
 			if (change) {
 				// @todo Add localisation
 				g[id]['saveButton'].html('Saving...');
-				$.post(ajaxurl + '?action=gh_save', {'saveData': data},
+				$.post(ajaxurl + '?action=gh_save', {a: 'save', data: data},
 						this.confirmSave.bind(this, id));
 			}
 		},

@@ -1518,7 +1518,7 @@ class GHierarchy {
 		echo '<p><a onclick="gH.filter(\'' . $id . '\');" class="button" id="'
 				. $id . 'filterButton">' . __('Filter', 'gallery_hierarchy') . '</a> ';
 		echo '<a onclick="gH.save(\'' . $id . '\');" class="button disabled" id="'
-				. $id . 'saveButton">' . __('Save Image Changes', 'gallery_hierarchy')
+				. $id . 'saveButton">' . __('Save Image Exclusions', 'gallery_hierarchy')
 				. '</a>';
 		if ($insert) {
 			echo ' <a onclick="gH.insert(\'' . $id . '\');" class="button" id="'
