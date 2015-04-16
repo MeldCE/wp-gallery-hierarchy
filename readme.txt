@@ -192,6 +192,11 @@ manually generate a shortcode, or use the shortcode builder in the Image
 Gallery. Don't worry, in the not too distant future, you will be able to do
 this from the edit page.
 
+== Custom Albums ==
+Custom albums can be created by implementing the GHAlbum interface. The
+specification for the interface can be found in the
+`gallery-hierarchy/lib/GHAlbum.php` file.
+
 == Future Features (Todos) ==
 https://github.com/weldstudio/wp-gallery-hierarchy/issues
 

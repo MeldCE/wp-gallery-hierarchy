@@ -1465,7 +1465,7 @@ class GHierarchy {
 		// Comment field
 		echo '<p><label for="' . $id . 'comment">' . __('Comments Contain:',
 				'gallery_hierarchy') . '</label> ';
-		echo '<input type="text" name="' . $id . 'comments" id="' . $id. 'comments"></p>';
+		echo '<input type="text" name="' . $id . 'comment" id="' . $id. 'comment"></p>';
 		
 		// Tags field
 		echo '<p><label for="' . $id . 'tags">' . __('Has Tags:',
@@ -1512,12 +1512,6 @@ class GHierarchy {
 		// Shortcode window
 		echo '<p>' . __('Shortcode:', 'gallery_hierarchy') . ' <span id="' . $id
 				. 'shortcode"></span></p>';
-		// Toggle selected
-		echo '<p><a onclick="gH.toggleSelected(\'' . $id . '\');" id="' . $id
-				. 'selectedLabel">' . __('Show currently selected images',
-				'gallery_hierarchy') . '</a> <a onclick="gH.clearSelected(\'' . $id
-				. '\');" id="' . $id . 'builderLabel">'
-				. __('Clear selected images', 'gallery_hierarchy') . '</a></p>';
 		echo '</div>';
 
 
@@ -2722,7 +2716,7 @@ class GHierarchy {
 			$file = join('.', $file);
 
 			if (($dir = $this->getDirectory($image->dir_id)) !== false) {
-				$file = gHpath($dir, $image->file);
+				$file = gHpath($dir, $file);
 			}
 		}
 

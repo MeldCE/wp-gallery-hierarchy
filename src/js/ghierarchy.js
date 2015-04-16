@@ -22,7 +22,8 @@ gH = (function ($) {
 		generators: {
 			imageEditor: displayImageEditor.bind(this)
 		},
-		default: 'imageEditor'
+		default: 'imageEditor',
+		orderedSelection: true
 	});
 
 	/**
@@ -38,6 +39,9 @@ gH = (function ($) {
 				.viewer(null, 'gHBrowser').data('imageData', file));
 	}
 
+	/**
+	 * Used to diplay the image editor in the floater window
+	 */
 	function displayImageEditor(link, objects) {
 		console.log('in displayer');
 		console.log(link);
@@ -55,6 +59,10 @@ gH = (function ($) {
 		}.bind(this));
 	}
 
+	/**
+	 * Used to resize the image in image editor in the floater so it is the
+	 * maximum size possible
+	 */
 	function calculateImageHeight(objects, editor) {
 		var oWidth = editor.img.prop('naturalWidth');
 		var oHeight = editor.img.prop('naturalHeight');
@@ -73,7 +81,10 @@ gH = (function ($) {
 		//width -= 
 
 		// Make image best height / width
-		if ((sWidth / oWidth) > (sHeight / oHeight)) {
+		if (sWidth >= oWidth && sHeight >= oHeight) {
+			editor.img.height(oHeight);
+			editor.img.width(oWidth);
+		} else if ((sWidth / oWidth) > (sHeight / oHeight)) {
 			editor.img.height(sHeight);
 			editor.img.width(oWidth / oHeight * sHeight);
 		} else {
@@ -132,11 +143,11 @@ gH = (function ($) {
 			dom.append((scanner.status = $('<p></p>')));
 			dom.append((scanner.scanBtn = $('<a class="button">'
 					+ 'Rescan Directories' + '</a>')));
-			scanner.scanBtn.click(this.returnFunction(sendScanCommand, false, 'rescan'));
+			scanner.scanBtn.click(sendScanCommand.bind(this, 'rescan', null));
 			dom.append(' ');
 			dom.append((scanner.fullScanBtn = $('<a class="button">'
 					+ 'Force Rescan of All Images' + '</a>')));
-			scanner.fullScanBtn.click(this.returnFunction(sendScanCommand, false, 'full'));
+			scanner.fullScanBtn.click(sendScanCommand.bind(this, 'full', null));
 
 			receiveScanRefresh(currentStatus);
 		},
@@ -202,8 +213,10 @@ gH = (function ($) {
 						'group': $('#' + id + 'group'),
 						'class': $('#' + id + 'class'),
 						'limit': $('#' + id + 'limit'),
+						'includeFilter': $('#' + id + 'includeFilter'),
 						'sort': $('#' + id + 'sort'),
 						'caption': $('#' + id + 'caption'),
+						'class': $('#' + id + 'class'),
 						'popup_caption': $('#' + id + 'popupCaption'),
 						'link': $('#' + id + 'link'),
 						'size': $('#' + id + 'size'),
@@ -268,6 +281,20 @@ gH = (function ($) {
 							g[id]['start'].datetimepicker('option', 'maxDate', g[id]['end'].datetimepicker('getDate') );
 						}
 				});
+
+				// Add change event watchers to fields
+				g[id]['sctype'].change(pub.redisplayShortcode.bind(this, id));
+				g[id]['class'].change(pub.redisplayShortcode.bind(this, id));
+				g[id]['group'].change(pub.redisplayShortcode.bind(this, id));
+				g[id]['recurse'].change(pub.redisplayShortcode.bind(this, id));
+				g[id]['start'].change(pub.redisplayShortcode.bind(this, id));
+				g[id]['end'].change(pub.redisplayShortcode.bind(this, id));
+				g[id]['name'].change(pub.redisplayShortcode.bind(this, id));
+				g[id]['title'].change(pub.redisplayShortcode.bind(this, id));
+				g[id]['comment'].change(pub.redisplayShortcode.bind(this, id));
+				g[id]['tags'].change(pub.redisplayShortcode.bind(this, id));
+				g[id]['includeFilter'].change(pub.redisplayShortcode.bind(this, id));
+				//g[id][''].change(pub.redisplayShortcode.bind(this, id));
 
 				g[id].browser = new Browser(pad, {
 					selection: gallerySelect.bind(this, id),
@@ -430,23 +457,6 @@ gH = (function ($) {
 			}
 		},
 
-		// @todo Move to be a private function
-		returnFunction: function(func, add) {
-			var a = Array.prototype.slice.call(arguments);
-			a.shift();
-			a.shift();
-			var t = this;
-			return function () {
-				if (add) {
-					var b = [].concat(a);
-					b = b.concat(Array.prototype.slice.call(arguments));
-					func.apply(t, b);
-				} else {
-					func.apply(t, a);
-				}
-			};
-		},
-
 		clearSelected: function(id) {
 			if(!g[id]) {
 				return;
@@ -521,7 +531,7 @@ gH = (function ($) {
 			}
 
 			// Add filter
-			if (!g[id]['idsOnly']) {
+			if (!g[id]['idsOnly'] || g[id]['includeFilter'].attr('checked')) {
 				// Folders
 				if (g[id].folders.length) {
 					code['folders'] = g[id].folders;
@@ -539,6 +549,15 @@ gH = (function ($) {
 				}
 			}
 			
+			var o, O = ['class', 'group'];
+			for (o in O) {
+				if ((part = g[id][O[o]].val())) {
+					code[O[o]] = part;
+				}
+			}
+		
+			console.log(code);
+
 			return code;
 		},
 
@@ -555,6 +574,8 @@ gH = (function ($) {
 			for (f in files) {
 				g[id].folders.push(files[f].id);
 			}
+
+			pub.redisplayShortcode(id);
 
 			console.log('folders updated for ' + id);
 			console.log(g[id].folders);
@@ -581,7 +602,7 @@ gH = (function ($) {
 			}
 
 			// Add filter
-			if (!g[id]['idsOnly']) {
+			if (!g[id]['idsOnly'] || g[id]['includeFilter'].attr('checked')) {
 				// Folders
 				if (code['folders']) {
 					filter.push((g[id].recurse.attr('checked') ? 'r' : '')
@@ -605,12 +626,24 @@ gH = (function ($) {
 				}
 			}
 
+			var others = [];
+			var val, o, O = ['class', 'group',];
+			for (o in O) {
+				if ((val = code[O[o]])) {
+					others.push(O[o] + '="' + val + '"');
+				}
+			}
+
 			return '[' + code.code
-					+ (filter.length ? ' id="' + filter.join(',') + '"' : '') + ']';
+					+ (filter.length ? ' id="' + filter.join(',') + '"' : '') 
+					+ (others.length ? ' ' + others.join(' ') : '') + ']';
 		},
 
 		redisplayShortcode: function(id) {
+			console.log('redisplaying shortcode');
+
 			if(!g[id]) {
+				console.log('dont know');
 				return;
 			}
 

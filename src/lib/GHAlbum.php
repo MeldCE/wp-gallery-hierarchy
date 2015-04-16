@@ -48,6 +48,7 @@ interface GHAlbum {
 	 * Generates the album for the given images and options. The options will
 	 * be the options built from the options in the shortcode and the defaults
 	 * set in the plugin options.
+	 * @internal Used to generate the builtin.css file.
 	 *
 	 * @param $images array Array containing the image *objects* (resulting from
 	 *                      a call to $wpdb->get_results(..., OBJECT_K). The

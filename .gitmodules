@@ -31,3 +31,6 @@
 [submodule "src/lib/jquery-hierarchy-select"]
 	path = src/lib/jquery-hierarchy-select
 	url = https://github.com/MeldCE/jquery-hierarchy-select
+[submodule "src/lib/packery"]
+	path = src/lib/packery
+	url = https://github.com/metafizzy/packery.git

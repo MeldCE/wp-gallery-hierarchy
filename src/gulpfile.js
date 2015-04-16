@@ -89,6 +89,11 @@ paths.ext.plupload = {
 	css: 'css/jquery.plupload.queue.css'
 };
 
+// Packery
+paths.ext.plupload = {
+	js: 'lib/packery/dist/packery.pkgd.min.js'
+};
+
 gulp.task('markupMainPhp', [], function() {
 			return gulp.src(paths.main)
 					.pipe(insert.prepend('<?php\n/**\n'

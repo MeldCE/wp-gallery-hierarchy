@@ -78,8 +78,10 @@ var Browser = (function($) {
 	 * @param id string Id of the current gallery
 	 */
 	function printFiles(offset) {
+		console.log('printFiles called');
 		// Stop if we have no images
 		if (!this.currentFiles) {
+			console.log('no files');
 			return;
 		}
 	
@@ -259,7 +261,7 @@ var Browser = (function($) {
 				this.selectOrder.splice(x, 1);
 			}
 			this.fileDoms[id].div.removeClass(this.options.selectedClass);
-			if (this.showCurrent !== false) {
+			if (this.showingCurrent !== false) {
 				this.fileDoms[id].selected = false;
 			} else {
 				delete this.selected[id];
@@ -358,31 +360,35 @@ var Browser = (function($) {
 		}
 	}
 
-	function toggleSelected() {
+	function toggleSelected(noPrint) {
 		var i;
 		if (this.showingCurrent !== false) {
 			// Clean up unselected
 			for (i in this.selected) {
-				if (!this.selected[i]['selected']) {
+				if (this.selectOrder.indexOf(i) === -1) {
 					delete this.selected[i];
 				}
 			}
-			this.setCurrentImages(id, this.imageData);
-			this.selectedLabel.html('Show currently selected images');
-			this.printFiles(id, this.showingCurrent);
+			this.currentFiles = this.displayFiles;
+			this.currentOffset = this.showingCurrent;
+			this.doms.showSelected.html('Show selected');
 			this.showingCurrent = false;
 		} else {
-			this.currentFiles = [];
-			this.imageIndex = {};
+			this.displayFiles = this.currentFiles;
+			this.currentFiles = {};
+			//this.imageIndex = {};
 			var i;
 			for (i in this.selectOrder) {
-				this.currentFiles[i] = this.selected[this.selectOrder[i]];
-				this.imageIndex[this.selectOrder[i]] = i;
+				this.currentFiles[this.selectOrder[i]] = this.selected[this.selectOrder[i]];
+				//this.imageIndex[this.selectOrder[i]] = i;
 			}
 			this.showingCurrent = this.currentOffset;
 			this.currentOffset = 0;
-			this.selectedLabel.html('Show filtered images');
-			this.printFiles(id, this.showingCurrent);
+			this.doms.showSelected.html('Hide Selected');
+		}
+
+		if (!noPrint) {
+			printFiles.call(this);
 		}
 	}
 
@@ -487,7 +493,7 @@ var Browser = (function($) {
 	}
 
 	function clearSelection() {
-		if (!this.showCurrent
+		if (!this.showingCurrent
 				|| confirm('Are you sure? Entire current selection will be cleared')) {
 			// Clear selected class
 			var d;
@@ -536,8 +542,7 @@ var Browser = (function($) {
 		this.selectOrder = [];
 		this.currentFiles = {};
 		this.currentOffset = 0;
-		this.showCurrent = false;
-
+		this.showingCurrent = false;
 
 		this.options = $.extend({
 			/** Remember selected images from previous
@@ -612,6 +617,10 @@ var Browser = (function($) {
 			this.doms.obj = obj;
 		}
 
+		if (this.options.orderedSelection) {
+			this.doms.obj.addClass('ordered');
+		}
+
 		if (this.options.class) {
 			this.doms.obj.addClass(this.options.class);
 		}
@@ -653,7 +662,8 @@ var Browser = (function($) {
 						)
 						.append($('<div class="drop">With selected</div>').append(
 								(actions = $('<ul></ul>'))))
-						.append($('<span>Show selected</span>'))
+						.append((this.doms.showSelected = $('<span>Show selected</span>')
+								.click(toggleSelected.bind(this, false))))
 						.append($('<span></span>')
 								.append($('<input type="checkbox" id="' + r + '"'
 										+ (this.options.rememberSelection ? ' checked' : '')
@@ -752,6 +762,10 @@ var Browser = (function($) {
 		displayFiles: function(files, append) {
 			// Show div
 			this.doms.obj.show();
+
+			if (this.showingCurrent !== false) {
+				toggleSelected.call(this, true);
+			}
 
 			if (append) {
 				mergeFiles.call(this, files);
