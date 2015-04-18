@@ -155,6 +155,16 @@ gH = (function ($) {
 					dir_id: false,
 					uploadedDiv: $('#' + id + 'uploaded')
 				};
+
+				// Create browser for uploaded files
+				uploaders[id].browser = new Browser(uploaders[id].uploadedDiv, {
+					limit: 50,
+					selection: true,
+					exclusion: galleryExclude.bind(this, id),
+					generators: {
+						image: displayImage.bind(this, id)
+					}
+				});
 				
 				initUploader(id);
 			}

@@ -3,6 +3,7 @@ var uploader = {
 };
 
 function addUploadedFile(id, uploader, file, response) {
+	console.log('addUploadedFile called');
 	// @todo Check for error
 
 	if (!uploaders[id]) {
@@ -15,7 +16,9 @@ function addUploadedFile(id, uploader, file, response) {
 	}
 
 	if (data.files) {
-		var f, file;
+		console.log(data.files);
+		uploaders[id].browser.displayFiles(data.files, true);
+		/*var f, file;
 
 		for (f in data.files) {
 			file = data.files[f];
@@ -25,7 +28,7 @@ function addUploadedFile(id, uploader, file, response) {
 					new Editor(uploaders[id].uploadedDiv, file);
 					break;
 			}
-		}
+		}*/
 	}
 }
 
@@ -49,7 +52,7 @@ function resetUploader(id) {
 		return;
 	}
 
-	setTimeout(pub.returnFunction(doUploaderReset, true, id), 2000);
+	setTimeout(doUploaderReset.bind(this, id), 2000);
 }
 
 function doUploaderReset(id) {
@@ -67,7 +70,7 @@ function initUploader(id) {
 	// Hook function onto start button to stop upload if don't have a
 	// destination folder
 	var startButton = uploaders[id].obj.find('a.plupload_start');
-	startButton.click(pub.returnFunction(checkForUploadDir, true, id));
+	startButton.click(checkForUploadDir.bind(this, id));
 	
 	// Rearrange event handler for start button, to ensure that it has the ability
 	// to execute first
@@ -75,8 +78,8 @@ function initUploader(id) {
 	if (clickEvents.length == 2) clickEvents.unshift(clickEvents.pop());
 
 	// Bind to events
-	uploader.bind('FileUploaded', pub.returnFunction(addUploadedFile, true, id));
-	uploader.bind('UploadComplete', pub.returnFunction(resetUploader, true, id));
+	uploader.bind('FileUploaded', addUploadedFile.bind(this, id));
+	uploader.bind('UploadComplete', resetUploader.bind(this, id));
 
 	// Set dir_id if we have one
 	if (uploaders[id].dirId) {

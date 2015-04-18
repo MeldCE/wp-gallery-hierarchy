@@ -1055,7 +1055,7 @@ class GHierarchy {
 					$data['type'] = 'image';
 					$data['path'] = $endPath;
 					return array(
-						'files' => array($data)
+						'files' => array($data['id'] => $data)
 					);
 				} else {
 
@@ -1647,7 +1647,7 @@ class GHierarchy {
 		
 		echo '<h3>' . __('Uploaded files',
 				'gallery_hierarchy') . '</h3>';
-		echo '<div id="' . $id . 'uploaded"></div>';
+		echo '<div class="gHBrowser" id="' . $id . 'uploaded"></div>';
 	}
 
 	/**

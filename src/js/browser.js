@@ -272,8 +272,10 @@ var Browser = (function($) {
 			this.fileDoms[id].div.addClass(this.options.selectedClass);
 			this.fileDoms[id].selected = true;
 		}
-		
-		this.options.selection(this.selectOrder, this.selected);
+	
+		if (this.options.selection && this.options.selection.call) {
+			this.options.selection(this.selectOrder, this.selected);
+		}
 	}
 
 	/**
@@ -331,7 +333,9 @@ var Browser = (function($) {
 
 		reorder.call(this);
 
-		this.options.selection(this.selectOrder, this.selected);
+		if (this.options.selection && this.options.selection.call) {
+			this.options.selection(this.selectOrder, this.selected);
+		}
 	}
 
 	function promptOrder(id) {
@@ -539,6 +543,10 @@ var Browser = (function($) {
 	 *
 	 */  
 	function Viewer(obj, options, files) {
+		if (!obj) {
+			throw new Error('Need a real object to put a viewer in');
+		}
+
 		this.doms = {};
 		/// Stores the JQueryDOMObjects of the currently shown files
 		this.fileDoms = {};
@@ -778,7 +786,12 @@ var Browser = (function($) {
 				printFiles.call(this, 0);
 			} else {
 				this.currentFiles = files;
-			
+				
+				// Clear selected if not remebering selection
+				if (!this.options.rememberSelection) {
+					this.selected = {};
+					this.selectOrder = [];
+				}
 				// Reset current offset
 				printFiles.call(this, 0);
 			}
