@@ -1,10 +1,10 @@
-[Gallery Hierarchy (gallery-hierarchy)](https://github.com/weldstudio)
+[Gallery Hierarchy (gallery-hierarchy)](https://github.com/MeldCE)
 ====================
 A simplistic gallery plugin for Wordpress that stores images in a hierarchical folder structure.
 
-By [The Weld Studio](http://www.theweldstudio.com)
+By [Meld Computer Engineering](http://www.meldce.com)
 
-Support this opensource development [Paypal](http://gift.weldce.com) [Gittip](http://gittip.weldce.com)
+Support this opensource development [Paypal](http://gift.meldce.com) [Gittip](http://gittip.meldce.com)
 
 ## Introduction
 
@@ -31,8 +31,8 @@ This plugin contains no styling for the inserted images, so it is up to you or
 your theme to style them how you want.
 
 ## Releases
-- [v0.1-beta](https://github.com/weldstudio/wp-gallery-hierarchy/releases/tag/v0.1-beta)
-  [Release .zip file](https://github.com/weldstudio/wp-gallery-hierarchy/releases/download/v0.1-beta/gallery-hierarchy_v0.1-beta.zip)
+- [v0.1-beta](https://github.com/MeldCE/wp-gallery-hierarchy/releases/tag/v0.1-beta)
+  [Release .zip file](https://github.com/MeldCE/wp-gallery-hierarchy/releases/download/v0.1-beta/gallery-hierarchy_v0.1-beta.zip)
 
 ## Features
 - Hierarchical storage of images
@@ -224,7 +224,7 @@ specification for the interface can be found in the
 `gallery-hierarchy/lib/GHAlbum.php` file.
 
 ## Future Features (Todos)
-https://github.com/weldstudio/wp-gallery-hierarchy/issues
+https://github.com/MeldCE/wp-gallery-hierarchy/issues
 
 ## Changelog
-https://github.com/weldstudio/wp-gallery-hierarchy/releases
+https://github.com/MeldCE/wp-gallery-hierarchy/releases

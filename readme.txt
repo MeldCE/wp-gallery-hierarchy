@@ -1,6 +1,6 @@
 === Gallery Hierarchy ===
 Contributors: weldstudio
-Donate link: http://gift.weldce.com
+Donate link: http://gift.meldce.com
 Tags: gallery, photo, hierarchy, thumbnail, album, shortcode, filter, search
 Requires at least: 3.8.0
 Tested up to: 3.9.2
@@ -12,9 +12,9 @@ A simplistic gallery plugin for Wordpress that stores images in a hierarchical f
 
 == Description ==
 
-By [The Weld Studio](http://www.theweldstudio.com)
+By [Meld Computer Engineering](http://www.meldce.com)
 
-Support this opensource development [Paypal](http://gift.weldce.com) [Gittip](http://gittip.weldce.com)
+Support this opensource development [Paypal](http://gift.meldce.com) [Gittip](http://gittip.meldce.com)
 
 Images are stored in hierarchical folders, as you normally would. To add new
 images, you can either put them directly into the folders or upload them 
@@ -198,7 +198,7 @@ specification for the interface can be found in the
 `gallery-hierarchy/lib/GHAlbum.php` file.
 
 == Future Features (Todos) ==
-https://github.com/weldstudio/wp-gallery-hierarchy/issues
+https://github.com/MeldCE/wp-gallery-hierarchy/issues
 
 == Screenshots ==
 
@@ -207,4 +207,4 @@ https://github.com/weldstudio/wp-gallery-hierarchy/issues
 == Upgrade Notice ==
 
 == Changelog ==
-https://github.com/weldstudio/wp-gallery-hierarchy/releases
+https://github.com/MeldCE/wp-gallery-hierarchy/releases
