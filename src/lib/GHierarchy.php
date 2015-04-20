@@ -32,7 +32,7 @@ class GHierarchy {
 	protected static $statusTimeTransientTime = DAY_IN_SECONDS;
 	protected static $filesTransientTime = DAY_IN_SECONDS;
 	protected static $runAdminInit = false;
-	protected static $dbVersion = 3;
+	protected static $dbVersion = 4;
 	protected $directories = false;
 
 	protected static $shortcodes = array('ghthumb', 'ghalbum', 'ghimage');
@@ -91,7 +91,10 @@ class GHierarchy {
 	protected function  __construct() {
 		global $wpdb;
 
-		//static::$lp = fopen('galleruy-hierarchy.log', 'a');
+		static::$lp = fopen('gallery-hierarchy.log', 'a');
+		if (static::$lp) fwrite(static::$lp, "GHierarchy initiated at " 
+				. time() . "\n");
+		
 
 		if (function_exists(finfo_open)) {
 			$this->finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -157,7 +160,7 @@ class GHierarchy {
 								'description' => __('Size to make the thumbnails.',
 										'gallery_hierarchy'),
 								'type' => 'dimensions',
-								'default' => array(200, 200)
+								'default' => array('width' => 200, 'height' => 200)
 						),
 						'crop_thumbnails' => array(
 							'title' => __('Crop Thumbnails', 'gallery_hierarchy'),
@@ -197,7 +200,7 @@ class GHierarchy {
 							'description' => __('Maximum size of the images.',
 									'gallery_hierarchy'),
 							'type' => 'dimensions',
-							'default' => array(1100, 1100)
+							'default' => array('width' => 1100, 'height' => 1100)
 						),
 						'folder_keywords' => array(
 							'title' => __('Folders to Tags', 'gallery_hierarchy'),
@@ -538,9 +541,9 @@ class GHierarchy {
 
 		// Enqueue lightbox script
 		wp_enqueue_script('lightbox', 
-				plugins_url('/lib/lightbox2/js/lightbox.min.js', dirname(__FILE__)));
+				plugins_url('/lib/js/lightbox.min.js', dirname(__FILE__)));
 		wp_enqueue_style('lightbox',
-				plugins_url('/lib/lightbox2/css/lightbox.css', dirname(__FILE__)));
+				plugins_url('/lib/css/lightbox.css', dirname(__FILE__)));
 		if (static::$settings->use_included_styles) {
 			wp_enqueue_style('gallery_hierarchy-basic',
 					plugins_url('/css/basicStyle.min.css', dirname(__FILE__)));
@@ -732,7 +735,10 @@ class GHierarchy {
 		$q = 'SELECT *, CONCAT((SELECT dir FROM ' . $me->dirTable . ' WHERE id = '
 				.'dir_id), \'' . DIRECTORY_SEPARATOR . '\', file) '
 				. 'AS path FROM ' . $me->imageTable . ($parts ? ' WHERE (('
-				.join(') AND (', $parts) . ')' . ')' : '');
+				.join(') AND (', $parts) . ')' . ')' : '') . ' ORDER BY taken';
+
+
+		if (static::$lp) fwrite(static::$lp, "Ajax gallery SQL command is $q\n");
 	
 		$images = $wpdb->get_results($q, ARRAY_A);
 
@@ -1973,7 +1979,7 @@ class GHierarchy {
 		$q = 'SELECT f.*, CONCAT(d.dir, \'/\', f.file) AS path FROM '
 				. $me->imageTable . ' AS f JOIN ' . $me->dirTable
 				. ' AS d ON d.id = f.dir_id '
-				. ($w ? ' WHERE ' . join(' OR ', $w) : '');
+				. ($w ? ' WHERE ' . join(' OR ', $w) : '') . ' ORDER BY taken';
 		echo "command is $q\n";
 		$images = $wpdb->get_results($q, OBJECT_K);
 		
@@ -2120,6 +2126,9 @@ class GHierarchy {
 	 protected function generateShortcode($atts) {
 			$filter = array();
 
+			if (static::$lp) fwrite(static::$lp, "generateShortcode received "
+					. print_r($atts, 1));
+	
 			if (!isset($atts['code'])
 						|| !in_array($atts['code'], static::$shortcodes)) {
 				return false;
@@ -2132,7 +2141,7 @@ class GHierarchy {
 
 			// Folders
 			if (isset($atts['folders'])) {
-				filter.push('folder=' . $atts['folders'].join('|'));
+				$filter[] = 'folder=' . implode('|', $atts['folders']);
 			}
 
 			// Check the dates are valid
@@ -2157,7 +2166,16 @@ class GHierarchy {
 				}
 			}
 
-			return '[' . $atts['code'] . ' id="' . join(',', $filter) . '"' . ']';
+			$others = array('class', 'group');
+			$params = array();
+			foreach ($others as $o) {
+				if (isset($atts[$o]) && $atts[$o]) {
+					$params[] = $o . '="' . $atts[$o] . '"';
+				}
+			}
+
+			return '[' . $atts['code'] . ' id="' . implode(',', $filter) . '"'
+					. ($params ? ' ' . implode(' ', $params) : '') . ']';
 	 }
 
 	/**
@@ -2386,6 +2404,8 @@ class GHierarchy {
 
 			// @todo Could fail within this loop, then we loose the image.
 			while(($image = array_shift($files['images'])) !== null) {
+				if (static::$lp) fwrite(static::$lp, "Processing image $image\n");
+
 				$iPath = gHpath($me->imageDir, $image);
 
 				if (($id = $me->findImageId($images, $image)) !== false) {
@@ -2456,6 +2476,11 @@ class GHierarchy {
 		} catch (Exception $e) {
 			static::setScanTransients(__('Error: ',
 					'gallery_hierarchy') . $e->getMessage());
+			// Clear running transients
+			if (static::$lp) fwrite(static::$lp, "Exception caught in scan()\n"
+					. $e->getTraceAsString());
+			wp_clear_scheduled_hook('gh_rescan');
+			delete_transient(static::$scanTransient);
 			throw $e;
 		}
 
@@ -2469,15 +2494,19 @@ class GHierarchy {
 		$file = basename($imagePath);
 		$dir = dirname($imagePath);
 
-		print "trying to find $dir $file\n";
+		if (static::$lp) fwrite(static::$lp, "trying to find $dir $file: ");
 
 		if (($dir = $this->getDirectoryId($dir))) {
 			foreach ($images as $id => &$image) {
 				if ($image->file == $file && $image->dir_id == $dir) {
-					print "Found $id";
+					if (static::$lp) fwrite(static::$lp, "Found - $id\n");
 					return $id;
+				} else {
+					if (static::$lp) fwrite(static::$lp, "Not found\n");
 				}
 			}
+		} else {
+			if (static::$lp) fwrite(static::$lp, "New directory\n");
 		}
 
 		return false;
@@ -2839,6 +2868,8 @@ class GHierarchy {
 	 */
 	protected function resizeImage($image, &$imagick, $newSize, $crop = false,
 			$newImagePath = false) {
+		if (static::$lp) fwrite(static::$lp, "resizeImage called with newSize "
+				. "wxh of " . $newSize['width'] . "x" . $newSize['height'] . "\n");
 		$write = false;
 		if ($newImagePath) {
 			$write = true;
@@ -2861,9 +2892,13 @@ class GHierarchy {
 
 		$cw = $imagick->getImageWidth();
 		$ch = $imagick->getImageHeight();
+			
+		if (static::$lp) fwrite(static::$lp, "Have image wxh of " . $cw . "x"
+				. $ch . "\n");
 
 		// First check if we need to do anything
 		if ($cw <= $newSize['width'] && $ch <= $newSize['height']) {
+			if (static::$lp) fwrite(static::$lp, "image smaller - no need to resize\n");
 			return false;
 		}
 
@@ -2882,6 +2917,10 @@ class GHierarchy {
 				//$imagick->setImagePage(0, 0, 0, 0);
 			}
 		}
+
+		if (static::$lp) fwrite(static::$lp, "Caculated new image wxh of " 
+				. $newSize['width'] . "x" . $newSize['height'] . "\n");
+
 
 		// Resize the image
 		$imagick->resizeImage($newSize['width'], $newSize['height'],
@@ -3002,7 +3041,12 @@ class GHierarchy {
 
 		// Create an image (for resizing, rotating and thumbnail)
 		$imagick = new Imagick();
-		$imagick->readImage($iPath);
+		if (!$imagick->readImage($iPath)) {
+
+			if (static::$lp) fwrite(static::$lp, "Failed on reading image " . $iPath
+					. "\n");
+			return false;
+		}
 
 		// Read metadata from the database
 		if ($exif = exif_read_data($iPath, 0)) {
@@ -3065,6 +3109,9 @@ class GHierarchy {
 
 		$width = $imagick->getImageWidth();
 		$height = $imagick->getImageHeight();
+		
+		if (static::$lp) fwrite(static::$lp, "Got image wxh of " . $width . "x"
+				. $height  . "\n");
 
 		// Create thumbnail
 		$this->createThumbnail($img, $imagick);
@@ -3273,8 +3320,14 @@ class GHierarchy {
 			 * Update version 2 - changing added field to updated and adding
 			 * ON UPDATE CURRENT_TIMESTAMP to updated
 			 */
-			$wpdb->query('ALTER TABLE ' . $me->imageTable . ' CHANGE added '
-					. 'updated timestamp NOT NULL DEFAULT \'0000-00-00 00:00:00\'');
+			// Get columns of current table
+			$cols = static::getTableColumns($me->imageTable);
+
+			// Add columns if they don't exist
+			if (isset($cols['added']) && !isset($cols['updated'])) {
+				$wpdb->query('ALTER TABLE ' . $me->imageTable . ' CHANGE added '
+						. 'updated timestamp NOT NULL DEFAULT \'0000-00-00 00:00:00\'');
+			}
 		}
 
 		if ($current < 3) {
@@ -3296,7 +3349,7 @@ class GHierarchy {
 			// Redo all image file and directory fields
 			if (($folders = $me->getDirectories())) {
 				// Get all the images
-				if ($images = $wpdb->get_results('SELECT id, file, dir, dir_id FROM '
+				if ($images = $wpdb->get_results('SELECT id, file, dir_id FROM '
 						. $me->imageTable, ARRAY_A)) {
 
 					$s = DIRECTORY_SEPARATOR;

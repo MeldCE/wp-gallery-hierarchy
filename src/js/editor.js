@@ -88,6 +88,11 @@ var Editor = (function() {
 			// Image Dimensions
 			this.details.append(drawRow('Image Dimensions:', 
 					this.file.width + 'x' + this.file.height + 'px'));
+			// Taken data
+			if (this.file.taken) {
+				this.details.append(drawRow('Taken:', 
+						this.file.taken));
+			}
 			// Image Title
 			this.details.append(drawRow('Title:', 
 					(this.title = $('<input type="text" value="'

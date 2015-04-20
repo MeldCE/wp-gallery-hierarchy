@@ -65,7 +65,7 @@ paths.ext.timepicker = {
 
 // Lightbox 2
 paths.ext.lightbox = {
-	js: 'lib/lightbox2/js/lightbox.min.js',
+	js: 'lib/lightbox2/js/lightbox.min.{js,map}',
 	css: 'lib/lightbox2/css/*',
 	imgs: 'lib/lightbox2/img/*.{png,gif}',
 };

@@ -65,9 +65,11 @@ The plugin has the following shortcodes:
 The following shortcode attributes are available for the included shortcodes
 - `id="<id1>,<id2>,..."` - list of images (some sort of query or list - see
   Image Selection below (`ghalbum` `ghthumbnail` `ghimage`)
-/* - `limit="<num>" - limit the number of images to <num>
+<!---
+- `limit="<num>" - limit the number of images to <num>
   (`ghalbum` `ghthumbnail` `ghimage`)
-- `sort=""` - way the images should be sorted*/
+- `sort=""` - way the images should be sorted
+--->
 - `group="<group1>"` - id for linking images to scroll through with lightbox
   (`ghthumbnail` `ghimage`)
 - `class="<class1> <class2> ...` - additional classes to put on the images

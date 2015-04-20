@@ -64,7 +64,7 @@
 
 		// Add title and close
 		if (this.options.close) {
-			this.objects.box.prepend($('<div class="close">Close</div>')
+			this.objects.box.prepend($('<div class="close"></div>')
 					.click(this.close.bind(this)));
 		}
 
@@ -92,9 +92,9 @@
 				}
 
 				this.objects.box.append((this.objects.left
-						= $('<div class="left">Left</div>')
+						= $('<div class="left"></div>')
 						.click(this.scroll.bind(this, this.objects, -1)))).append(
-						(this.objects.right = $('<div class="right">Right</div>')
+						(this.objects.right = $('<div class="right"></div>')
 						.click(this.scroll.bind(this, this.objects, 1))));
 
 				// Add autoscroll
