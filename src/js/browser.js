@@ -214,7 +214,7 @@ var Browser = (function($) {
 						this.fileDoms[f].div.append($('<div'
 								+ (this.options.exclusionClass ? ' class="'
 								+ this.options.exclusionClass + '"' : '') + '>').data(files[f])
-								.click(exclude.bind(this, f, files, undefined)));
+								.click(exclude.bind(this, f, files[f], undefined)));
 
 						// Select if selected
 						if (files[f].exclude == '1') {

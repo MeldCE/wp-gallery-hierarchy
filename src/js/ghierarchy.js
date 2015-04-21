@@ -97,14 +97,13 @@ gH = (function ($) {
 	}
 
 	function galleryExclude(gid, id, excluded, file) {
-		console.log('exclusion called');
 		// Remove the disabled class from the Save button
 		if (g[gid]['saveButton'].hasClass('disabled')) {
 			g[gid]['saveButton'].removeClass('disabled');
 		}
 		
-		if (!g[gid]['changed'][id]) {
-			g[gid]['changed'][id] =  {};
+		if (!g[gid].changed[id]) {
+			g[gid].changed[id] =  {};
 		}
 
 		if (!g[gid].changed[id].exclude) {
@@ -217,6 +216,7 @@ gH = (function ($) {
 						'class': $('#' + id + 'class'),
 						'limit': $('#' + id + 'limit'),
 						'includeFilter': $('#' + id + 'includeFilter'),
+						'includeExcluded': $('#' + id + 'include_excluded'),
 						'sort': $('#' + id + 'sort'),
 						'caption': $('#' + id + 'caption'),
 						'class': $('#' + id + 'class'),
@@ -224,7 +224,6 @@ gH = (function ($) {
 						'link': $('#' + id + 'link'),
 						'size': $('#' + id + 'size'),
 						'type': $('#' + id + 'type'),
-						'include_excluded': $('#' + id + 'includeExcluded'),
 						'options': {
 								'ghalbum': ['type'],
 								'ghimage': ['size'],
@@ -297,6 +296,7 @@ gH = (function ($) {
 				g[id]['comment'].change(pub.redisplayShortcode.bind(this, id));
 				g[id]['tags'].change(pub.redisplayShortcode.bind(this, id));
 				g[id]['includeFilter'].change(pub.redisplayShortcode.bind(this, id));
+				g[id]['includeExcluded'].change(pub.redisplayShortcode.bind(this, id));
 				//g[id][''].change(pub.redisplayShortcode.bind(this, id));
 
 				g[id].browser = new Browser(pad, {
@@ -549,6 +549,12 @@ gH = (function ($) {
 				}
 			}
 			
+			// Check include excluded
+			if (g[id].includeExcluded.attr('checked')) {
+				code.include_excluded = 1;
+			}
+
+
 			var o, O = ['class', 'group'];
 			for (o in O) {
 				if ((part = g[id][O[o]].val())) {
@@ -622,7 +628,7 @@ gH = (function ($) {
 			}
 
 			var others = [];
-			var val, o, O = ['class', 'group',];
+			var val, o, O = ['class', 'group', 'include_excluded'];
 			for (o in O) {
 				if ((val = code[O[o]])) {
 					others.push(O[o] + '="' + val + '"');

@@ -85,7 +85,7 @@ class GHierarchy {
 	function __destruct() {
 		if (static::$lp) {
 			fclose(static::$lp);
-		}
+		} // static::$lp
 	}
 
 	protected function  __construct() {
@@ -93,7 +93,7 @@ class GHierarchy {
 
 		static::$lp = fopen('gallery-hierarchy.log', 'a');
 		if (static::$lp) fwrite(static::$lp, "GHierarchy initiated at " 
-				. time() . "\n");
+				. time() . "\n"); // static::$lp
 		
 
 		if (function_exists(finfo_open)) {
@@ -376,7 +376,26 @@ class GHierarchy {
 								 'comment' => __('Image Comment', 'gallery_hierarchy')
 							),
 							'default' => 'title'
-						)
+						),
+						'floater' => array(
+							'title' => __('Image Popup Script',
+									'gallery_hierarchy'),
+							'description' => __('What image popup script to use '
+									. 'when images are clicked on. The default is to use '
+									. 'Fancybox (included). You can also use Lightbox. To use '
+									. 'lightbox, install the minimised Javascript file, '
+									. 'lightbox.min.js, and the map file, lightbox.min.map, '
+									. 'into the folder (wp-content/plugins/gallery_hierarchy/)'
+									. 'lib/js/ and the stylesheet, lightbox.css, into '
+									. 'the folder lib/css/.', 'gallery_hierarchy'),
+							'type' => 'select',
+							'values' => array(
+								'none' => 'None',
+								'fancybox' => 'Fancybox',
+								'lightbox' => 'Lightbox'
+							),
+							'default' => 'fancybox'
+						),
 					)
 				),
 				'gHOther' => array(
@@ -540,13 +559,45 @@ class GHierarchy {
 		$me = static::instance();
 
 		// Enqueue lightbox script
-		wp_enqueue_script('lightbox', 
-				plugins_url('/lib/js/lightbox.min.js', dirname(__FILE__)));
-		wp_enqueue_style('lightbox',
-				plugins_url('/lib/css/lightbox.css', dirname(__FILE__)));
+		switch (static::$settings->floater) {
+			case 'lightbox':
+				wp_enqueue_script('lightbox', 
+						plugins_url('/lib/js/lightbox.min.js', dirname(__FILE__)));
+				wp_enqueue_style('lightbox',
+						plugins_url('/lib/css/lightbox.css', dirname(__FILE__)));
+				break;
+			case 'fancybox':
+				wp_enqueue_script('fancybox-js', 
+						plugins_url('/lib/js/jquery.fancybox-1.3.4.pack.js',
+						dirname(__FILE__)), array('jquery', 'fancybox-mouse'));
+				wp_enqueue_script('fancybox-mouse', 
+						plugins_url('/lib/js/jquery.mousewheel-3.0.4.pack.js',
+						dirname(__FILE__)), array('jquery'));
+				wp_enqueue_style('fancybox',
+						plugins_url('/lib/css/jquery.fancybox-1.3.4.css',
+						dirname(__FILE__)));
+				break;
+		}
 		if (static::$settings->use_included_styles) {
 			wp_enqueue_style('gallery_hierarchy-basic',
 					plugins_url('/css/basicStyle.min.css', dirname(__FILE__)));
+		}
+	}
+
+	static function head() {
+		$me = static::instance();
+
+		echo '<!--TESTTTTTTTT-->';
+
+		// Enqueue lightbox script
+		switch (static::$settings->floater) {
+			case 'fancybox':
+				echo '<script type="text/javascript">'
+						. 'jQuery(function() {'
+						. 'jQuery("a[data-fancybox=\'fancybox\']").fancybox();'
+						. '});'
+						. '</script>';
+				break;
 		}
 	}
 
@@ -1505,6 +1556,12 @@ class GHierarchy {
 				. 'filter in shortcode:', 'gallery_hierarchy') . '</label> ';
 		echo '<input type="checkbox" name="' . $id . 'includeFilter" id="'
 				. $id . 'includeFilter"></p>';
+		// Include excluded images
+		echo '<p><label for="' . $id . 'include_excluded">' . __('Include '
+				. 'excluded images in filter result:', 'gallery_hierarchy')
+				. '</label> ';
+		echo '<input type="checkbox" name="' . $id . 'include_excluded" id="'
+				. $id . 'include_excluded"></p>';
 		// Groups option
 		echo '<p><label for="' . $id . 'group">' . __('Image Group:',
 				'gallery_hierarchy') . '</label> ';
@@ -1811,10 +1868,26 @@ class GHierarchy {
 	 */
 	static function lightboxData(stdClass &$image, $group = null,
 			$caption = null) {
-		$html = ' data-lightbox="' . ($group ? $group : uniqid()) . '"';
-		
-		if ($caption) {
-			$html .= ' data-title="' . $caption . '"';
+		switch (static::$settings->floater) {
+			case 'lightbox':
+				$html = ' data-lightbox="' . ($group ? $group : uniqid()) . '"';
+				
+				if ($caption) {
+					$html .= ' data-title="' . $caption . '"';
+				}
+
+				break;
+			case 'fancybox':
+				$html = ' data-fancybox="fancybox" rel="' . ($group ? $group : uniqid())
+						. '"';
+				
+				if ($caption) {
+					$html .= ' title="' . $caption . '"';
+				}
+
+				break;
+			case 'none':
+				break;
 		}
 		
 		return $html;
@@ -1971,16 +2044,21 @@ class GHierarchy {
 			$query['folders'] = '(' . join(' OR ', $folders) . ')';
 		}
 
+		// Include excluded
+
+
 		if ($query) {
 			$w[] = '((' . join(') AND (', array_values($query)) . ')' 
 			. (isset($atts['include_excluded']) && $atts['include_excluded']
-			? ' AND excluded=0' : '') . ')';
+			? '' : ' AND exclude=0') . ')';
 		}
 		$q = 'SELECT f.*, CONCAT(d.dir, \'/\', f.file) AS path FROM '
 				. $me->imageTable . ' AS f JOIN ' . $me->dirTable
 				. ' AS d ON d.id = f.dir_id '
 				. ($w ? ' WHERE ' . join(' OR ', $w) : '') . ' ORDER BY taken';
-		echo "command is $q\n";
+		
+		if (static::$lp) fwrite(static::$lp, "command is $q\n");
+
 		$images = $wpdb->get_results($q, OBJECT_K);
 		
 		// Rebuild array if based on ids @todo Implement attribute for this
@@ -2127,7 +2205,7 @@ class GHierarchy {
 			$filter = array();
 
 			if (static::$lp) fwrite(static::$lp, "generateShortcode received "
-					. print_r($atts, 1));
+					. print_r($atts, 1)); // static::$lp
 	
 			if (!isset($atts['code'])
 						|| !in_array($atts['code'], static::$shortcodes)) {
@@ -2166,7 +2244,7 @@ class GHierarchy {
 				}
 			}
 
-			$others = array('class', 'group');
+			$others = array('class', 'group', 'include_excluded');
 			$params = array();
 			foreach ($others as $o) {
 				if (isset($atts[$o]) && $atts[$o]) {
@@ -2478,7 +2556,7 @@ class GHierarchy {
 					'gallery_hierarchy') . $e->getMessage());
 			// Clear running transients
 			if (static::$lp) fwrite(static::$lp, "Exception caught in scan()\n"
-					. $e->getTraceAsString());
+					. $e->getTraceAsString()); // static::$lp
 			wp_clear_scheduled_hook('gh_rescan');
 			delete_transient(static::$scanTransient);
 			throw $e;
@@ -2869,7 +2947,8 @@ class GHierarchy {
 	protected function resizeImage($image, &$imagick, $newSize, $crop = false,
 			$newImagePath = false) {
 		if (static::$lp) fwrite(static::$lp, "resizeImage called with newSize "
-				. "wxh of " . $newSize['width'] . "x" . $newSize['height'] . "\n");
+				. "wxh of " . $newSize['width'] // static::$lp
+				. "x" . $newSize['height'] . "\n"); // static::$lp
 		$write = false;
 		if ($newImagePath) {
 			$write = true;
@@ -2894,7 +2973,7 @@ class GHierarchy {
 		$ch = $imagick->getImageHeight();
 			
 		if (static::$lp) fwrite(static::$lp, "Have image wxh of " . $cw . "x"
-				. $ch . "\n");
+				. $ch . "\n"); // static::$lp
 
 		// First check if we need to do anything
 		if ($cw <= $newSize['width'] && $ch <= $newSize['height']) {
@@ -2919,7 +2998,8 @@ class GHierarchy {
 		}
 
 		if (static::$lp) fwrite(static::$lp, "Caculated new image wxh of " 
-				. $newSize['width'] . "x" . $newSize['height'] . "\n");
+				. $newSize['width'] . "x" . $newSize['height'] // static::$lp
+				. "\n"); // static::$lp
 
 
 		// Resize the image
@@ -3044,7 +3124,7 @@ class GHierarchy {
 		if (!$imagick->readImage($iPath)) {
 
 			if (static::$lp) fwrite(static::$lp, "Failed on reading image " . $iPath
-					. "\n");
+					. "\n"); // static::$lp
 			return false;
 		}
 
@@ -3111,7 +3191,7 @@ class GHierarchy {
 		$height = $imagick->getImageHeight();
 		
 		if (static::$lp) fwrite(static::$lp, "Got image wxh of " . $width . "x"
-				. $height  . "\n");
+				. $height  . "\n"); // static::$lp
 
 		// Create thumbnail
 		$this->createThumbnail($img, $imagick);
@@ -3207,7 +3287,7 @@ class GHierarchy {
 		}
 
 		if (static::$lp) fwrite(static::$lp, "$img date will be " . time() . " " 
-				. gmdate('Y-m-d H:i:s', time()) . "\n");
+				. gmdate('Y-m-d H:i:s', time()) . "\n"); // static::$lp
 
 
 		// Write image to database

@@ -55,12 +55,13 @@ function gHisInt($text) {
 function gHIncludeFiles ($path, $extension='.php') {
 	$files = scandir($path);
 	$extLength = strlen($extension);
+	$currentPath = '';
 
 	foreach ($files as $include) {
 		if (strpos($include, '.') !== 0) { // ignores dotfiles and self/parent directories
 			if (is_dir($include)) { // if a directory, iterate into
 				$newPath = $currentPath . $include . '/';
-				includeFiles($path, $extension);
+				gHIncludeFiles($newPath, $extension);
 			} else {
 				if (!$extLength || substr($include, -$extLength) === $extension) {
 					try {

@@ -18,6 +18,10 @@ var package = require('./package.json');
 //var streamify = require('gulp-streamify');
 var include = require('../../gulp-include');
 var spawn = require('child_process').spawn;
+var stripLine  = require('gulp-strip-line');
+var tar = require('gulp-tar');
+var gzip = require('gulp-gzip');
+var symlink = require('gulp-symlink');
 
 var paths = {
 	dist: '../dist/',
@@ -68,6 +72,13 @@ paths.ext.lightbox = {
 	js: 'lib/lightbox2/js/lightbox.min.{js,map}',
 	css: 'lib/lightbox2/css/*',
 	imgs: 'lib/lightbox2/img/*.{png,gif}',
+};
+
+// Fancybox
+paths.ext.fancybox = {
+	js: 'lib/fancybox/{jquery.fancybox-1.3.4.pack.js,jquery.mousewheel-3.0.4.pack.js}',
+	css: 'lib/fancybox/{blank.gif,fancybox{,-{x,y}}.png,jquery.fancybox-1.3.4.css}',
+//	imgs: 'lib/lightbox2/img/*.{png,gif}',
 };
 
 // Jquery UI
@@ -195,6 +206,29 @@ gulp.task('albumFiles', [], function() {
 gulp.task('html', [], function() {
 		});
 
+gulp.task('package', ['markupMainPhp', 'css', 'js', 'intFiles', 'albumFiles', 'basicStyle'], function() {
+	// Removed $lp lines
+	var file = path.join(paths.dist, 'lib/GHierarchy.php');
+	
+	shell.task('sed -ie \'/static::$lp/d\' ' + file);
+
+	//gulp.src(path.join(paths.dist, 'lib/GHierarchy.php'))
+	//		.pipe(stripLine([/static::\$lp/]))
+	//		.pipe(gulp.dest(path.join(paths.dist, 'lib')));
+
+	//gulp.src(paths.dist)
+	//		.pipe(symlink('../gallery-hierarchy'));
+
+	console.log('cd .. && tar -czf ' + package.name + '-' + package.version
+			+ '.tgz gallery-hierarchy');
+	shell.task('tar -czf ' + package.name + '-' + package.version
+			+ '.tgz gallery-hierarchy', {cwd: '../'});
+	shell.task('zip ' + package.name + '-' + package.version
+			+ '.zip gallery-hierarchy', {cwd: '../'});
+	shell.task('pwd');
+	shell.task('cd .. && pwd');
+});
+
 for (e in paths.ext) {
 	gulp.task(e, [], (function(e) { return function() {
 		var p;
@@ -208,9 +242,9 @@ for (e in paths.ext) {
 
 gulp.task('watch', function() {
 			gulp.watch(paths.main, ['markupMainPhp']);
-			console.log(paths.allJsSrc);
 			gulp.watch(paths.allJsSrc, ['js']);
 			gulp.watch(paths.cssSrc, ['css']);
+			gulp.watch(paths.basicStylesScript, ['basicStyle']);
 			gulp.watch(paths.int, ['intFiles']);
 			gulp.watch(paths.albumsSrc, ['albumFiles', 'basicStyle']);
 			for (e in paths.ext) {

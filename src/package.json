@@ -1,6 +1,6 @@
 {
   "name": "wp-gallery-hierarchy",
- 	"version": "0.2.0",
+  "version": "0.2.0",
   "homepage": "http://www.meldce.com/gallery-hierarchy",
   "author": {
     "name": "Meld Computer Engineering",
@@ -36,7 +36,11 @@
     "gulp-rename": "~1.2.0",
     "gulp-css-validator": "0.0.4",
     "gulp-insert": "~0.4.0",
-    "gulp-shell": "~0.2.11"
+    "gulp-shell": "~0.2.11",
+    "gulp-strip-line": "0.0.1",
+    "gulp-gzip": "~1.1.0",
+    "gulp-tar": "~1.4.0",
+    "gulp-symlink": "~2.1.0"
   },
   "dependencies": {
     "gulp-inlining-node-require": "0.0.3",

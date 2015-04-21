@@ -110,7 +110,8 @@ var Editor = (function() {
 			// Image Gallery Exclusion
 			this.details.append(drawRow('Exclude by Default:', 
 					(this.exclude = $('<input type="checkbox"'
-					+ (this.file.exclude ? ' checked' : '') + '>'))));
+					+ ((this.file.exclude && this.file.exclude == '1') ? ' checked'
+					: '') + '>'))));
 
 
 			// Image Actions

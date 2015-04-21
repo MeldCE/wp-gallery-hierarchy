@@ -26,6 +26,9 @@ if (!class_exists('GHierarchy')) {
 			add_action('admin_enqueue_scripts', array('GHierarchy', 'adminEnqueue'));
 			add_action('admin_print_scripts', array('GHierarchy', 'adminPrintInit'));
 
+			add_action('wp_head', array('GHierarchy', 'head'));
+			add_action('admin_head', array('GHierarchy', 'head'));
+
 			// Handle AJAX requests (from image browser)
 			add_action('wp_ajax_gh_gallery', array('GHierarchy', 'ajaxGallery'));
 			add_action('wp_ajax_gh_save', array('GHierarchy', 'ajaxSave'));
