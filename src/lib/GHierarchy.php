@@ -587,8 +587,6 @@ class GHierarchy {
 	static function head() {
 		$me = static::instance();
 
-		echo '<!--TESTTTTTTTT-->';
-
 		// Enqueue lightbox script
 		switch (static::$settings->floater) {
 			case 'fancybox':
