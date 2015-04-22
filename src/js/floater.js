@@ -74,28 +74,29 @@
 
 		// Determine if there are other files
 		if (this.options.scroll && id) {
+			this.current = null;
 			// Add scroll buttons
 			if (groups[id]) {
 				// Find current object in group
 				var i = 0;
 				while (i < groups[id].length) {
 					if (groups[id][i].is(element)) {
-						this.objects.current = i;
+						this.current = i;
 						break;
 					}
 					i++;
 				}
 
-				if (!this.objects.current) {
-					this.objects.current = groups[id].length;
+				if (this.current == null) {
+					this.current = groups[id].length;
 					groups[id].push(element);
 				}
 
 				this.objects.box.append((this.objects.left
 						= $('<div class="left"></div>')
-						.click(this.scroll.bind(this, this.objects, -1)))).append(
+						.click(this.scroll.bind(this, id, -1, null)))).append(
 						(this.objects.right = $('<div class="right"></div>')
-						.click(this.scroll.bind(this, this.objects, 1))));
+						.click(this.scroll.bind(this, id, 1, null))));
 
 				// Add autoscroll
 				if (this.options.autoscroll) {
@@ -110,13 +111,7 @@
 			}
 		}
 
-		// @todo Draw div
-		var type = this.options.default;
-		if (this.options.generators[type]) {
-			this.options.generators[type](element, this.objects);
-		} else {
-			/// @todo Error
-		}
+		callGenerator.call(this, element);
 	}
 
 	Viewer.prototype = {
@@ -140,12 +135,36 @@
 		/**
 		 * Scrolls the floater objects.
 		 *
+		 * @param id {string} Image group identification string
 		 * @param direction {1|-1} Direction to scroll the elements in
 		 * @param noWrap {boolean} If not true, will go to the first element
 		 *        if trying to scroll past the end of the array and the last
 		 *        for past the start of the array.
 		 */
-		scroll: function(direction, noWrap) {
+		scroll: function(id, direction, noWrap, ev) {
+			if (ev && ev.preventDefault) {
+				ev.preventDefault();
+			}
+
+			// Find the element in
+			if (!groups[id]) {
+				return;
+			}
+
+			// Change current offset
+			var newOffset = Math.max(0, Math.min(this.current
+					+ direction, groups[id].length - 1));
+
+			// Redraw if have a new offset
+			if (newOffset != this.current) {
+				this.current = newOffset;
+
+				// Clear div
+				this.objects.div.html('');
+
+				// Call redraw
+				callGenerator.call(this, groups[id][this.current]);
+			}
 		},
 
 		/**
@@ -159,6 +178,16 @@
 	 * Does the autoscroll for a Floater object
 	 */
 	function autoscroll() {
+	}
+
+	function callGenerator(element) {
+		// @todo Draw div
+		var type = this.options.default;
+		if (this.options.generators[type]) {
+			this.options.generators[type](element, this.objects);
+		} else {
+			/// @todo Error
+		}
 	}
 
 	/**
@@ -274,6 +303,8 @@
 						return opts[option];
 					}
 				}
+
+				console.log(options);
 			},
 
 			clearGroup: function(id) {

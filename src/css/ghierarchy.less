@@ -227,24 +227,50 @@ div.fBacking {
 			position: relative;
 			border-radius: 5px;
 			box-shadow: 2px 2px 15px #444;
+			padding: 0px 20px;
 
-			.close {
+			.close, .left, .right {
 				cursor: pointer;
 				position: absolute;
+
+				&:before {
+					color: #333;
+					font-family: "dashicons";
+					font-weight: bold;
+
+					&:hover {
+						color: #000;
+					}
+				}
+			}
+
+			.close {
 				right: 2px;
 				top: 2px;
 			}
 
 			.close:before {
-				font-family: "dashicons";
-				font-weight: bold;
 				content: "\f158";
 			}
 
 			.left {
+				top: 50%;
+				left: 2px;
 			}
 
 			.right {
+				top: 50%;
+				right: 2px;
+			}
+
+			.left:before {
+				font-size: 2em;
+				content: "\f341";
+			}
+
+			.right:before {
+				font-size: 2em;
+				content: "\f345";
 			}
 		}
 	}

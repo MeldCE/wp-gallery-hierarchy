@@ -20,8 +20,9 @@ gH = (function ($) {
 
 	$.viewer.option('gHBrowser', {
 		generators: {
-			imageEditor: displayImageEditor.bind(this)
+			imageEditor: displayImageEditor.bind(this),
 		},
+		scroll: true,
 		default: 'imageEditor'
 	});
 

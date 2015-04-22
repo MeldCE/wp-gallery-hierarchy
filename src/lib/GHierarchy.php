@@ -525,9 +525,9 @@ class GHierarchy {
 		}
 		if ($hook_suffix == 'gallery-hierarchy_page_gHOptions') {
 			wp_enqueue_style('wpsettings',
-					plugins_url('/css/wpsettings.min.css', dirname(__FILE__)));
+					plugins_url('/lib/css/wpsettings.min.css', dirname(__FILE__)));
 			wp_enqueue_script('wpsettings', 
-					plugins_url('/js/wpsettings.min.js', dirname(__FILE__)),
+					plugins_url('/lib/js/wpsettings.min.js', dirname(__FILE__)),
 					array('jquery'));
 		}
 		/// @todo @see http://codex.wordpress.org/I18n_for_WordPress_Developers
@@ -2034,7 +2034,7 @@ class GHierarchy {
 
 		// Build Ids
 		if ($ids) {
-			$w[] = 'id IN (' . join(', ', $ids) . ')';
+			$w[] = 'f.id IN (' . join(', ', $ids) . ')';
 		}
 
 		// Build Folders

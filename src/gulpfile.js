@@ -22,6 +22,7 @@ var stripLine  = require('gulp-strip-line');
 var tar = require('gulp-tar');
 var gzip = require('gulp-gzip');
 var symlink = require('gulp-symlink');
+var del = require('del');
 
 var paths = {
 	dist: '../dist/',
@@ -71,20 +72,13 @@ paths.ext.timepicker = {
 paths.ext.lightbox = {
 	js: 'lib/lightbox2/js/lightbox.min.{js,map}',
 	css: 'lib/lightbox2/css/*',
-	imgs: 'lib/lightbox2/img/*.{png,gif}',
+	img: 'lib/lightbox2/img/*.{png,gif}',
 };
 
 // Fancybox
 paths.ext.fancybox = {
 	js: 'lib/fancybox/{jquery.fancybox-1.3.4.pack.js,jquery.mousewheel-3.0.4.pack.js}',
 	css: 'lib/fancybox/{blank.gif,fancybox{,-{x,y}}.png,jquery.fancybox-1.3.4.css}',
-//	imgs: 'lib/lightbox2/img/*.{png,gif}',
-};
-
-// Jquery UI
-paths.ext.ui = {
-	css: 'css/jquery-ui/{jquery-ui.min.css,jquery-ui.structure.min.css,jquery-ui.theme.min.css}',
-	imgs: 'css/jquery-ui/images/*'
 };
 
 // Jquery Folders
@@ -93,17 +87,31 @@ paths.ext.hierarchySelect = {
 	css: 'lib/jquery-hierarchy-select/dist/css/folders.css'
 };
 
-// PLupload
+// Jquery UI
+paths.ext.ui = {
+	css: 'css/jquery-ui/{jquery-ui.min.css,jquery-ui.structure.min.css,jquery-ui.theme.min.css}',
+	'css/images': 'css/jquery-ui/images/*'
+};
+
+// plupload
 paths.ext.plupload = {
 	i18n: 'lib/plupload/js/i18n/*',
 	js: 'lib/plupload/js/{moxie.min.js,plupload.full.min.js,jquery.plupload.queue/jquery.plupload.queue.min.js}',
-	css: 'css/jquery.plupload.queue.css'
+	css: 'css/jquery.plupload.queue.css',
+	img: 'lib/plupload/js/jquery.plupload.queue/img/{{transp50,buttons{,-disabled}}.png,backgrounds.gif}'
 };
 
-// Packery
-paths.ext.plupload = {
+// packery
+paths.ext.packery = {
 	js: 'lib/packery/dist/packery.pkgd.min.js'
 };
+
+gulp.task('clean', [], function() {
+	del([
+		path.join(paths.dist, '**'),
+		path.join(paths.build, '**')
+	], {force: true});
+});
 
 gulp.task('markupMainPhp', [], function() {
 			return gulp.src(paths.main)
@@ -206,14 +214,41 @@ gulp.task('albumFiles', [], function() {
 gulp.task('html', [], function() {
 		});
 
-gulp.task('package', ['markupMainPhp', 'css', 'js', 'intFiles', 'albumFiles', 'basicStyle'], function() {
-	// Removed $lp lines
+for (e in paths.ext) {
+	gulp.task(e, [], (function(e) { return function() {
+		var p;
+		for (p in paths.ext[e]) {
+			gulp.src(paths.ext[e][p], {base: './'})
+					.pipe(rename({dirname: path.join('lib', p)}))
+					.pipe(gulp.dest(paths.dist));
+		}
+	}})(e));
+}
+
+gulp.task('watch', function() {
+	gulp.watch(paths.main, ['markupMainPhp']);
+	gulp.watch(paths.allJsSrc, ['js']);
+	gulp.watch(paths.cssSrc, ['css']);
+	gulp.watch(paths.basicStylesScript, ['basicStyle']);
+	gulp.watch(paths.int, ['intFiles']);
+	gulp.watch(paths.albumsSrc, ['albumFiles', 'basicStyle']);
+	for (e in paths.ext) {
+		var f, files = [];
+		for (f in paths.ext[e]) {
+			files.push(paths.ext[e][f]);
+		}
+		gulp.watch(files, [e]);
+	}
+});
+
+gulp.task('package', ['markupMainPhp', 'css', 'js', 'intFiles', 'albumFiles', 'basicStyle'].concat(Object.keys(paths.ext)), function() {
+	// removed $lp lines
 	var file = path.join(paths.dist, 'lib/GHierarchy.php');
 	
 	shell.task('sed -ie \'/static::$lp/d\' ' + file);
 
 	//gulp.src(path.join(paths.dist, 'lib/GHierarchy.php'))
-	//		.pipe(stripLine([/static::\$lp/]))
+	//		.pipe(stripline([/static::\$lp/]))
 	//		.pipe(gulp.dest(path.join(paths.dist, 'lib')));
 
 	//gulp.src(paths.dist)
@@ -229,31 +264,12 @@ gulp.task('package', ['markupMainPhp', 'css', 'js', 'intFiles', 'albumFiles', 'b
 	shell.task('cd .. && pwd');
 });
 
-for (e in paths.ext) {
-	gulp.task(e, [], (function(e) { return function() {
-		var p;
-		for (p in paths.ext[e]) {
-			gulp.src(paths.ext[e][p], {base: './'})
-					.pipe(rename({dirname: path.join('lib', p)}))
-					.pipe(gulp.dest(paths.dist));
-		}
-	}})(e));
-}
-
-gulp.task('watch', function() {
-			gulp.watch(paths.main, ['markupMainPhp']);
-			gulp.watch(paths.allJsSrc, ['js']);
-			gulp.watch(paths.cssSrc, ['css']);
-			gulp.watch(paths.basicStylesScript, ['basicStyle']);
-			gulp.watch(paths.int, ['intFiles']);
-			gulp.watch(paths.albumsSrc, ['albumFiles', 'basicStyle']);
-			for (e in paths.ext) {
-				var f, files = [];
-				for (f in paths.ext[e]) {
-					files.push(paths.ext[e][f]);
-				}
-				gulp.watch(files, [e]);
-			}
-		});
+gulp.task('one', ['markupMainPhp', 'css', 'js', 'intFiles', 'albumFiles', 'basicStyle'].concat(Object.keys(paths.ext)));
 
 gulp.task('default', ['markupMainPhp', 'css', 'js', 'intFiles', 'albumFiles', 'basicStyle', 'watch'].concat(Object.keys(paths.ext)));
+
+gulp.task('pre_production', [], function() {
+	delete paths.ext.lightbox;
+});
+
+gulp.task('production', ['pre_production', 'package'].concat(Object.keys(paths.ext)));
