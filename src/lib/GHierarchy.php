@@ -35,6 +35,8 @@ class GHierarchy {
 	protected static $dbVersion = 4;
 	protected $directories = false;
 
+	protected $dbErrors = array();
+
 	protected static $shortcodes = array('ghthumb', 'ghalbum', 'ghimage');
 
 	protected static $lp;
@@ -1396,6 +1398,19 @@ class GHierarchy {
 	}
 
 	protected function checkFunctions() {
+		// Check for database errors
+		if ($this->dbErrors) {
+			$this->echoError(__('The following errors were encountered:',
+				'gallery_hierarchy') . '<br/>' . join('<br/>', $this->dbErrors)
+				. '<br/>' . __('Please try deactivating and reactivating the Gallery '
+				. 'Hierarchy plugin. If that does not fix the issue, please ',
+				'gallery_hierarchy') . '<a target="_blank" '
+				. 'href="https://wordpress.org/support/plugin/gallery-hierarchy">'
+				. __('report the error', 'gallery_hierarchy') . '</a>.'
+				. __('We are very sorry for the inconvenience.', 'gallery_hierarchy'));
+				
+		}
+
 		if (!function_exists('finfo_file')) {
 			$this->echoError(__('The required Fileinfo Extension is not installed. Please install it',
 					'gallery_hierarchy'));
@@ -3406,6 +3421,8 @@ class GHierarchy {
 				$wpdb->query('ALTER TABLE ' . $me->imageTable . ' CHANGE added '
 						. 'updated timestamp NOT NULL DEFAULT \'0000-00-00 00:00:00\'');
 			}
+
+			static::$settings->db_version = 2;
 		}
 
 		if ($current < 3) {
@@ -3420,8 +3437,13 @@ class GHierarchy {
 
 			// Add columns if they don't exist
 			if (!isset($cols['dir_id'])) {
-				$wpdb->query('ALTER TABLE ' . $me->imageTable . ' ADD dir_id '
-						. static::$imageTableFields['fields']['dir_id']);
+				if ($wpdb->query('ALTER TABLE ' . $me->imageTable . ' ADD dir_id '
+						. static::$imageTableFields['fields']['dir_id']) === false) {
+		 			array_push($me->dbErrors, 'Error adding the dir_id column to the '
+							. 'image table: ' . $wpdb->last_error . ' (SQL was: '
+							. $wpdb->last_query . ')');
+					return;
+	 			}
 			}
 
 			// Redo all image file and directory fields
@@ -3460,8 +3482,15 @@ class GHierarchy {
 								. ' WHERE id = \'' . $image['id'] . '\'';
 						$wpdb->query($cmd);
 					}
+				} else if ($wpdb->last_error) {
+		 			array_push($me->dbErrors, 'Error getting the current images: '
+							. $wpdb->last_error . ' (SQL was: '
+							. $wpdb->last_query . ')');
+					return;
 				}
 			}
+
+			static::$settings->db_version = 3;
 		}
 
 		if ($current < 4) {
@@ -3474,8 +3503,13 @@ class GHierarchy {
 
 			// Add parent_id column if they don't exist
 			if (!isset($cols['parent_id'])) {
-				$wpdb->query('ALTER TABLE ' . $me->dirTable . ' ADD parent_id '
-						. static::$dirTableFields['fields']['parent_id']);
+				if ($wpdb->query('ALTER TABLE ' . $me->dirTable . ' ADD parent_id '
+						. static::$dirTableFields['fields']['parent_id']) === false) {
+		 			array_push($me->dbErrors, 'Error adding the parent_id column to the '
+							. 'directory table: ' . $wpdb->last_error . ' (SQL was: '
+							. $wpdb->last_query . ')');
+					return;
+				}
 			}
 
 			// Get folders
@@ -3489,7 +3523,14 @@ class GHierarchy {
 						}
 					}
 				}
+			} else if ($wpdb->last_error) {
+				array_push($me->dbErrors, 'Error getting the current directories: '
+						. $wpdb->last_error . ' (SQL was: '
+						. $wpdb->last_query . ')');
+				return;
 			}
+
+			static::$settings->db_version = 4;
 		}
 					
 		
@@ -3523,8 +3564,16 @@ class GHierarchy {
 	/**
 	 * Builds an SQL statement for creating a table.
 	 * @param $table string Name of the table.
-	 * @param $fields array Associative array of the field name and details
-	 * @param $primary string The field name to use as the primary key
+	 * @param $options array Associative array containing fields and indexes
+	 *        array (
+	 *          'fields' => array(
+	 *            'id' => 'smallint(5) NOT NULL AUTO_INCREMENT',
+	 *            'file' => 'text NOT NULL',
+	 *          ),
+	 *          'indexes' => array(
+	 *            array('type' => 'PRIMARY', 'field' => 'id'),
+	 *          )
+	 *        )        
 	 */
 	protected function buildTableSql($table, $options) {
 		global $wpdb;
@@ -3549,7 +3598,7 @@ class GHierarchy {
 		}
 		$sql = 'CREATE TABLE ' . $table . " ( \n";
 
-		foreach ($fields as $f => &$field) {
+		foreach ($options['fields'] as $f => &$field) {
 			$sql .= $f . ' ' . $field . ", \n";
 		}
 
@@ -3567,8 +3616,9 @@ class GHierarchy {
 					case 'UNIQUE':
 						$i = 'UNIQUE ';
 					case false:
-						array_push($indexes, $i . 'KEY ' . $index['name'] . ' ('
-								. $index['field'] . ")");
+						array_push($indexes, $i . 'KEY ' 
+								. (isset($index['name']) ? $index['name'] : $index['field'])
+								. ' (' . $index['field'] . ")");
 						break;
 				}
 
@@ -3577,6 +3627,9 @@ class GHierarchy {
 		}
 		
 		$sql .= "\n) " . $charset_collate . ';';
+
+		if (static::$lp) fwrite(static::$lp, "buildTableSQL made SQL statement "
+				. "$sql"); // static::$lp
 
 		return $sql;
 	}
