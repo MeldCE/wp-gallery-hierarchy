@@ -701,6 +701,8 @@ class GHierarchy {
 
 		$me = static::instance();
 
+		header('Content-Type: application/json');
+
 		// Build query
 		$parts = array();
 
@@ -733,16 +735,34 @@ class GHierarchy {
 			}
 		}
 
+		if (static::$lp) fwrite(static::$lp, "Got start of '$_POST[start]' and "
+				. "stop of '$_POST[end]'\n"); // static::$lp
+
 		// Build date
 		// Check dates are valid
-		if (!isset($_POST['start'])
-			|| !strptime($_POST['start'], '%Y-%m-%d %H:%i')) {
+		if (!isset($_POST['start'])) {
 			$_POST['start'] = false;
+		} else if ($_POST['start']
+				&& !strptime($_POST['start'], '%Y-%m-%d %H:%M')) {
+			echo json_encode(array(
+				'data' => __('Invalid taken after date. Please reenter and try again.',
+						'gallery_hierarchy')
+			));
+			return;
 		}
-		if (!isset($_POST['end'])
-			|| !strptime($_POST['end'], '%Y-%m-%d %H:%i')) {
+
+		if (!isset($_POST['end'])) {
 			$_POST['end'] = false;
+		} else if ($_POST['end'] && !strptime($_POST['end'], '%Y-%m-%d %H:%M')) {
+			echo json_encode(array(
+				'data' => __('Invalid taken before date. Please reenter and try again.',
+						'gallery_hierarchy')
+			));
+			return;
 		}
+
+		if (static::$lp) fwrite(static::$lp, "Parsed to start of '$_POST[start]' "
+				. "and stop of '$_POST[end]'\n"); // static::$lp
 
 		if ($_POST['start'] && $_POST['end']) {
 			$parts[] = 'taken BETWEEN \'' . $_POST['start'] . '\' AND \''
@@ -792,8 +812,6 @@ class GHierarchy {
 		if (static::$lp) fwrite(static::$lp, "Ajax gallery SQL command is $q\n");
 	
 		$images = $wpdb->get_results($q, ARRAY_A);
-
-		header('Content-Type: application/json');
 
 		echo json_encode($images);
 

@@ -426,6 +426,11 @@ gH = (function ($) {
 			if(!g[id]) {
 				return;
 			}
+
+			if (data.error) {
+				alert(data.error);
+				return;
+			}
 			
 			// Remap data
 			var i, images = {};
