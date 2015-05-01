@@ -12,7 +12,13 @@
     "wordpress",
     "gallery",
     "images",
-    "hierarchy"
+    "hierarchy",
+		"photo",
+		"shortcode",
+		"filter",
+		"search",
+		"browser",
+		"upload"
   ],
   "repository": {
     "type": "git",

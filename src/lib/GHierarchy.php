@@ -18,6 +18,9 @@ class GHierarchy {
 	protected static $statusTimeTransient = 'gHStatusTimeTran';
 	// Transient to store job files
 	protected static $filesTransient = 'gHFilesTran';
+	// Scan status for directories and for images
+	protected static $dirScanStatus ='';
+	protected static $imageScanStatus = '';
 	// @todo ?? protected $disabled = array();
 	protected $disable = false;
 	// How often should a status update be set
@@ -954,6 +957,9 @@ class GHierarchy {
 		if (!($size = ob_get_length())) {
 			$size = 0;
 		}
+		if (static::$lp) fwrite(static::$lp, "Closing connection with content "
+				. "length of $size:\n" . ob_get_contents() . "\n"); // static::$lp
+
 		header("Content-Encoding: none");
 		header("Content-Length: $size");
 		header("Connection: close");
@@ -961,6 +967,10 @@ class GHierarchy {
 		ob_end_flush();     // Strange behaviour, will not work
 		flush();            // Unless both are called !
 		ob_end_clean();
+		//if (function_exists('fastcgi_finish_request')) {
+		//	if (static::$lp) fwrite(static::$lp, "Calling fastcgi_finish_request\n");
+		//	fastcgi_finish_request();
+		//}
 	}
 
 	/**
@@ -2360,14 +2370,31 @@ class GHierarchy {
 
 	/**
 	 * Sets the two transients involved with scanning folders
-	 * @param $status string String to set the status transient to
+	 * @param $dirStatus {string|false} String to use for the directory status,
+	 *        or false to keep status the same
+	 * @param $imageStatus {string|false} String to use for the image status,
+	 *        or false to keep the status the same
+	 * @param $files {array} Associative array containing scan file data. Used
+	 *        to resume killed scans.
 	 */
-	static function setScanTransients($status, &$files = null) {
+	static function setScanTransients($dirStatus, $imageStatus, 
+			$overallStatus, &$files = null) {
+		if ($dirStatus !== false) static::$dirScanStatus = rtrim($dirStatus, '. ');
+		if ($imageStatus !== false) static::$imageScanStatus = $imageStatus;
 		if ($files) {
 			set_transient(static::$filesTransient, json_encode($files));
 		}
-		set_transient(static::$statusTransient, $status);
+
+		$currentStatus = ($overallStatus ? $overallStatus . '. ' : '')
+				. (static::$dirScanStatus ? static::$dirScanStatus . '. ' : '')
+				. static::$imageScanStatus;
+
+		set_transient(static::$statusTransient, $currentStatus);
 		set_transient(static::$statusTimeTransient, time());
+
+		if (static::$lp) fwrite(static::$lp, "Scan status  updated: "
+				. "'$currentStatus' " . " at " . time() . "\n"); // static::$lp
+
 		static::$nextSet = time() + static::$statusUpdateTime;
 	}
 
@@ -2433,6 +2460,9 @@ class GHierarchy {
 		try {
 			$me = static::instance();
 
+			// Cache directories so can use it to delete images later
+			$me->getDirectories();
+
 			switch (static::checkScanJob()) {
 				case 0: // None running
 				case 2: // Most likely killed
@@ -2451,7 +2481,7 @@ class GHierarchy {
 
 			if ($fullScan ||
 					!($files = json_decode(get_transient(static::$filesTransient), true))) {
-				static::setScanTransients(__('Scanning Folder',
+				static::setScanTransients('', '', __('Scanning folders',
 						'gallery_hierarchy'));
 
 				// Find all the folders and images
@@ -2465,8 +2495,9 @@ class GHierarchy {
 			$files['redoneImages'] = 0;
 
 			static::setScanTransients( 
-					__("Found $files[totalDirs] folders and $files[totalImages] "
-					. ' images.', 'gallery_hierarchy'), $files);
+					__("$files[totalDirs] folders to check.", 'gallery_hierarchy'),
+					__("$files[totalImages] images to check.", 'gallery_hierarchy'),
+					__('Scanning folders', 'gallery_hierarchy'), $files);
 
 			// Add directories
 			// Get the current directories
@@ -2487,28 +2518,31 @@ class GHierarchy {
 					static::setScanTransients(
 							__("Added $files[newDirs] new folders. ", 'gallery_hierarchy')
 							. count($files['dirs']) . __(' to check.', 'gallery_hierarchy'),
-							$files); 
+							false, __('Scanning folders', 'gallery_hierarchy'), $files); 
 				}
 			}
 
-			/// @todo Remove any deleted directories
-			//if (count($dirs)) {
-			//	$wpdb->query($wpdb->prepare('DELETE FROM ' . $me->dirTable
-			//			. 'WHERE id IN (' . . ')'));
-			//}
+			// Remove any deleted directories
+			if (count($dirs)) {
+				$files['removedDirs'] = count($dirs);
+				$dirIds = array();
+				foreach ($dirs as &$dir) {
+					array_push($dirIds, $dir->id);
+				}
+				$wpdb->query('DELETE FROM ' . $me->dirTable
+						. ' WHERE id IN (' . join(', ', $dirIds) . ')');
+			}
 
-			static::setScanTransients(__("Added $files[newDirs] folders, ",
-					'gallery_hierarchy')
-					. count($dirs) . __(' folders total. Now looking at '
-					. "$files[totalImages] images. ",
-					'gallery_hierarchy'), $files);
-
-
+			static::setScanTransients(($files['newDirs'] ?
+					__("$files[newDirs] new folders, ", 'gallery_hierarchy') : '')
+					. (isset($files['removedDirs']) ? __("$files[removedDirs] folders "
+					. "removed.", 'gallery_hierarchy') : ''), false,
+					__('Finished scanning folders', 'gallery_hierarchy'), $files);
 
 			// Add images
 			
 			//Get current images
-			$images = $wpdb->get_results('SELECT id,file,dir,dir_id,updated FROM ' 
+			$images = $wpdb->get_results('SELECT id,file,dir_id,updated FROM ' 
 					. $me->imageTable, OBJECT_K);
 
 			// @todo Could fail within this loop, then we loose the image.
@@ -2535,8 +2569,10 @@ class GHierarchy {
 						$me->registerImage($image, $id, true);
 						$files['redoneImages']++;
 					} else {
-						unset($images[$image]);
 					}
+					
+					// Remove image from previous images
+					unset($images[$id]);
 				} else {
 					if (static::$lp) fwrite(static::$lp, "Adding $iPath\n");
 					$me->registerImage($image);
@@ -2545,7 +2581,7 @@ class GHierarchy {
 
 				// Report status
 				if (static::$nextSet < time()) {
-					static::setScanTransients(
+					static::setScanTransients(false,
 							($files['newImages'] ? __("Added $files[newImages] new images. ",
 							'gallery_hierarchy') : '')
 							. ($files['updatedImages'] ? __("Updated $files[updatedImages] "
@@ -2554,36 +2590,49 @@ class GHierarchy {
 							. ($files['redoneImages'] ? __("Redid $files[redoneImages] "
 							. "images. ", 'gallery_hierarchy') : '')
 							. count($files['images']) . __(' to check.', 'gallery_hierarchy'),
-							$files);
+							__('Processing images', 'gallery_hierarchy'), $files);
 				}
 			}
 
-			//if (count($dirs)) {
-			//	$wpdb->query($wpdb->prepare('DELETE FROM ' . $me->dirTable
-			//			. 'WHERE id IN (' . . ')'));
-			//}
+			if (count($images)) {
+				$files['removedImages'] = count($images);
+				$imageIds = array();
+				foreach ($images as &$image) {
+					if (static::$lp) fwrite(static::$lp, "Scan removing "
+							. $image->file . " (" . $image->id . ")\n"); // static::$lp
 
-			$changes = ($files['newDirs'] ? __("Added $files[newDirs] folders",
+					array_push($imageIds, $image->id);
+					// Delete cached files
+					if ($path = $me->getDirectory($image->dir_id)) {
+						$me->delCacheFiles(gHpath($path, $image->file));
+					}
+				}
+				$wpdb->query('DELETE FROM ' . $me->imageTable
+						. ' WHERE id IN (' . join(', ', $imageIds) . ')');
+			}
+
+			static::setScanTransients(false,
+					($files['newImages'] ? __("$files[newImages] new images ",
 					'gallery_hierarchy') : '')
-					//. count($dirs) . __(' removed. ', 'gallery_hierarchy')
-					. ($files['newImages'] ? __("Added $files[newImages] new images. ",
-					'gallery_hierarchy') : '')
-					. ($files['updatedImages'] ? __("Updated $files[updatedImages] "
-					. "images. ",
-					'gallery_hierarchy') : '')
-					. ($files['redoneImages'] ? __("Redid $files[redoneImages] "
-					. "images. ", 'gallery_hierarchy') : '');
-					//. __('Deleted ', 'gallery_hierarchy')
-					//. count($images) . __(' removed.', 'gallery_hierarchy')
-			
-			static::setScanTransients(
-					__('Scan complete. ', 'gallery_hierarchy')
-					. ($changes ? __('Changes were: ', 'gallery_hierarchy') . $changes
-					: __('No changes found.', 'gallery_hierarchy')));
+					. ($files['updateImages'] ? __("$files[updatedImages] updated "
+					. "images ", 'gallery_hierarchy') : '')
+					. ($files['redoneImages'] ? __("$files[redoneImages] readded "
+					. "images ", 'gallery_hierarchy') : '')
+					. ($files['removedImages'] ? __("$files[removedImages] removed "
+					. "images.", 'gallery_hierarchy') : ''),
+					__('Finished processing images',
+					'gallery_hierarchy'));
+
+			static::setScanTransients(false, false, __('Finished scan',
+					'gallery_hierarchy') . ((static::$dirScanStatus
+					|| static::$imageScanStatus) ? '' : '. ' . __('No updates',
+					'gallery_hierarchy')));
+
 			delete_transient(static::$filesTransient);
+			delete_transient(static::$scanTransient);
 			wp_clear_scheduled_hook('gh_rescan');
 		} catch (Exception $e) {
-			static::setScanTransients(__('Error: ',
+			static::setScanTransients('', '',__('Error: ',
 					'gallery_hierarchy') . $e->getMessage());
 			// Clear running transients
 			if (static::$lp) fwrite(static::$lp, "Exception caught in scan()\n"
@@ -2610,14 +2659,13 @@ class GHierarchy {
 				if ($image->file == $file && $image->dir_id == $dir) {
 					if (static::$lp) fwrite(static::$lp, "Found - $id\n");
 					return $id;
-				} else {
-					if (static::$lp) fwrite(static::$lp, "Not found\n");
 				}
 			}
 		} else {
 			if (static::$lp) fwrite(static::$lp, "New directory\n");
 		}
 
+		if (static::$lp) fwrite(static::$lp, "Not found\n");
 		return false;
 	}
 
@@ -2688,7 +2736,7 @@ class GHierarchy {
 			if (static::$nextSet < time()) {
 				static::setScanTransients(__('Scanning Folder. ',
 						'gallery_hierarchy') . $files['totalDirs'] . __(' folders found, ',
-						'gallery_hierarchy') . $files['totalImages'] . __(' images found.',
+						'gallery_hierarchy'), $files['totalImages'] . __(' images found.',
 						'gallery_hierarchy'));
 			}
 		}
@@ -2824,9 +2872,19 @@ class GHierarchy {
 	protected function delCacheFiles($path) {
 		$name = str_replace(DIRECTORY_SEPARATOR, '_', $path);
 
-		$path = gHPath($this->cacheDir, $path . '*');
+		/// @todo Temporary
+		$name = explode('.', $name);
+		array_pop($name);
+		$name = join('.', $name);
+		
 
-		$files = glob($path);
+		$glob = gHPath($this->cacheDir, $name . '*');
+
+		$files = glob($glob);
+		
+		if (static::$lp) fwrite(static::$lp, "Deleting cache files for $path "
+				. "with glob '$glob'\n"); // static::$lp
+		
 		foreach($files as $file){
 			if(is_file($file)) {
 				unlink($file);
@@ -2843,6 +2901,7 @@ class GHierarchy {
 	 * @return string Path to cached image relative to the cache base directory
 	 */
 	protected function getCImagePath($image, $size = null) {
+		/// @todo Stop removing "extension"
 		if (is_string($image)) {
 			$file = explode('.', $image);
 			$ext = array_pop($file);
@@ -3167,6 +3226,10 @@ class GHierarchy {
 				// Check the orientation
 				if (static::$settings->rotate_images) {
 					if (isset($exif['Orientation'])) {
+
+						if (static::$lp) fwrite(static::$lp, "Rotating with an "
+								. "orientation of '$exif[Orientation]'\n"); // static::$lp
+
 						$rotate = 0;
 						$flip = '';
 
@@ -3194,6 +3257,9 @@ class GHierarchy {
 							default:
 								break; 
 						}
+						
+						if (static::$lp) fwrite(static::$lp, "Flip is '$flip', "
+								. "rotate is '$rotate'\n"); // static::$lp
 
 						// Flip / rototate the image
 						if ($rotate || $flip) {

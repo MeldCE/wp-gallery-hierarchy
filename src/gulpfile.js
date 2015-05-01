@@ -31,6 +31,7 @@ var paths = {
 	int: ['readme.txt', 'README.md', 'LICENSE', 'lib/GHierarchy.php', 'lib/GHAlbum.php', 'lib/utils.php'],
 	albumsSrc: 'albums/*.php',
 	main: 'gallery-hierarchy.php',
+	readme: 'readme.txt',
 	//jsSrc: '{js/ghierarchy.js,albums/js/*.js}',
 	jsSrc: ['js/ghierarchy.js', 'albums/js/*.js'],
 	cssSrc: 'css/{jquery.plupload.queue.css,ghierarchy.less}',
@@ -114,21 +115,39 @@ gulp.task('clean', [], function() {
 });
 
 gulp.task('markupMainPhp', [], function() {
-			return gulp.src(paths.main)
-					.pipe(insert.prepend('<?php\n/**\n'
-							+ 'Plugin Name: ' + package.title + '\n'
-							+ 'Plugin URI: ' + package.homepage + '\n'
-							+ 'Version: ' + package.version + '\n'
-							+ 'Description: ' + package.description + '\n'
-							+ 'Author: ' + package.author.name + '\n'
-							+ 'Author URI: ' + package.author.url + '\n'
-							+ 'Text Domain: gallery-hierarchy\n'
-							+ 'Tags: ' + package.keywords.join(',') + '\n'
-							+ 'Licence: ' + package.licence + '\n'
-							+ '*/\n?>\n'
-					))
-					.pipe(gulp.dest(paths.dist));
-		});
+	return gulp.src(paths.main)
+			.pipe(insert.prepend('<?php\n/**\n'
+					+ 'Plugin Name: ' + package.title + '\n'
+					+ 'Plugin URI: ' + package.homepage + '\n'
+					+ 'Version: ' + package.version + '\n'
+					+ 'Description: ' + package.description + '\n'
+					+ 'Author: ' + package.author.name + '\n'
+					+ 'Author URI: ' + package.author.url + '\n'
+					+ 'Text Domain: gallery-hierarchy\n'
+					+ 'Tags: ' + package.keywords.join(',') + '\n'
+					+ 'Licence: ' + package.licence + '\n'
+					+ '*/\n?>\n'
+			))
+			.pipe(gulp.dest(paths.dist));
+});
+
+gulp.task('readme', [], function() {
+	return gulp.src(paths.readme)
+			.pipe(insert.prepend('=== ' + package.title + ' ===\n'
+					+ 'Contributors: weldstudio\n'
+					+ 'Donate link: http://gift.meldce.com\n'
+					+ 'Link: ' + package.homepage + '\n'
+					+ 'Tags: ' + package.keywords.join(', ') + '\n'
+					+ 'Requires at least: 3.8.0\n'
+					+ 'Tested up to: 3.9.2\n'
+					+ 'Stable tag: 0.2.0\n'
+					+ 'License: ' + package.licence + '\n'
+					+ 'License URI: http://www.gnu.org/licenses/gpl-2.0.html\n'
+					+ '\n'
+					+ package.description + '\n'
+			))
+			.pipe(gulp.dest(paths.dist));
+});
 
 gulp.task('auto-reload', function() {
 	var process;
@@ -241,7 +260,9 @@ gulp.task('watch', function() {
 	}
 });
 
-gulp.task('package', ['markupMainPhp', 'css', 'js', 'intFiles', 'albumFiles', 'basicStyle'].concat(Object.keys(paths.ext)), function() {
+var defaultTasks = ['readme', 'markupMainPhp', 'css', 'js', 'intFiles', 'albumFiles', 'basicStyle'].concat(Object.keys(paths.ext));
+
+gulp.task('package', defaultTasks, function() {
 	// removed $lp lines
 	var file = path.join(paths.dist, 'lib/GHierarchy.php');
 	
@@ -264,9 +285,9 @@ gulp.task('package', ['markupMainPhp', 'css', 'js', 'intFiles', 'albumFiles', 'b
 	shell.task('cd .. && pwd');
 });
 
-gulp.task('one', ['markupMainPhp', 'css', 'js', 'intFiles', 'albumFiles', 'basicStyle'].concat(Object.keys(paths.ext)));
+gulp.task('one', defaultTasks);
 
-gulp.task('default', ['markupMainPhp', 'css', 'js', 'intFiles', 'albumFiles', 'basicStyle', 'watch'].concat(Object.keys(paths.ext)));
+gulp.task('default', defaultTasks.concat(['watch']));
 
 gulp.task('pre_production', [], function() {
 	delete paths.ext.lightbox;

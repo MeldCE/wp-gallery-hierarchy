@@ -1,15 +1,3 @@
-=== Gallery Hierarchy ===
-Contributors: weldstudio
-Donate link: http://gift.meldce.com
-Tags: gallery, photo, hierarchy, thumbnail, album, shortcode, filter, search
-Requires at least: 3.8.0
-Tested up to: 3.9.2
-Stable tag: 1.0
-License: GPLv2
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
-
-A simplistic gallery plugin for Wordpress that stores images in a hierarchical folder structure.
-
 == Description ==
 
 By [Meld Computer Engineering](http://www.meldce.com)
