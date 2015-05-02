@@ -99,7 +99,7 @@ paths.ext.plupload = {
 	i18n: 'lib/plupload/js/i18n/*',
 	js: 'lib/plupload/js/{moxie.min.js,plupload.full.min.js,jquery.plupload.queue/jquery.plupload.queue.min.js}',
 	css: 'css/jquery.plupload.queue.css',
-	img: 'lib/plupload/js/jquery.plupload.queue/img/{{transp50,buttons{,-disabled}}.png,backgrounds.gif}'
+	img: 'lib/plupload/js/jquery.plupload.queue/img/{{transp50,buttons{,-disabled}}.png,{delete,done,backgrounds}.gif}'
 };
 
 // packery

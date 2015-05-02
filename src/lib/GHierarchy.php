@@ -277,7 +277,7 @@ class GHierarchy {
 									. '<br>' . $albumDescription,
 							'type' => 'select',
 							'values' => $albums,
-							'default' => 'thumbnail'
+							'default' => 'thumbnails'
 						),
 						'thumb_class' => array(
 							'title' => __('Default Thumbnail Class', 'gallery_hierarchy'),
@@ -2098,7 +2098,7 @@ class GHierarchy {
 				. ' AS d ON d.id = f.dir_id '
 				. ($w ? ' WHERE ' . join(' OR ', $w) : '') . ' ORDER BY taken';
 		
-		if (static::$lp) fwrite(static::$lp, "command is $q\n");
+		if (static::$lp) fwrite(static::$lp, "doShortcode: Command is $q\n");
 
 		$images = $wpdb->get_results($q, OBJECT_K);
 		
@@ -2216,6 +2216,7 @@ class GHierarchy {
 				break;
 			case 'ghthumb':
 				$atts['type'] = static::$settings->thumb_album;
+				if (static::$lp) fwrite(static::$lp, "Using album '$atts[type]' for album");
 			case 'ghalbum':
 				// `type="<type1>"` - of album (`ghalbum`)
 				// Check we have a valid album, if not, use the thumbnail one
@@ -3706,8 +3707,9 @@ class GHierarchy {
 						break;
 				}
 
-				$sql .= join($indexes, ", \n");
 			}
+			
+			$sql .= join($indexes, ", \n");
 		}
 		
 		$sql .= "\n) " . $charset_collate . ';';
