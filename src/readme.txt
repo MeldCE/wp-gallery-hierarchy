@@ -196,3 +196,45 @@ https://github.com/MeldCE/wp-gallery-hierarchy/issues
 
 == Changelog ==
 https://github.com/MeldCE/wp-gallery-hierarchy/releases
+
+=== v0.2 ===
+New version, lots of fixed features including:
+
+-ability to upload photos via the interface
+-reworked browser and folder selection
+-lots of bug fixes
+-improved user interface
+
+The version now allows you to select between lightbox and fancybox, however
+the version on the Wordpress plugins site does not include the lightbox as
+it is under the CC license, so you must either download lightbox separately
+and install it manually, or install this plugin from Github.
+
+=== v0.1.3 ===
+Major bugfixes done to the scanner and some improvements made. Note that this
+release includes lightbox2, which is under a CC license. For Wordpress
+releases see -fancybox releases.
+
+=== v0.1.2 ===
+Fixed some bugs in the gallery and added some nice to haves to make it easier
+to use.
+
+=== v0.1-beta ===
+Current capabilities are:
+
+Scanning the image folder for new images
+Browsing/searching images using the image browser
+Generating a shortcode (with minimal attributes) with the image browser
+Current albums are:
+
+Thumbnail - Simple album for displaying a single or group of thumbnails.
+Labelling as pre-release just there is a bug that I haven't managed to see
+during my testing.
+
+There are two flavours:
+
+-One using lightbox2 (has a Creative Commons licence)
+-One using fancybox (MIT licence - capable with Wordpress licence)
+
+Eventually, there will be one flavour once I have sorted out a nice lightbox
+that is GPL/MIT.

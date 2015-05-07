@@ -28,7 +28,7 @@ var paths = {
 	dist: '../dist/',
 	build: '../build/',
 	ext: {},
-	int: ['readme.txt', 'README.md', 'LICENSE', 'lib/GHierarchy.php', 'lib/GHAlbum.php', 'lib/utils.php'],
+	int: ['README.md', 'LICENSE', 'lib/GHierarchy.php', 'lib/GHAlbum.php', 'lib/utils.php'],
 	albumsSrc: 'albums/*.php',
 	main: 'gallery-hierarchy.php',
 	readme: 'readme.txt',
@@ -220,7 +220,7 @@ gulp.task('basicStyle', ['createBasicStyle'], function() {
 					.pipe(gulp.dest(paths.css));
 		});
 
-gulp.task('intFiles', [], function() {
+gulp.task('intFiles', ['readme'], function() {
 			return gulp.src(paths.int, {base: './'})
 					.pipe(gulp.dest(paths.dist));
 		});
