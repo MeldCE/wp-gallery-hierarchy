@@ -1,5 +1,7 @@
 *~
 .*.sw?
+node_modules
+src/node_modules
 gallery-hierarchy
 gallery-hierarchy.*.tgz
 gallery-hierarchy.*.zip

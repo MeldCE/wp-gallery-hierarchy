@@ -1,0 +1,57 @@
+{
+  "name": "gallery-hierarchy",
+  "version": "0.2.0",
+  "homepage": "http://www.meldce.com/gallery-hierarchy",
+  "author": {
+    "name": "Meld Computer Engineering",
+    "url": "http://www.meldce.com"
+  },
+  "title": "Gallery Hierarchy",
+  "description": "A simple image gallery where images are stored in hierarchical folders.",
+  "keywords": [
+    "wordpress",
+    "gallery",
+    "images",
+    "hierarchy",
+		"photo",
+		"shortcode",
+		"filter",
+		"search",
+		"browser",
+		"upload"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MeldCE/wp-gallery-hierarchy"
+  },
+  "contributors": [
+    {
+      "name": "Jack Farley",
+      "email": "jack@meldce.com"
+    }
+  ],
+  "bugs": "https://github.com/MeldCE/wp-gallery-hierarchy/issues",
+  "licence": "GPL-3.0",
+  "devDependencies": {
+    "gulp-uglify": "~1.0.1",
+    "gulp-util": "~3.0.1",
+    "gulp-check": "~0.1.1",
+    "gulp-mini-css": "0.0.1",
+    "gulp-less": "~1.3.6",
+    "gulp-jsvalidate": "~1.0.1",
+    "gulp-rename": "~1.2.0",
+    "gulp-css-validator": "0.0.4",
+    "gulp-insert": "~0.4.0",
+    "gulp-shell": "~0.2.11",
+    "gulp-strip-line": "0.0.1",
+    "gulp-gzip": "~1.1.0",
+    "gulp-tar": "~1.4.0",
+    "gulp-symlink": "~2.1.0",
+    "del": "~1.1.1"
+  },
+  "dependencies": {
+    "gulp-inlining-node-require": "0.0.3",
+    "gulp-streamify": "0.0.5",
+    "gulp-include": "~1.1.1"
+  }
+}

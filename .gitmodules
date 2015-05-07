@@ -1,12 +1,27 @@
-[submodule "lib/lightbox2"]
-	path = lib/lightbox2
-	url = https://github.com/lokesh/lightbox2.git
-[submodule "lib/wp-settings"]
-	path = lib/wp-settings
+[submodule "src/lib/wp-settings"]
+	path = src/lib/wp-settings
 	url = https://github.com/weldstudio/wp-settings.git
-[submodule "lib/jquery-ui-multiselect"]
-	path = lib/jquery-ui-multiselect
-	url = https://github.com/ehynds/jquery-ui-multiselect-widget.git
-[submodule "lib/jquery-ui-timepicker"]
-	path = lib/jquery-ui-timepicker
-	url = https://github.com/trentrichardson/jQuery-Timepicker-Addon.git
+[submodule "src/lib/jcarousel"]
+	path = src/lib/jcarousel
+	url = https://github.com/jsor/jcarousel.git
+[submodule "src/lib/camanjs"]
+	path = src/lib/camanjs
+	url = https://github.com/meltingice/CamanJS.git
+[submodule "src/lib/plupload"]
+	path = src/lib/plupload
+	url = https://github.com/moxiecode/plupload.git
+[submodule "src/lib/simplefadeslideshow"]
+	path = src/lib/simplefadeslideshow
+	url = https://github.com/pascalbajorat/simplefadeslideshow.git
+[submodule "src/lib/jqueryfiletree"]
+	path = src/lib/jqueryfiletree
+	url = https://github.com/daverogers/jQueryFileTree.git
+[submodule "src/lib/jquery-folders"]
+	path = src/lib/jquery-folders
+	url = https://github.com/MeldCE/jquery-folders.git
+[submodule "src/lib/jquery-hierarchy-select"]
+	path = src/lib/jquery-hierarchy-select
+	url = https://github.com/MeldCE/jquery-hierarchy-select
+[submodule "src/lib/packery"]
+	path = src/lib/packery
+	url = https://github.com/metafizzy/packery.git

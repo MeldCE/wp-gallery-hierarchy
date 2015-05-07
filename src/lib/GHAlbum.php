@@ -37,9 +37,18 @@ interface GHAlbum {
 	static function enqueue();
 
 	/**
+	 * Returns an associative array of attribute and descriptions of attributes
+	 * specific to this album. Is used to generate options on the gallery
+	 * builder. Each attribute key should have an array value containing the
+	 * type, a label and a description.
+	 */
+	static function attributes();
+
+	/**
 	 * Generates the album for the given images and options. The options will
 	 * be the options built from the options in the shortcode and the defaults
 	 * set in the plugin options.
+	 * @internal Used to generate the builtin.css file.
 	 *
 	 * @param $images array Array containing the image *objects* (resulting from
 	 *                      a call to $wpdb->get_results(..., OBJECT_K). The
@@ -48,5 +57,13 @@ interface GHAlbum {
 	 * @param $options array Array containing the options built for the shortcode
 	 * @return string The HTML for the album
 	 */
-	 static function printAlbum(&$images, &$options);
+	static function printAlbum(&$images, &$options);
+
+	/**
+	 * Prints the CSS used to style the album when the option include inbuilt
+	 * style is selected. It should try and use unique classnames that should
+	 * be included by printAlbum only when the option is selected.
+	 * @see GHierarchy::printStyle For the generic styles that can be reused.
+	 */
+	static function printStyle();
 }

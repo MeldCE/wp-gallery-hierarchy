@@ -1,11 +1,7 @@
-[Gallery Hierarchy (gallery-hierarchy)](https://github.com/WeldCE/wp-gallery-hierarchy)
-A simplistic gallery plugin for Wordpress that stores images in a hierarchical folder structure.
-
+## Description
 By [Meld Computer Engineering](http://www.meldce.com)
 
 Support this opensource development [Paypal](http://gift.meldce.com) [Gittip](http://gittip.meldce.com)
-
-## Introduction
 
 Being super tired of the limitations of the gallery plugins in Wordpress
 that I have tried and looked at, I decided to create my own that suits my
@@ -28,10 +24,6 @@ ids.
 
 This plugin contains no styling for the inserted images, so it is up to you or
 your theme to style them how you want.
-
-## Releases
-- [v0.1-beta](https://github.com/MeldCE/wp-gallery-hierarchy/releases/tag/v0.1-beta)
-  [Release .zip file](https://github.com/MeldCE/wp-gallery-hierarchy/releases/download/v0.1-beta/gallery-hierarchy_v0.1-beta.zip)
 
 ## Features
 - Hierarchical storage of images
@@ -137,35 +129,24 @@ tag or both the `travel` and `new zealand` tags.
 - Add the title to the start of the comment
 - What is displayed by default below the images (per type)
 
-## Installation from Github
-This project uses the Github projects mentioned below as Git submodules.
-To initialise them, you will need to run the command
-`git submodule update --init`
-from the root directory.
-- [Lightbox](https://github.com/lokesh/lightbox2.git)
-- [wp-settings](https://github.com/weldstudio/wp-settings)
-- [jquery-ui-multiselect-widget](https://github.com/ehynds/jquery-ui-multiselect-widget)
-- [jquery-Timepicker-Addon](https://github.com/trentrichardson/jQuery-Timepicker-Addon)
-You will also need to generate minified versions of the Javascript and CSS
-files by running the command
-`make minify`
+## Installation
+Installation is easy as installing and activating the plugin from
+Wordpress.com.
 
-## Use
 Once the plugin is activated in Wordpress, a Gallery Hierarchy menu will
 appear in the dashboard. Select the Gallery Hierarchy menu and go to options.
 Ensure the options are correct for your setup, including the folder from which
-to retrieve images. The current version does not have the capability of
-uploading images, so image will have to be manually uploaded. Don't worry,
-this feature is on its way.
+to retrieve images (by default, it is `wp-content/gHImages`).
 
 ### Loading Images
 Images can be loaded by going to Load Images in the Gallery Hierarchy menu.
-Click on the Rescan button to start a scan to find your images in the
-configured directory. The scan uses wp-cron to start the scan process. You may
-need to visit your site before the cron kicks off (make sure you are not
-getting a cache version of your site by holding down the SHIFT key and pressing
-the refresh button). Once the scan is underway, status updates will be
-displayed on the Load Image page. Once the scan is complete, you will be able
+You can either scan for photos already on your site in a specific folder, or
+upload them through the upload interface.
+
+To scan for images in the image directory (by default `wp-content/gHImages`),
+click on the Rescan button to start a scan to find your images. The scan uses
+AJAX requests to start the scanning, so scan status updates should start
+appearing. Once the scan is complete, you will be able
 to view your images and use a shortcode to insert them into posts and pages.
 
 ### Viewing Images
@@ -224,8 +205,50 @@ Custom albums can be created by implementing the GHAlbum interface. The
 specification for the interface can be found in the
 `gallery-hierarchy/lib/GHAlbum.php` file.
 
+## Releases
+https://github.com/MeldCE/wp-gallery-hierarchy/releases
+
+### v0.2.0
+New version, lots of fixed features including:
+
+-ability to upload photos via the interface
+-reworked browser and folder selection
+-lots of bug fixes
+-improved user interface
+
+The version now allows you to select between lightbox and fancybox, however
+the version on the Wordpress plugins site does not include the lightbox as
+it is under the CC license, so you must either download lightbox separately
+and install it manually, or install this plugin from Github.
+
+### v0.1.3
+Major bugfixes done to the scanner and some improvements made. Note that this
+release includes lightbox2, which is under a CC license. For Wordpress
+releases see -fancybox releases.
+
+### v0.1.2
+Fixed some bugs in the gallery and added some nice to haves to make it easier
+to use.
+
+### v0.1-beta
+Current capabilities are:
+
+Scanning the image folder for new images
+Browsing/searching images using the image browser
+Generating a shortcode (with minimal attributes) with the image browser
+Current albums are:
+
+Thumbnail - Simple album for displaying a single or group of thumbnails.
+Labelling as pre-release just there is a bug that I haven't managed to see
+during my testing.
+
+There are two flavours:
+
+-One using lightbox2 (has a Creative Commons licence)
+-One using fancybox (MIT licence - capable with Wordpress licence)
+
+Eventually, there will be one flavour once I have sorted out a nice lightbox
+that is GPL/MIT.
+
 ## Future Features (Todos)
 https://github.com/MeldCE/wp-gallery-hierarchy/issues
-
-## Changelog
-https://github.com/MeldCE/wp-gallery-hierarchy/releases

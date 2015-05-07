@@ -1,21 +1,8 @@
-=== Gallery Hierarchy ===
-Contributors: weldstudio
-Donate link: http://gift.weldce.com
-Plugin link: http://www.weldce.com/gallery-hierarchy.php
-Tags: gallery, photo, hierarchy, thumbnail, album, shortcode, filter, search
-Requires at least: 3.8.0
-Tested up to: 3.9.2
-Stable tag: 0.1.3
-License: GPLv2
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
-
-A simplistic gallery plugin for Wordpress that stores images in a hierarchical folder structure.
-
 == Description ==
 
-By [Weld Computer Engineering](http://www.weldce.com)
+By [Meld Computer Engineering](http://www.meldce.com)
 
-Support this opensource development [Paypal](http://gift.weldce.com) [Gittip](http://gittip.weldce.com)
+Support this opensource development [Paypal](http://gift.meldce.com) [Gittip](http://gittip.meldce.com)
 
 Images are stored in hierarchical folders, as you normally would. To add new
 images, you can either put them directly into the folders or upload them 
@@ -193,8 +180,13 @@ manually generate a shortcode, or use the shortcode builder in the Image
 Gallery. Don't worry, in the not too distant future, you will be able to do
 this from the edit page.
 
+== Custom Albums ==
+Custom albums can be created by implementing the GHAlbum interface. The
+specification for the interface can be found in the
+`gallery-hierarchy/lib/GHAlbum.php` file.
+
 == Future Features (Todos) ==
-https://github.com/weldstudio/wp-gallery-hierarchy/issues
+https://github.com/MeldCE/wp-gallery-hierarchy/issues
 
 == Screenshots ==
 
@@ -203,4 +195,46 @@ https://github.com/weldstudio/wp-gallery-hierarchy/issues
 == Upgrade Notice ==
 
 == Changelog ==
-https://github.com/weldstudio/wp-gallery-hierarchy/releases
+https://github.com/MeldCE/wp-gallery-hierarchy/releases
+
+=== v0.2 ===
+New version, lots of fixed features including:
+
+-ability to upload photos via the interface
+-reworked browser and folder selection
+-lots of bug fixes
+-improved user interface
+
+The version now allows you to select between lightbox and fancybox, however
+the version on the Wordpress plugins site does not include the lightbox as
+it is under the CC license, so you must either download lightbox separately
+and install it manually, or install this plugin from Github.
+
+=== v0.1.3 ===
+Major bugfixes done to the scanner and some improvements made. Note that this
+release includes lightbox2, which is under a CC license. For Wordpress
+releases see -fancybox releases.
+
+=== v0.1.2 ===
+Fixed some bugs in the gallery and added some nice to haves to make it easier
+to use.
+
+=== v0.1-beta ===
+Current capabilities are:
+
+Scanning the image folder for new images
+Browsing/searching images using the image browser
+Generating a shortcode (with minimal attributes) with the image browser
+Current albums are:
+
+Thumbnail - Simple album for displaying a single or group of thumbnails.
+Labelling as pre-release just there is a bug that I haven't managed to see
+during my testing.
+
+There are two flavours:
+
+-One using lightbox2 (has a Creative Commons licence)
+-One using fancybox (MIT licence - capable with Wordpress licence)
+
+Eventually, there will be one flavour once I have sorted out a nice lightbox
+that is GPL/MIT.
