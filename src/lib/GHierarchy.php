@@ -1641,7 +1641,8 @@ class GHierarchy {
 				. $id . 'pages" class="tablenav-pages"></span></p>';*/
 
 		// Photo div
-		echo '<div id="' . $id . 'pad"></div>';
+		echo '<div id="' . $id . 'pad"' . ($insert ? ' class="builderOn"' : '')
+				. '></div>';
 		/// @todo Add admin_url('admin-ajax.php')
 		echo '<script>gH.gallery(\'' . $id . '\', ' . ($insert ? 1 : 0) . ');</script>';
 	}
@@ -2102,6 +2103,14 @@ class GHierarchy {
 
 		$images = $wpdb->get_results($q, OBJECT_K);
 		
+		if (static::$lp) fwrite(static::$lp, "images are:\n" . print_r($images, 1)
+				. "\n"); // static::$lp
+
+		// If no images, return nothing
+		if (!$images) {
+			return '';
+		}
+
 		// Rebuild array if based on ids @todo Implement attribute for this
 		// Determine position of specified images based on positional weighting
 		if ($ids) {

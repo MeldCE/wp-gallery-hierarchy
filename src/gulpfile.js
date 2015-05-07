@@ -7,6 +7,7 @@ var fs = require('fs');
 var uglify = require('gulp-uglify');
 var cssMinify = require('gulp-mini-css');
 var lessCss = require('gulp-less');
+var replace = require('gulp-replace');
 var jsValidate = require('gulp-jsvalidate');
 var cssValidate = require('gulp-css-validator');
 var insert = require('gulp-insert');
@@ -28,10 +29,10 @@ var paths = {
 	dist: '../dist/',
 	build: '../build/',
 	ext: {},
-	int: ['README.md', 'LICENSE', 'lib/GHierarchy.php', 'lib/GHAlbum.php', 'lib/utils.php'],
+	int: ['LICENSE', 'lib/GHierarchy.php', 'lib/GHAlbum.php', 'lib/utils.php'],
 	albumsSrc: 'albums/*.php',
 	main: 'gallery-hierarchy.php',
-	readme: 'readme.txt',
+	readme: 'README.md',
 	//jsSrc: '{js/ghierarchy.js,albums/js/*.js}',
 	jsSrc: ['js/ghierarchy.js', 'albums/js/*.js'],
 	cssSrc: 'css/{jquery.plupload.queue.css,ghierarchy.less}',
@@ -132,21 +133,36 @@ gulp.task('markupMainPhp', [], function() {
 });
 
 gulp.task('readme', [], function() {
+	// readme.txt
 	return gulp.src(paths.readme)
+			.pipe(replace(/^## (.*)/mg, '== $1 =='))
+			.pipe(replace(/^###+ (.*)/mg, '= $1 ='))
 			.pipe(insert.prepend('=== ' + package.title + ' ===\n'
 					+ 'Contributors: weldstudio\n'
 					+ 'Donate link: http://gift.meldce.com\n'
 					+ 'Link: ' + package.homepage + '\n'
 					+ 'Tags: ' + package.keywords.join(', ') + '\n'
 					+ 'Requires at least: 3.8.0\n'
-					+ 'Tested up to: 3.9.2\n'
-					+ 'Stable tag: 0.2.0\n'
+					+ 'Tested up to: 4.2.2\n'
+					+ 'Stable tag: ' + package.version + '\n'
 					+ 'License: ' + package.licence + '\n'
 					+ 'License URI: http://www.gnu.org/licenses/gpl-2.0.html\n'
 					+ '\n'
 					+ package.description + '\n'
 			))
-			.pipe(gulp.dest(paths.dist));
+			.pipe(rename({
+					basename: "readme",
+					extname: ".txt"
+			}))
+			.pipe(gulp.dest(paths.dist))
+			// README.md
+			&& gulp.src(paths.readme)
+					.pipe(insert.prepend('[' + package.title + ' (' + package.name
+							+ ')](' + package.homepage + ')\n'
+							+ '====================\n'
+							+ package.description + '\n\n'
+					))
+					.pipe(gulp.dest('../'));
 });
 
 gulp.task('auto-reload', function() {

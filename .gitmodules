@@ -25,3 +25,9 @@
 [submodule "src/lib/packery"]
 	path = src/lib/packery
 	url = https://github.com/metafizzy/packery.git
+[submodule "src/lib/jquery-ui-timepicker"]
+	path = src/lib/jquery-ui-timepicker
+	url = https://github.com/trentrichardson/jQuery-Timepicker-Addon.git
+[submodule "src/lib/lightbox2"]
+	path = src/lib/lightbox2
+	url = https://github.com/lokesh/lightbox2.git
