@@ -275,9 +275,9 @@ gulp.task('package', defaultTasks, function() {
 	//gulp.src(paths.dist)
 	//		.pipe(symlink('../gallery-hierarchy'));
 
-	console.log('cd .. && tar -czf ' + package.name + '-' + package.version
+	console.log('cd .. && tar -chzf ' + package.name + '-' + package.version
 			+ '.tgz gallery-hierarchy');
-	shell.task('tar -czf ' + package.name + '-' + package.version
+	shell.task('tar -chzf ' + package.name + '-' + package.version
 			+ '.tgz gallery-hierarchy', {cwd: '../'});
 	shell.task('zip ' + package.name + '-' + package.version
 			+ '.zip gallery-hierarchy', {cwd: '../'});

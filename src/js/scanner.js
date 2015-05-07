@@ -31,8 +31,11 @@ function sendScanCommand(cmd, data) {
 	}
 	data.a = cmd;
 
-	scanner.status.html('Starting scan... If this message doesn\'t change '
-			+ 'you may need to refresh the page.');
+	if (cmd !== 'status') {
+		scanner.status.html('Starting scan... If this message doesn\'t change '
+				+ 'you may need to refresh the page.');
+	}
+
 	$.post(ajaxurl + '?action=gh_scan', data, receiveScanRefresh);
 }
 
