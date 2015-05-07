@@ -1505,8 +1505,10 @@ class GHierarchy {
 
 		if (!$images) {
 			echo '<p class="error">'
-					. __('No images/folders found. Have you added any?',
-					'gallery_hierarchy') . '</p>';
+					. __('No images/folders found.', 'gallery_hierarchy')
+					. ' <a href="' . admin_url('admin.php?page=gHLoad') . '">'
+					. __('Have you added any', 'gallery_hierarchy')
+					. '</a>?</p>';
 			return;
 		}
 		
@@ -1651,9 +1653,7 @@ class GHierarchy {
 		$this->checkFunctions();
 
 		echo '<h1>' . __('Gallery Hierarchy', 'gallery_hierarchy')
-				. ' <a href="' . admin_url('admin.php?page=gHOptions')
-				. '" class="add-new-h1">'
-				. __('Add New', 'gallery_hierarchy') . '</a></h1>';
+				 . '</h1>';
 
 		$this->printGallery();
 
@@ -2450,8 +2450,6 @@ class GHierarchy {
 	 * images.
 	 * @param $fullScan boolean If true, the database will be completely
 	 *                  rebuit.
-	 * @todo Need to remove photos that are no longer there from the database
-	 *       and the cache.
 	 * @todo Need to be able to stop the scan part way through - possibly need
 	 *       a stop transient?
 	 */
