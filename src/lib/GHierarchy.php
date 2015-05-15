@@ -486,16 +486,13 @@ class GHierarchy {
 	}
 
 	/**
-	 * Function to initialise the plugin when in the dashboard
+	 * Function to initialise the plugin
 	 */
-	static function adminInit() {
-		if (!static::$runAdminInit) {
+	static function init() {
+		if (!static::$runInit) {
 			$me = static::instance();
 
-			add_action('admin_enqueue_scripts', array(&$me, 'adminEnqueue'));
-			add_action('admin_menu', array(&$me, 'adminMenuInit'));
-
-			static::$runAdminInit = true;
+			static::$runInit = true;
 		}
 	}
 
