@@ -303,8 +303,6 @@
 						return opts[option];
 					}
 				}
-
-				console.log(options);
 			},
 
 			clearGroup: function(id) {

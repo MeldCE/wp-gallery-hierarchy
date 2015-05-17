@@ -3,7 +3,6 @@ var uploader = {
 };
 
 function addUploadedFile(id, uploader, file, response) {
-	console.log('addUploadedFile called');
 	// @todo Check for error
 
 	if (!uploaders[id]) {
@@ -16,7 +15,6 @@ function addUploadedFile(id, uploader, file, response) {
 	}
 
 	if (data.files) {
-		console.log(data.files);
 		uploaders[id].browser.displayFiles(data.files, true);
 		/*var f, file;
 
