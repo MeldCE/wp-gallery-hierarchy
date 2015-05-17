@@ -38,6 +38,8 @@ class GHierarchy {
 	protected static $dbVersion = 4;
 	protected $directories = false;
 
+	protected static $runInit = false;
+
 	protected $dbErrors = array();
 
 	protected static $shortcodes = array('ghthumb', 'ghalbum', 'ghimage');
@@ -1581,8 +1583,7 @@ class GHierarchy {
 		// Shortcode type
 		echo '<p><label for="' . $id . 'sctype">' . __('Shortcode Type:',
 				'gallery_hierarchy') . '</label> <select name="' . $id . 'sctype" '
-				. 'id="' . $id . 'sctype" onchange="gH.compileShortcode(\'' . $id
-				. '\');">';
+				. 'id="' . $id . 'sctype">';
 		echo '<option value="ghthumb">' . __('A thumbnail', 'gallery_hierarchy')
 				. '</option>';
 		echo '<option value="ghalbum">' . __('An album', 'gallery_hierarchy')
@@ -1591,6 +1592,27 @@ class GHierarchy {
 				. '</option>';
 		echo '</select>';
 		// Shortcode options
+		echo '<div id="' . $id . 'options-ghthumb">';
+		echo '</div>';
+		echo '<div id="' . $id . 'options-ghalbum">';
+			// Albums
+			$options = '';
+			$descriptions = '';
+			foreach (static::getAlbums() as $a => $album) {
+				$descriptions .= $album['name'] . ' - ' . $album['description'] . '<br>';
+				$options .= '<option value="' . $a . '">' . $album['name']
+						. '</option>';
+			}
+			echo '<p><label for="' . $id . 'type">' . __('Album Type:',
+					'gallery_hierarchy') . '</label> <select name="' . $id
+					. 'type" id="' . $id . 'type">';
+			echo $options;
+			echo '</select>';
+			echo '<p class="description">' . $descriptions . '</p>';
+		echo '</div>';
+		echo '<div id="' . $id . 'options-ghimage">';
+		echo '</div>';
+
 		// Include current query in shortcode
 		echo '<p><label for="' . $id . 'includeFilter">' . __('Include current '
 				. 'filter in shortcode:', 'gallery_hierarchy') . '</label> ';
@@ -2293,6 +2315,13 @@ class GHierarchy {
 			}
 
 			$others = array('class', 'group', 'include_excluded');
+			
+			switch ($atts['code']) {
+				case 'ghalbum':
+					array_push($others, 'type');
+					break;
+			}
+			
 			$params = array();
 			foreach ($others as $o) {
 				if (isset($atts[$o]) && $atts[$o]) {

@@ -57,6 +57,28 @@ gH = (function ($) {
 	}
 
 	/**
+	 * Shows hides the shortcode type options based on what shortcode type is
+	 * currently selected.
+	 */
+	function changeVisibleOptions(id) {
+		if (!g[id]) {
+			return;
+		}
+
+		var t, c = g[id].sctype.val();
+
+		for (t in g[id].options) {
+			if (g[id]['options-' + t]) {
+				if (c === t) {
+					g[id]['options-' + t].show();
+				} else {
+					g[id]['options-' + t].hide();
+				}
+			}
+		}
+	}
+
+	/**
 	 * Used to resize the image in image editor in the floater so it is the
 	 * maximum size possible
 	 */
@@ -226,8 +248,9 @@ gH = (function ($) {
 						'size': $('#' + id + 'size'),
 						'type': $('#' + id + 'type'),
 						'options': {
-								'ghalbum': ['type'],
-								'ghimage': ['size'],
+							ghalbum: ['type'],
+							ghimage: ['size'],
+							ghthumb: []
 						},
 						'filter': $('#' + id + 'filter'),
 						'filterButton': $('#' + id + 'filterButton'),
@@ -240,6 +263,9 @@ gH = (function ($) {
 						'selectedLabel': $('#' + id + 'selectedLabel'),
 						'sctype': $('#' + id + 'sctype'),
 						'pages': $('#' + id + 'pages'), // Span for page changer
+						'options-ghthumbnail': $('#' + id + 'options-ghthumbnail'),
+						'options-ghalbum': $('#' + id + 'options-ghalbum'),
+						'options-ghimage': $('#' + id + 'options-ghimage'),
 						//'': $('#' + id + ''),
 				};
 
@@ -298,7 +324,12 @@ gH = (function ($) {
 				g[id]['tags'].change(pub.redisplayShortcode.bind(this, id));
 				g[id]['includeFilter'].change(pub.redisplayShortcode.bind(this, id));
 				g[id]['includeExcluded'].change(pub.redisplayShortcode.bind(this, id));
+				g[id]['type'].change(pub.redisplayShortcode.bind(this, id));
 				//g[id][''].change(pub.redisplayShortcode.bind(this, id));
+
+				// Bind function to change visible shortcode options
+				g[id].sctype.change(changeVisibleOptions.bind(this, id));
+				changeVisibleOptions.call(this, id);
 
 				g[id].browser = new Browser(pad, {
 					selection: gallerySelect.bind(this, id),
@@ -528,7 +559,7 @@ gH = (function ($) {
 			}
 
 			var code = {
-					code: g[id]['sctype'].val()
+					code: g[id].sctype.val()
 			};
 
 			// Add selected ids
@@ -562,6 +593,12 @@ gH = (function ($) {
 
 
 			var o, O = ['class', 'group'];
+
+			// Append shortcode type options
+			if (g[id].options[code.code]) {
+				O = O.concat(g[id].options[code.code]);
+			}
+
 			for (o in O) {
 				if ((part = g[id][O[o]].val())) {
 					code[O[o]] = part;
@@ -635,6 +672,14 @@ gH = (function ($) {
 
 			var others = [];
 			var val, o, O = ['class', 'group', 'include_excluded'];
+
+			// Append shortcode type options
+			if (g[id].options[code.code]) {
+				O = O.concat(g[id].options[code.code]);
+			}
+
+			console.log('O is ' + O);
+
 			for (o in O) {
 				if ((val = code[O[o]])) {
 					others.push(O[o] + '="' + val + '"');
