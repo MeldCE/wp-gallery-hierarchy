@@ -6,7 +6,6 @@ gH = (function ($) {
 	var g = {},
 			scanner = {},
 			uploaders = {},
-			$ = jQuery,
 			hideClass = 'hide',
 			imageUrl,
 			cacheUrl,

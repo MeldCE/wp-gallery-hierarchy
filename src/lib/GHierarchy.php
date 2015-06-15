@@ -537,7 +537,7 @@ class GHierarchy {
 		}
 		/// @todo @see http://codex.wordpress.org/I18n_for_WordPress_Developers
 		wp_enqueue_script('ghierarchy', 
-				plugins_url('/js/ghierarchy.js', dirname(__FILE__)));
+				plugins_url('/js/ghierarchy.js', dirname(__FILE__)), array('jquery'));
 		//wp_enqueue_style( 'dashicons' );
 		wp_enqueue_style('ghierarchy',
 				plugins_url('/css/ghierarchy.min.css', dirname(__FILE__)), array('dashicons'));
@@ -603,6 +603,29 @@ class GHierarchy {
 				break;
 		}
 	}
+
+	static function adminHead() {
+		$me = static::instance();
+
+		static::head();
+		
+		// check user permissions
+		if ( !current_user_can( 'edit_posts' ) && !current_user_can( 'edit_pages' ) ) {
+			return;
+		}
+		
+		// check if WYSIWYG is enabled
+		if ( 'true' == get_user_option( 'rich_editing' ) ) {
+			add_filter( 'mce_external_plugins', array($me,'tinymceAddPlugin') );
+			//add_filter( 'mce_buttons', array($this, 'mce_buttons' ) );
+		}
+	}
+
+	function tinymceAddPlugin( $plugin_array ) {
+		$plugin_array['gHierarchy'] = plugins_url( 'js/tinymce.js' , __DIR__ );
+		return $plugin_array;
+	}
+
 
 	static function adminPrintInit() {
 		$me = static::instance();

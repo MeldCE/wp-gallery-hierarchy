@@ -33,7 +33,7 @@ var paths = {
 	main: 'gallery-hierarchy.php',
 	readme: 'readme.txt',
 	//jsSrc: '{js/ghierarchy.js,albums/js/*.js}',
-	jsSrc: ['js/ghierarchy.js', 'albums/js/*.js'],
+	jsSrc: ['js/{ghierarchy,tinymce}.js', 'albums/js/*.js'],
 	cssSrc: 'css/{jquery.plupload.queue.css,ghierarchy.less}',
 	basicStylesScript: 'createBasicStyle.php',
 	basicSrc: 'js/basicStyle.css'
