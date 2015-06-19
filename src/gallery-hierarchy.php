@@ -30,6 +30,7 @@ if (!class_exists('GHierarchy')) {
 			add_action('admin_head', array('GHierarchy', 'adminHead'));
 
 			// Handle AJAX requests (from image browser)
+			add_action('wp_ajax_gh_tiny', array('GHierarchy', 'ajaxTinyMCE'));
 			add_action('wp_ajax_gh_gallery', array('GHierarchy', 'ajaxGallery'));
 			add_action('wp_ajax_gh_save', array('GHierarchy', 'ajaxSave'));
 			// Handle folder request

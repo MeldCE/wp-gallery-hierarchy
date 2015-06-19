@@ -3,7 +3,7 @@
 	tinymce.PluginManager.add('gHierarchy', function( editor, url ) {
 		console.log('plugin being init');
 		
-		var dataTag = 'data-gH-code';
+		var dataTag = 'data-gh-code';
 
 		//helper functions 
 		function getAttr(s, n) {
@@ -24,7 +24,9 @@
 			console.log(content);
 			return content.replace(/\[gh(album|thumb|image)( [^\]]*)?\]/g, function (shortcode) {
 				console.log('found shortcode ' + shortcode);
-				return '<div ' + dataTag + '="' + window.encodeURIComponent(shortcode) + '"></div>';
+				var encSC = window.encodeURIComponent(shortcode);
+				return '<!--gHStart ' + encSC + ' --><div ' + dataTag + '="'
+						+ encSC + '">&nbsp;</div><!--gHEnd-->';
 			});
 
 			/*return content.replace( /\[bs3_panel([^\]]*)\]([^\]]*)\[\/bs3_panel\]/g, function( all,attr,con) {
@@ -35,30 +37,46 @@
 		
 		function drawShortcodes(ev) {
 			console.log('drawShortcodes called');
-			console.log(editor.iframeElement);
+			console.log(editor.getDoc());
 			console.log(editor);
-			var editorEl = $(editor.iframeElement);
+			var doc = $(editor.getDoc());
 
-			$(editor.contentAreaContainer).find('iframe').each(function() {
-				console.log('found iframe');
-			});
-			console.log(editorEl);
-			console.log(editorEl.html());
-			editorEl.find('div[' + dataTag + ']').each(function() {
-				console.log('found div with shortcode: ' + $(this).attr(dataTag));
+			doc.find('div[' + dataTag + ']').each(function() {
+				var div = $(this);
+				console.log('found div with shortcode: ' + div.attr(dataTag));
+				$.post(ajaxurl + '?action=gh_tiny', {
+					a: 'html',
+					sc: window.decodeURIComponent($(this).attr(dataTag))
+				}, function(data) {
+					div.replaceWith($(data)
+							.click(function(ev) {
+								alert('test');
+								//ev.preventDefault();
+								ev.stopPropagation();
+							})
+					);
+				});
+				console.log('sent');
 			});
 		}
 
 		function restoreShortcodes( content ) {
-			return content.replace( /(?:<p(?: [^>]+)?>)*(<img [^>]+>)(?:<\/p>)*/g, function( match, image ) {
-				var data = getAttr( image, 'data-sh-attr' );
+			console.log('running restoreShortcodes');
+			console.log(content);
+			return content.replace(/<!--gHStart (.*?) -->.*?<!--gHEnd-->/g, function(match, sc) {
+				console.log('found one');
+				return window.decodeURIComponent(sc);
+			});
+
+			//return content.replace( /(?:<p(?: [^>]+)?>)*(<img [^>]+>)(?:<\/p>)*/g, function( match, image ) {
+			/*	var data = getAttr( image, 'data-sh-attr' );
 				var con = getAttr( image, 'data-sh-content' );
 
 				if ( data ) {
 					return '<p>[' + sh_tag + data + ']' + con + '[/'+sh_tag+']</p>';
 				}
 				return match;
-			});
+			});*/
 		}
 
 		//add popup

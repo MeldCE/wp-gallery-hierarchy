@@ -718,6 +718,32 @@ class GHierarchy {
 	}
 
 	/**
+	 * Handles AJAX calls from the TinyMCE plugin
+	 */
+	static function ajaxTinyMCE() {
+		global $wpdb;
+
+		$me = static::instance();
+		if (current_user_can('edit_pages')) {
+			switch($_REQUEST['a']) {
+				/**
+				 * Parse the shortcode and return the HTML for the editor to display
+				 */
+				case 'html':
+					if (isset($_POST['sc'])) {
+						$sc = stripslashes($_POST['sc']);
+						echo "Found shortcode $sc\n";
+						echo do_shortcode($sc);
+					}
+
+					exit;
+			}
+		}
+
+		exit;
+	}
+
+	/**
 	 * Handles AJAX calls from the gallery javascript
 	 * @todo Look at merging some of the code with doShortcode
 	 * @todo Add nonce
