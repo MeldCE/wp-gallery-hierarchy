@@ -1,12 +1,11 @@
 *~
 .*.sw?
 node_modules
-src/node_modules
-gallery-hierarchy
 gallery-hierarchy.*.tgz
 gallery-hierarchy.*.zip
-css/basicStyle.css
-css/basicStyle.min.css
-css/ghierarchy.min.css
-js/ghierarchy.min.js
+src/node_modules
+gallery-hierarchy
+dist
+dists
+build
 svn

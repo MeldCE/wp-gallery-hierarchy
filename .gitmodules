@@ -1,18 +1,9 @@
-[submodule "src/lib/lightbox2"]
-	path = src/lib/lightbox2
-	url = https://github.com/lokesh/lightbox2.git
 [submodule "src/lib/wp-settings"]
 	path = src/lib/wp-settings
 	url = https://github.com/weldstudio/wp-settings.git
 [submodule "src/lib/jcarousel"]
 	path = src/lib/jcarousel
 	url = https://github.com/jsor/jcarousel.git
-[submodule "src/lib/jquery-ui-multiselect"]
-	path = src/lib/jquery-ui-multiselect
-	url = https://github.com/ehynds/jquery-ui-multiselect-widget.git
-[submodule "src/lib/jquery-ui-timepicker"]
-	path = src/lib/jquery-ui-timepicker
-	url = https://github.com/trentrichardson/jQuery-Timepicker-Addon.git
 [submodule "src/lib/camanjs"]
 	path = src/lib/camanjs
 	url = https://github.com/meltingice/CamanJS.git
@@ -40,3 +31,9 @@
 [submodule "src/lib/jquery-arranger"]
 	path = src/lib/jquery-arranger
 	url = https://github.com/MeldCE/jquery-arranger
+[submodule "src/lib/jquery-ui-timepicker"]
+	path = src/lib/jquery-ui-timepicker
+	url = https://github.com/trentrichardson/jQuery-Timepicker-Addon.git
+[submodule "src/lib/lightbox2"]
+	path = src/lib/lightbox2
+	url = https://github.com/lokesh/lightbox2.git

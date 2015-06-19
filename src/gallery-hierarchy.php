@@ -17,6 +17,13 @@ if (!class_exists('GHierarchy')) {
 			// Check database version is correct
 			GHierarchy::checkDatabase();
 
+			// Initialise
+			add_action('init', array('GHierarchy', 'init'));
+
+			// Enqueue Admin scripts
+			add_action('admin_enqueue_scripts', array(&$me, 'adminEnqueue'));
+			add_action('admin_menu', array(&$me, 'adminMenuInit'));
+
 			// Shortcodes
 			add_shortcode('ghalbum', array('GHierarchy', 'doShortcode'));
 			add_shortcode('ghthumb', array('GHierarchy', 'doShortcode'));
@@ -39,9 +46,6 @@ if (!class_exists('GHierarchy')) {
 			add_action('wp_ajax_gh_upload', array('GHierarchy', 'ajaxUpload'));
 		
 			if (is_admin()) {
-				// Initialise
-				add_action('init', array('GHierarchy', 'adminInit'));
-
 				add_filter('media_upload_tabs', array('GHierarchy', 'uploadTabs'));
 			}
 		}
@@ -61,3 +65,4 @@ if (!class_exists('GHierarchy')) {
 	/// @todo Add a hook for plugin deletion
 	register_activation_hook(__FILE__, array('GHierarchy', 'install'));
 }
+?>

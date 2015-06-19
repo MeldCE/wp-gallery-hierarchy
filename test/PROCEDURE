@@ -1,0 +1,25 @@
+= INSTALLATION, SCAN AND UPLOAD =
+ 1. Ensure database is clear of previous GHierarchy tables and options.
+ 2. Install last released version of Gallery Hierarchy from Wordpress
+    repository.
+ 3. Verify no installation errors.
+ 4. Verify folders have been created.
+ 5. Create an old folder in the gHImages folder and copy the test images folder
+    into it.
+ 6. Run a rescan
+ 7. Verify all images and folders are visible, except those in a directory
+    starting with --
+ 8. Ensure all images have the correct tags and have been resized and rotated
+    to the correct dimensions (specified in the limits)
+ 9. Ensure thumbnails have been created for every image
+10. If possible, try uploading some of the test images into the same folders.
+11. Verify images were uploaded successfully and resized and rotated correctly
+12. Toggle local file resizing and try uploading some more of the files and
+    verify success.
+13. Try changing the dimension limits for both the main image and the
+    thumbnail, try uploading some more images and verify success.
+14. Upgrade to the latest version and repeat steps 3 through 13, creating a
+    new folder inside the gHImages folder.
+
+= GALLERY =
+ 1.
