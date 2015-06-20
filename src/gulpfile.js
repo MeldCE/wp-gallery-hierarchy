@@ -65,6 +65,11 @@ paths.ext.wpsettings = {
 	lib: 'lib/wp-settings/WPSettings.php'
 };
 
+// JQuery Touch Events
+paths.ext.touchEvents = {
+	js: 'lib/jquery-touch-events/src/jquery.mobile-events.min.js',
+};
+
 // JQuery Timepicker
 paths.ext.timepicker = {
 	js: 'lib/jquery-ui-timepicker/src/jquery-ui-timepicker-addon.js',

@@ -622,6 +622,7 @@ class GHierarchy {
 
 	function tinymceAddPlugin( $plugin_array ) {
 		$plugin_array['gHierarchy'] = plugins_url( 'js/tinymce.js' , __DIR__ );
+		$plugin_array['jquery-touch'] = plugins_url( 'js/jquery.mobile-events.min.js' , __FILE__ );
 		return $plugin_array;
 	}
 

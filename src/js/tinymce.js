@@ -48,8 +48,13 @@
 					a: 'html',
 					sc: window.decodeURIComponent($(this).attr(dataTag))
 				}, function(data) {
+					console.log($(data));
 					div.replaceWith($(data)
-							.click(function(ev) {
+							// Disable standard Wordpress click function
+							.bind('click', function(ev) {
+								ev.stopPropagation();
+							})
+							.bind('tap', function(ev) {
 								alert('test');
 								//ev.preventDefault();
 								ev.stopPropagation();
