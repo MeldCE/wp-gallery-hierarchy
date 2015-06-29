@@ -21,8 +21,8 @@ if (!class_exists('GHierarchy')) {
 			add_action('init', array('GHierarchy', 'init'));
 
 			// Enqueue Admin scripts
-			add_action('admin_enqueue_scripts', array(&$me, 'adminEnqueue'));
-			add_action('admin_menu', array(&$me, 'adminMenuInit'));
+			add_action('admin_enqueue_scripts', array('GHierarchy', 'adminEnqueue'));
+			add_action('admin_menu', array('GHierarchy', 'adminMenuInit'));
 
 			// Shortcodes
 			add_shortcode('ghalbum', array('GHierarchy', 'doShortcode'));
