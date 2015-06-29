@@ -26,11 +26,17 @@ class GHFader implements GHAlbum {
 		if ($images) {
 			$id = uniqid();
 			// Add script
-			$html .= '<script src="' . plugins_url('js/fader.js', dirname(__FILE__))
-					. '"></script>';
-			$html .= '<div id="' . $id . '"'
-					. ($options['class'] ? ' class="' . $options['class'] . '"' : '')
-					. '>';
+			$html .= '<script src="' . plugins_url('lib/js/fadeSlideShow.js', dirname(__FILE__))
+					. '"></script><script>'
+					. 'jQuery(function($) { $(\'#' . $id . '\').fadeSlideShow({'
+					. 'interval: 2500,'
+					. ($options['width'] ? 'width: \'' . $options['width'] . '\',' : '')
+					. ($options['height'] ? 'height: \'' . $options['height'] . '\',' : '')
+					. '}); });'
+					. '</script>';
+			$html .= '<div class="ghfader'
+					. ($options['class'] ? ' ' . $options['class'] : '')
+					. '"><div id="' . $id . '">';
 			foreach ($images as &$image) {
 				// Create link
 				if (!$url = GHierarchy::getImageURL($image)) {
@@ -96,11 +102,7 @@ class GHFader implements GHAlbum {
 				$html .= '</a>';
 			}
 
-			$html .= '</div>';
-			$html .= '<script>jQuery(function($) {'
-					. '$(\'#' . $id . '\').faderAlbum();'
-					. '});'
-					. '</script>';
+			$html .= '</div></div>';
 		}
 
 		return $html;
@@ -108,6 +110,59 @@ class GHFader implements GHAlbum {
 
 	static function printStyle() {
 		?>
+		.ghfader {
+			position: relative;
+			padding: 0px;
+		}
+
+		.ghfader div {
+			padding: 0px;
+		}
+
+		.ghfader > #fssPrev {
+			display: none;
+		}
+
+		.ghfader > #fssNext {
+			display: none;
+		}
+
+		.ghfader > #fssPlayPause {
+			display: none;
+		}
+
+		.ghfader > #fssList {
+			position: absolute;
+			width: 100%;
+			bottom: 10px;
+			text-align: center;
+			padding: 0px;
+			margin: 0px;
+		}
+
+		.ghfader > #fssList li {
+			display: inline-block;
+			overflow: hidden;
+			padding: 2px 5px;
+		}
+		
+		.ghfader > #fssList li a {
+			color: #fff;
+			font-weight: bold;
+		}
+		
+		.ghfader > #fssList li a:hover {
+			text-decoration: none;
+		}
+		
+		.ghfader > #fssList li a:before {
+			content: '\25cb';
+		}
+		
+		.ghfader > #fssList li.fssActive a:before {
+			content: '\25cf';
+		}
+
 		<?php
 	}
 }

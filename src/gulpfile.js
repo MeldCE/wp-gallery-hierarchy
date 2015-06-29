@@ -96,6 +96,12 @@ paths.ext.ui = {
 	'css/images': 'css/jquery-ui/images/*'
 };
 
+// fadeSlideShow
+paths.ext.fadeSlideShow = {
+	css: 'lib/simplefadeslideshow/demoStyleSheet.css',
+	js: 'lib/simplefadeslideshow/fadeSlideShow.js'
+};
+
 // plupload
 paths.ext.plupload = {
 	i18n: 'lib/plupload/js/i18n/*',
