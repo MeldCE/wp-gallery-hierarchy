@@ -678,8 +678,11 @@ class GHierarchy {
 		$me = static::instance();
 		$error = false;
 		$shortcode = false;
+		$current = false;
 
+		// Handle submitted shortcode
 		if (isset($_REQUEST['shortcode'])) {
+			$shortcode = stripslashes($_REQUEST['shortcode']);
 			$shortcode = str_replace('\\"', '"', $_REQUEST['shortcode']);
 			if (($shortcode = json_decode($shortcode, true)) !== null) {
 				if (($shortcode = $me->generateShortcode($shortcode))) {
@@ -689,9 +692,20 @@ class GHierarchy {
 			} else {
 				$error = 'Could not decode given data.';
 			}
+		} else if (isset($_REQUEST['sc'])) { // Handle shortcode to be edited
+			// @see wp-includes/shortcodes.php for details on implementation
+			$pattern = get_shortcode_regex();
+			$sc = stripslashes($_REQUEST['sc']);
+			preg_match("/$pattern/s", $sc, $matches);
+			print_r($matches);
+			$tag = $matches[2];
+			$atts = shortcode_parse_atts($matches[3]);
+			$current = $atts;
+			$current['tag'] = $tag;
+			//$current = $_REQUEST['sc'];
 		}
 		
-		wp_iframe(array($me, 'printGallery'), true, $error);
+		wp_iframe(array($me, 'printGallery'), true, $current, $error);
 		
 		if ($shortcode) {
 			media_send_to_editor($shortcode);
@@ -1546,9 +1560,13 @@ class GHierarchy {
 	/**
 	 * Prints the gallery/search HTML
 	 */
-	function printGallery($insert = false, $error = false) {
+	function printGallery($insert = false, $shortcode = false, $error = false) {
 		global $wpdb;
 		$id = uniqid();
+
+		if ($shortcode) {
+			echo '<p>Current shortcode is ' . print_r($shortcode, 1) . '</p>';
+		}
 		
 		// Get folders first to see if we have anything worth searching
 		$images = $wpdb->get_var('SELECT id FROM ' . $this->imageTable
@@ -2313,6 +2331,15 @@ class GHierarchy {
 		}
 		
 		return $html;
+	}
+
+	/**
+	 * Parses the id attribute in the shortcode and returns an associative array
+	 * containing the different parts of the id attribute
+	 *
+	 * @param $attr string String containing the value of the id attribute
+	 */
+	protected function parseIdAttr($attr) {
 	}
 
 	/**
