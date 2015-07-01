@@ -678,15 +678,16 @@ class GHierarchy {
 	 * Function to create the Gallery Hierarchy admin menu.
 	 * Called by @see gHierarchy::init()
 	 */
-	function adminMenuInit() {
+	static function adminMenuInit() {
+		$me = static::instance();
 		add_menu_page(__('Gallery Hierarchy', 'gallery_hierarchy'), 
 				__('Gallery Hierarchy', 'gallery_hierarchy'), 'edit_posts',
-				'gHierarchy', array(&$this, 'galleryPage'),
+				'gHierarchy', array(&$me, 'galleryPage'),
 				'dashicons-format-gallery', 50);
 		add_submenu_page('gHierarchy',
 				__('Load Images into Gallery Hierarchy', 'gallery_hierarchy'),
 				__('Load Images', 'gallery_hierarchy'), 'upload_files', 'gHLoad',
-				array(&$this, 'loadPage'));
+				array(&$me, 'loadPage'));
 		add_submenu_page('gHierarchy',
 				__('Gallery Hierarchy Options', 'gallery_hierarchy'),
 				__('Options', 'gallery_hierarchy'), 'manage_options', 'gHOptions',
