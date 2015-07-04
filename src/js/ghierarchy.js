@@ -33,7 +33,10 @@ gH = (function ($) {
 	 * @param file Object Object containing information on the file
 	 */
 	function displayImage(id, obj, file) {
+		console.log(file);
 		obj.append($('<a href="' + imageUrl + '/' + file.path
+				+ '" title="' 
+				+ (file.title ? file.title + ' (#' + file.id + ')' : '#' + file.id)
 				+ '" target="_blank"><img src="'
 				+ this.thumbnail(file.path) + '"></a>')
 				.viewer(null, 'gHBrowser').data('imageData', file));

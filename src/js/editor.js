@@ -85,34 +85,41 @@ var Editor = (function() {
 
 			// Print details
 			// File Name @todo Make so you can change
+			// Image ID
+			this.details.append(drawRow('Image ID:', this.file.id));
+
 			// Image Dimensions
 			this.details.append(drawRow('Image Dimensions:', 
 					this.file.width + 'x' + this.file.height + 'px'));
+			
 			// Taken data
 			if (this.file.taken) {
 				this.details.append(drawRow('Taken:', 
 						this.file.taken));
 			}
+			
 			// Image Title
 			this.details.append(drawRow('Title:', 
 					(this.title = $('<input type="text" value="'
 					+ (this.file.title ? this.file.title : '')
 					+ '">'))));
+			
 			// Image Comment
 			this.details.append(drawRow('Comment:',
 					(this.comment = $('<textarea>'
 					+ (this.file.comment ? this.file.comment : '') + '</textarea>'))));
+			
 			// Image Tags
 			this.details.append(drawRow('Tags (comma-separated):', 
 					(this.tags = $('<input type="text" value="'
 					+ (this.file.tags ? this.file.tags : '')
 					+ '">'))));
+			
 			// Image Gallery Exclusion
 			this.details.append(drawRow('Exclude by Default:', 
 					(this.exclude = $('<input type="checkbox"'
 					+ ((this.file.exclude && this.file.exclude == '1') ? ' checked'
 					: '') + '>'))));
-
 
 			// Image Actions
 			this.details.append(drawRow(null, [
