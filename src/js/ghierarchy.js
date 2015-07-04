@@ -212,18 +212,28 @@ gH = (function ($) {
 			var pad;
 			if ((pad = $('#' + id + 'pad'))) {
 				g[id] = {
-						'insertOnly': insertOnly,
-						'builderOn': (insertOnly ? true : false),
-						'pad': pad,
-						'selected': {}, // Stores the selected images
-						'currentImages': null, // Stores the images displayed in pad
-						'imageIndex': null, // Used to look an image in currentImages based on its id
-						'selectOrder': [], // Stores the order of selected images
-						'changed': {}, // Stores any changed information to send to server
-						'currentOffset': 0, // Stores the current image offset
-						'currentLimit': 0,
-						'showingCurrent': false, // False if not or filtered image offset
-						'idsOnly': false, // True when only ids should be in shortcode
+						insertOnly: insertOnly,
+						builderOn: (insertOnly ? true : false),
+						pad: pad,
+						filter: $('#' + id + 'filter'),
+						selected: {}, // Stores the selected images
+						currentImages: null, // Stores the images displayed in pad
+						imageIndex: null, // Used to look an image in currentImages based on its id
+						selectOrder: [], // Stores the order of selected images
+						changed: {}, // Stores any changed information to send to server
+						currentOffset: 0, // Stores the current image offset
+						currentLimit: 0,
+						showingCurrent: false, // False if not or filtered image offset
+						idsOnly: false, // True when only ids should be in shortcode
+				};
+
+				// Put the filter into the filter div
+				createFilterHTML(id);
+
+
+
+
+
 						'input': $('#' + id + 'input'), // Input field used when inserting into post/page
 						'form': $('#' + id + 'form'), // Form used when inserting into post/page
 						'folders': [], // Selected folders array

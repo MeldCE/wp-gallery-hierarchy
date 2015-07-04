@@ -1525,6 +1525,16 @@ class GHierarchy {
 					. '</form>';
 		}
 
+		// Filter block
+		echo '<div id="' . $id . 'filter">';
+	
+		echo '<p><a onclick="gH.toggle(\'' . $id . '\', \'filter\', \''
+				. __('advanced filter', 'gallery_hierarchy') . '\');" id="' . $id
+				. 'filterLabel">' . __('Show advanced filter',
+				'gallery_hierarchy') . '</a></p>';
+
+		// for {
+			echo '<div>';
 		// Folders field
 		echo '<div><label for="' . $id . 'folder">' . __('Folders:',
 				'gallery_hierarchy') . '</label> '
@@ -1532,16 +1542,12 @@ class GHierarchy {
 					'multiple' => true,
 					'selection' => 'function (files) { gH.changeFolder(\'' . $id
 							. '\', files); }'
-				)) . '</div>';
+				))
+				. ' <label><input type="checkbox" name="' . $id
+				. 'recurse" id="' . $id . 'recurse"> ' . __('Include Subfolders',
+				'gallery_hierarchy') . '</label>'
+				. '</div>';
 
-		echo '<p><label for="' . $id . 'recurse">' . __('Include Subfolders:',
-				'gallery_hierarchy') . '</label> <input type="checkbox" name="' . $id
-				. 'recurse" id="' . $id . 'recurse"></p>';
-	
-		echo '<p><a onclick="gH.toggle(\'' . $id . '\', \'filter\', \''
-				. __('advanced filter', 'gallery_hierarchy') . '\');" id="' . $id
-				. 'filterLabel">' . __('Show advanced filter',
-				'gallery_hierarchy') . '</a></p>';
 
 		echo '<div id="' . $id . 'filter" class="hide">';
 		// Date fields
@@ -1572,6 +1578,9 @@ class GHierarchy {
 				'gallery_hierarchy') . '</label> ';
 		echo '<input type="text" name="' . $id . 'tags" id="' . $id. 'tags"></p>';
 
+		echo '</div>';
+
+		// End of filter block
 		echo '</div>';
 	
 		// Shortcode builder
