@@ -527,6 +527,10 @@ class GHierarchy {
 			wp_enqueue_style('plupload',
 					plugins_url('/lib/css/jquery.plupload.queue.css', dirname(__FILE__)));
 		}
+		//if ($hook_suffix == 'gallery-hierarchy_page_gHierarcy') {
+			wp_enqueue_script('jquery-hierarchy-select', 
+					plugins_url('/lib/js/folders.js', dirname(__FILE__)));
+		//}
 		if ($hook_suffix == 'gallery-hierarchy_page_gHOptions') {
 			wp_enqueue_style('wpsettings',
 					plugins_url('/lib/css/wpsettings.min.css', dirname(__FILE__)));
@@ -1518,162 +1522,14 @@ class GHierarchy {
 			$this->echoError($error);
 		}
 
-		// Submit form if inserting
-		if ($insert) {
-			echo '<form id="' . $id . 'form" method="POST">'
-					. '<input type="hidden" name="shortcode" id="' . $id . 'input">'
-					. '</form>';
-		}
+		echo '<div id="' . $id . '"></div>';
 
-		// Filter block
-		echo '<div id="' . $id . 'filter">';
-	
-		echo '<p><a onclick="gH.toggle(\'' . $id . '\', \'filter\', \''
-				. __('advanced filter', 'gallery_hierarchy') . '\');" id="' . $id
-				. 'filterLabel">' . __('Show advanced filter',
-				'gallery_hierarchy') . '</a></p>';
-
-		// for {
-			echo '<div>';
-		// Folders field
-		echo '<div><label for="' . $id . 'folder">' . __('Folders:',
-				'gallery_hierarchy') . '</label> '
-				. $this->createFolderSelect($id . 'folder', array(
-					'multiple' => true,
-					'selection' => 'function (files) { gH.changeFolder(\'' . $id
-							. '\', files); }'
-				))
-				. ' <label><input type="checkbox" name="' . $id
-				. 'recurse" id="' . $id . 'recurse"> ' . __('Include Subfolders',
-				'gallery_hierarchy') . '</label>'
-				. '</div>';
-
-
-		echo '<div id="' . $id . 'filter" class="hide">';
-		// Date fields
-		echo '<p><label for="' . $id . 'dates">' . __('Photos Taken Between:',
-				'gallery_hierarchy') . '</label> ';
-		echo '<input type="datetime" name="' . $id . 'start" id="' . $id
-				. 'start">' . __(' and ', 'gallery_hierarchy')
-				. '<input type="datetime" name="' . $id . 'end" id="' . $id
-				. 'end"></p>';
-		
-		// Filename field
-		echo '<p><label for="' . $id . 'name">' . __('Filename Contains:',
-				'gallery_hierarchy') . '</label> ';
-		echo '<input type="text" name="' . $id . 'name" id="' . $id. 'name"></p>';
-		
-		// Title field
-		echo '<p><label for="' . $id . 'title">' . __('Title Contains:',
-				'gallery_hierarchy') . '</label> ';
-		echo '<input type="text" name="' . $id . 'title" id="' . $id. 'title"></p>';
-		
-		// Comment field
-		echo '<p><label for="' . $id . 'comment">' . __('Comments Contain:',
-				'gallery_hierarchy') . '</label> ';
-		echo '<input type="text" name="' . $id . 'comment" id="' . $id. 'comment"></p>';
-		
-		// Tags field
-		echo '<p><label for="' . $id . 'tags">' . __('Has Tags:',
-				'gallery_hierarchy') . '</label> ';
-		echo '<input type="text" name="' . $id . 'tags" id="' . $id. 'tags"></p>';
-
-		echo '</div>';
-
-		// End of filter block
-		echo '</div>';
-	
-		// Shortcode builder
-		echo '<p><a onclick="gH.toggleBuilder(\'' . $id . '\');" id="' . $id
-				. 'builderLabel">' . ($insert ? __('Show shortcode options',
-				'gallery_hierarchy') : __('Enable shortcode builder',
-				'gallery_hierarchy')) . '</a></p>';
-		// Builder div
-		echo '<div id="' . $id . 'builder" class="hide">';
-		// Shortcode type
-		echo '<p><label for="' . $id . 'sctype">' . __('Shortcode Type:',
-				'gallery_hierarchy') . '</label> <select name="' . $id . 'sctype" '
-				. 'id="' . $id . 'sctype">';
-		echo '<option value="ghthumb">' . __('A thumbnail', 'gallery_hierarchy')
-				. '</option>';
-		echo '<option value="ghalbum">' . __('An album', 'gallery_hierarchy')
-				. '</option>';
-		echo '<option value="ghimage">' . __('An image', 'gallery_hierarchy')
-				. '</option>';
-		echo '</select>';
-		// Shortcode options
-		echo '<div id="' . $id . 'options-ghthumb">';
-		echo '</div>';
-		echo '<div id="' . $id . 'options-ghalbum">';
-			// Albums
-			$options = '';
-			$descriptions = '';
-			foreach (static::getAlbums() as $a => $album) {
-				$descriptions .= $album['name'] . ' - ' . $album['description'] . '<br>';
-				$options .= '<option value="' . $a . '">' . $album['name']
-						. '</option>';
-			}
-			echo '<p><label for="' . $id . 'type">' . __('Album Type:',
-					'gallery_hierarchy') . '</label> <select name="' . $id
-					. 'type" id="' . $id . 'type">';
-			echo $options;
-			echo '</select>';
-			echo '<p class="description">' . $descriptions . '</p>';
-		echo '</div>';
-		echo '<div id="' . $id . 'options-ghimage">';
-		echo '</div>';
-
-		// Include current query in shortcode
-		echo '<p><label for="' . $id . 'includeFilter">' . __('Include current '
-				. 'filter in shortcode:', 'gallery_hierarchy') . '</label> ';
-		echo '<input type="checkbox" name="' . $id . 'includeFilter" id="'
-				. $id . 'includeFilter"></p>';
-		// Include excluded images
-		echo '<p><label for="' . $id . 'include_excluded">' . __('Include '
-				. 'excluded images in filter result:', 'gallery_hierarchy')
-				. '</label> ';
-		echo '<input type="checkbox" name="' . $id . 'include_excluded" id="'
-				. $id . 'include_excluded"></p>';
-		// Groups option
-		echo '<p><label for="' . $id . 'group">' . __('Image Group:',
-				'gallery_hierarchy') . '</label> ';
-		echo '<input type="text" name="' . $id . 'group" id="' . $id. 'group"></p>';
-		// Class option
-		echo '<p><label for="' . $id . 'class">' . __('Classes:',
-				'gallery_hierarchy') . '</label> ';
-		echo '<input type="text" name="' . $id . 'class" id="' . $id. 'class"></p>';
-
-
-		// Shortcode window
-		echo '<p>' . __('Shortcode:', 'gallery_hierarchy') . ' <span id="' . $id
-				. 'shortcode"></span></p>';
-		echo '</div>';
-
-
-		echo '<p><a onclick="gH.filter(\'' . $id . '\');" class="button" id="'
-				. $id . 'filterButton">' . __('Filter', 'gallery_hierarchy') . '</a> ';
-		echo '<a onclick="gH.save(\'' . $id . '\');" class="button disabled" id="'
-				. $id . 'saveButton">' . __('Save Image Exclusions', 'gallery_hierarchy')
-				. '</a>';
-		if ($insert) {
-			echo ' <a onclick="gH.insert(\'' . $id . '\');" class="button" id="'
-					. $id . 'saveButton">' . __('Insert Images', 'gallery_hierarchy')
-					. '</a>';
-		}
-		echo '</p>';
-
-		// Pagination
-		/** @xxx echo '<p class="tablenav"><label for="' . $id . 'limit">' . __('Images per page:',
-				'gallery_hierarchy') . '</label> <input type="number" name="' . $id
-				. 'limit" id="' . $id. 'limit" onchange="gH.repage(\'' . $id
-				. '\');" value="' . static::$settings->num_images . '"><span id="'
-				. $id . 'pages" class="tablenav-pages"></span></p>';*/
-
-		// Photo div
-		echo '<div id="' . $id . 'pad"' . ($insert ? ' class="builderOn"' : '')
-				. '></div>';
 		/// @todo Add admin_url('admin-ajax.php')
-		echo '<script>gH.gallery(\'' . $id . '\', ' . ($insert ? 1 : 0) . ');</script>';
+		echo '<script>gH.gallery(\'' . $id . '\', ' . ($insert ? 1 : 0) . ',' 
+				. '{ albums: ' . json_encode(static::getAlbums()) . ','
+				. 'folders: ' . json_encode(static::ajaxFolder(true, $full)) . ','
+				. ($insert ? 'insert: true' : '')
+				. '}, ""' . /* value */ ');</script>';
 	}
 
 	/**
@@ -1818,7 +1674,7 @@ class GHierarchy {
 		
 		$html = '<div id="' . $id . '"></div>'
 				. '<script>jQuery(function() {'
-				. 'jQuery(\'#' . $id . '\').folders({' . join(', ', $parts) . '})'
+				. 'jQuery(\'#' . $id . '\').hierarchical({' . join(', ', $parts) . '})'
 				. '})</script>';
 
 		if (!$writtenFolderSelectJavascript) {
@@ -1852,7 +1708,8 @@ class GHierarchy {
 						static::$albums[$className::label()] = array(
 								'name' => $className::name(),
 								'description' => $className::description(),
-								'class' => $className
+								'class' => $className,
+								'options' => $className::attributes()
 						);
 					}
 				}
