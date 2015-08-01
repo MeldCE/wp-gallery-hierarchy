@@ -60,9 +60,22 @@
 		 * @param el {JQueryDOMObject} JQuery DOM Object to put the HTML into
 		 * @param fields {Object} Object containing the fields to generate HTML for
 		 */
-		function HTML(el, fields, value, parentField) {
+		function HTML(el, fields, value, store, parentField) {
 			var field, dependencies = {}, i, id, div;
 			var hideLabel, showLabel;
+
+			if (!store) {
+				if (parentField instanceof Object) {
+					store = parentField;
+				} else {
+					store = this;
+				}
+			}
+
+			if (!store.fields) {
+				store.fields = [];
+			}
+
 			for (f in fields) {
 				// Create field id
 				// @todo Add flat option handling to HTML?
@@ -72,7 +85,7 @@
 				
 				// Handle group
 				if (field.fields) {
-					this[id] = {};
+					store[id] = {};
 				
 					// @todo Move to outside of for loop (so can be used for a table
 					if (field.hideable) {
@@ -80,35 +93,51 @@
 						showLabel = (field.showLabel ? field.showLabel : 'Show');
 
 						el.append($('<div></div>')
-								.append(this[id].hideLink = $('<a></a>')));
+								.append(store[id].hideLink = $('<a></a>')));
 					}
-
-					el.append(this[id].div = $('<div' + (field.inline
+						
+					el.append(store[id].div = $('<div' + (field.inline
 							? ' class="inline"' : '') + '>'
 							+ (field.label ? field.label : '') + '</div>'));
 
-					if (field.hideable) {
-						// Hide if should be
-						if (field.hide) {
-							this[id].div.hide();
+					if (field.multiple) {
+						// Add valueOf function
+						store[id].pads = [];
+						store[id].fields = [];
+						store[id].valueOf = multipleFieldsValueOf.bind(this, id);
+						store[id].div
+								.append(store[id].pad = $('<div></div>'))
+								.append(store[id].removeButton
+								= $('<a>' + 'Add new' + '</a>')
+								.click(addNewFields.bind(this, id, field)));
 
-							this[id].hideLink.html(showLabel);
-						} else {
-							this[id].hideLink.html(hideLabel);
+						// Add field to field list
+						store.fields.push(id);
+					} else {
+
+						if (field.hideable) {
+							// Hide if should be
+							if (field.hide) {
+								store[id].div.hide();
+
+								store[id].hideLink.html(showLabel);
+							} else {
+								store[id].hideLink.html(hideLabel);
+							}
+
+							// Add action
+							store[id].hideLink.click(toggle.bind(this, store[id].div,
+									store[id].hideLink, hideLabel, showLabel, null));
 						}
 
-						// Add action
-						this[id].hideLink.click(toggle.bind(this, this[id].div,
-								this[id].hideLink, hideLabel, showLabel, null));
-					}
-
-					//if (field.label) {
-					//	divs[f].append('<div>' + field.label + '</div>');
-					//}
-					if (!field.flat) {
-						HTML.call(this, this[id].div, field.fields, value, f);
-					} else {
-						HTML.call(this, this[id].div, field.fields, value);
+						//if (field.label) {
+						//	divs[f].append('<div>' + field.label + '</div>');
+						//}
+						if (!field.flat) {
+							HTML.call(this, store[id].div, field.fields, value, store, f);
+						} else {
+							HTML.call(this, store[id].div, field.fields, value, store);
+						}
 					}
 				} else if (field.type && Types[field.type]) {
 					// Encase change in table change so can implement dependencies
@@ -143,7 +172,7 @@
 
 					el.append(div = $('<div>' + (field.label ? field.label : '')
 							+ '</div>'));
-					this[id]
+					store[id]
 							= new Types[field.type](div,
 							((value && value[id]) ? value[id] : false), field.options);
 
@@ -153,7 +182,7 @@
 					}
 
 					// Add div to field
-					this[id].div = div;
+					store[id].div = div;
 
 					// Register dependencies
 					var d;
@@ -175,7 +204,7 @@
 					}
 					
 					// Add field to field list
-					this.fields.push(id);
+					store.fields.push(id);
 				}
 			}
 
@@ -287,69 +316,8 @@
 		parentEl.append(filterObj.div = $('<div></div>')
 				.append(div = $('<div></div>')
 		));
-		
-		var filter = {
-			folders: {
-				flat: true,
-				fields: {
-					folders: {
-						label: 'Folder(s): ',
-						type: 'select',
-						options: {
-							type: 'hierarchical',
-							multiple: true,
-							files: this.options.folders,
-						}
-					},
-					recurse: {
-						label: ' include subfolders',
-						type: 'bool',
-						options: {
-							prepend: true
-						}
-					}
-				}
-			},
-			advanced: {
-				flat: true,
-				hideable: true,
-				hide: true,
-				hideLabel: 'Hide advanced filtering',
-				showLabel: 'Show advanced filtering',
-				fields: {
-					title: {
-						label: 'Title contains: ',
-						type: 'text',
-					},
-					comments: {
-						label: 'Comments contain: ',
-						type: 'text'
-					},
-					tags: {
-						label: 'Tags contain: ',
-						type: 'text'
-					},
-					time: {
-						label: 'Photos taken between: ',
-						type: 'datetime',
-						options: {
-							type: 'datetimerange'
-						}
-					},
-					name: {
-						label: 'Filename contains: ',
-						type: 'text'
-					},
-				}
-			}
-		};
 
-		var f;
-
-		// Merge in base options
-		mergeBaseOptions.call(this, filter);
-
-		filterObj.fields = new Table(filterObj.div, {fields: filter});
+		filterObj.fields = new Table(filterObj.div, {fields: this.filterFields});
 
 		return filterObj;
 	}
@@ -419,22 +387,6 @@
 					}
 				}
 			},
-			group: {
-				label: 'Image group id: ',
-				type: 'text',
-				//description: ''
-			},
-			class: {
-				label: 'Classes: ',
-				type: 'text',
-			},
-			include_excluded: {
-				label: 'Include excluded images',
-				type: 'bool',
-				options: {
-					prepend: true
-				}
-			},
 			type: {
 				label: 'Album type: ',
 				type: 'select',
@@ -446,64 +398,89 @@
 					}
 				}
 			},
-			size: {
-				label: 'Size: ',
-				type: 'dimension',
-				dependencies: {
-					visible: {
-						sctype: 'ghimage', 
-					}
-				}
-			},
-			/** @todo For captions would be better to have text replace */
-			caption: {
-				label: 'Image caption text: ',
-				type: 'select',
-				options: {
-					//multiple: true,
-					values: {
-						'': 'Title and Comment',
-						none: 'No caption',
-						title: 'Title',
-						comment: 'Comment',
-						//date: 'Date'
-					}
-				}
-			},
-			popup_caption: {
-				label: 'Popup image caption text: ',
-				type: 'select',
-				options: {
-					//multiple: true,
-					values: {
-						'': 'Title and Comment',
-						none: 'No caption',
-						title: 'Title',
-						comment: 'Comment',
-						//date: 'Date'
-					}
-				}
-			},
-			defaultLink: {
-				label: 'Default image link: ',
-				type: 'text'
-			},
-			link: {
-				label: 'Image links: ',
-				multiple: true,
-				startNone: true,
-				inline: true,
+			options: {
+				hideable: true,
+				hide: true,
+				hideLabel: 'Hide shortcode options',
+				showLabel: 'Show shortcode options',
+				flat: true,
 				fields: {
-					/** @todo Something like a textbox with a button next to to add
-					 * ids or to add pages (when get to it).
-					 */
-					id: {
-						label: 'Image ids: ',
-						type: 'text', /// @todo Change to something more useful
+					group: {
+						label: 'Image group id: ',
+						type: 'text',
+						//description: ''
+					},
+					class: {
+						label: 'Classes: ',
+						type: 'text',
+					},
+					include_excluded: {
+						label: 'Include excluded images',
+						type: 'bool',
+						options: {
+							prepend: true
+						}
+					},
+					size: {
+						label: 'Size: ',
+						type: 'dimension',
+						dependencies: {
+							visible: {
+								sctype: 'ghimage', 
+							}
+						}
+					},
+					/** @todo For captions would be better to have text replace */
+					caption: {
+						label: 'Image caption text: ',
+						type: 'select',
+						options: {
+							//multiple: true,
+							values: {
+								'': 'Title and Comment',
+								none: 'No caption',
+								title: 'Title',
+								comment: 'Comment',
+								//date: 'Date'
+							}
+						}
+					},
+					popup_caption: {
+						label: 'Popup image caption text: ',
+						type: 'select',
+						options: {
+							//multiple: true,
+							values: {
+								'': 'Title and Comment',
+								none: 'No caption',
+								title: 'Title',
+								comment: 'Comment',
+								//date: 'Date'
+							}
+						}
+					},
+					defaultLink: {
+						label: 'Default image link: ',
+						type: 'text'
 					},
 					link: {
-						label: 'Link: ',
-						type: 'text', /// @todo Change to something more usefule
+						label: 'Image links: ',
+						multiple: true,
+						startNone: true,
+						inline: true,
+						fields: {
+							/** @todo Something like a textbox with a button next to to add
+							 * ids or to add pages (when get to it).
+							 */
+							id: {
+								label: 'Image ids: ',
+								type: 'text', /// @todo Change to something more useful
+							},
+							link: {
+								label: 'Link: ',
+								type: 'text', /// @todo Change to something more usefule
+							}
+						}
 					}
 				}
 			}
@@ -552,6 +529,51 @@
 		return shortcodeObject;
 	}
 
+	function addNewFields(id, field) {
+		var div;
+		var fid = this[id].fields.length;
+		this[id].fields[fid] = [];
+
+		// Add div for new fields
+		this[id].pad.append(this[id].pads[fid] = $('<div'
+				+ (field.inline ? ' class="inline"' : '') + '></div>'));
+
+		// Generate HTML
+		HTML.call(this, this[id].pads[fid], field.fields, null,
+				this[id].fields[fid]);
+
+		// Add delete
+		this[id].pads[fid].append($('<a>' + 'Delete' + '</a>')
+				.click(deleteFields.bind(this, id, fid)));
+	}
+
+	function deleteFields(id, fid) {
+		this[id].pads[fid].remove();
+		this[id].pads.splice(fid, 1);
+		this[id].fields.splice(fid, 1);
+	}
+
+	function multipleFieldsValueOf(id) {
+		var value = [];
+		var n,i,j,l;
+
+		if (!this[id].fields.length) {
+			return undefined;
+		}
+
+		for (i in this[id].fields) {
+			n = value.length;
+			value[n] = {};
+
+			for (j in this[id].fields[i].fields) {
+				l = this[id].fields[i].fields[j];
+				value[n][l] = this[id].fields[i][l].valueOf();
+			}
+		}
+
+		return value;
+	}
+
 	function submitShortcode() {
 		// from wp-admin/includes/media.php +239 media_send_to_editor()
 		var win = window.dialogArguments || opener || parent || top;
@@ -560,19 +582,28 @@
 		// Reset added filters
 	}
 
+	function toggleShortcodeBuilder() {
+		if (toggle(this.builder.div, this.builderButton,
+				'Disable shortcode builder', 'Enable shortcode builder')) {
+			this.addFilterButton.hide();
+		} else {
+			this.addFilterButton.show();
+		}
+	}
+
 	/**
 	 *
 	 * @param id {String} String id of changed field
 	 * @param field {Object} Field Object
 	 */
 	function handleChange(id, field) {
+		var i, browserFilter;
 		// Check to see if the browser filter has changed
 		//console.log(compileFilter.call(this, this.browserFilter));
 		if (this.browserFilter.fields.fields.indexOf(id) !== -1) {
 			this.filterRetrieved = false;
 			this.filterButton.removeClass('disabled');
 		}
-
 
 		// Redisplay the shortcode
 		redisplayShortcode.call(this);
@@ -746,22 +777,22 @@
 		this.browserFilter = filterHTML.call(this, this.el, value);
 
 		// Add filter buttons
-		this.el.append($('<div></div>').append(this.filterButton
-				= $('<a class="button">Filter</a>').click(getFilteredImages.bind(this)))
-				.append(' ').append(this.addFilter = $('<a class="button disabled">'
-				+ 'Add Filter to Shortcode' + '</a>').click()));
+		this.el.append(el = $('<div></div>').append(this.filterButton
+				= $('<a class="button">Filter</a>')
+				.click(getFilteredImages.bind(this))));
 
 		// Shortcode builder
-		this.el.append($('<div></div>').append(el = $('<a>'
-				+ 'Show shortcode builder' + '</a>')));
+		this.el.append($('<div></div>').append(this.builderButton = $('<a>'
+				+ 'Enable shortcode builder' + '</a>')));
 				
 
-		this.builder = shortcodeHTML.call(this, this.el, value);
-		this.builder.div.hide();
+		if (!this.options.insert) {
+			this.builder = shortcodeHTML.call(this, this.el, value);
+			this.builder.div.hide();
 
-		// Add toggle to link
-		el.click(toggle.bind(this, this.builder.div, el, 'Hide shorcode builder',
-				'Show shortcode builder', null));
+			// Add toggle to link
+			this.builderButton.click(toggleShortcodeBuilder.bind(this));
+		}
 
 		// Create shortcode specific options
 		var t, code;
@@ -875,6 +906,66 @@
 		if (el.has && el.length === 1) {
 			this.el = el;
 			this.options = options;
+			this.filters = [];
+		
+			this.filterFields = {
+				folders: {
+					flat: true,
+					fields: {
+						folders: {
+							label: 'Folder(s): ',
+							type: 'select',
+							options: {
+								type: 'hierarchical',
+								multiple: true,
+								files: this.options.folders,
+							}
+						},
+						recurse: {
+							label: ' include subfolders',
+							type: 'bool',
+							options: {
+								prepend: true
+							}
+						}
+					}
+				},
+				advanced: {
+					flat: true,
+					hideable: true,
+					hide: true,
+					hideLabel: 'Hide advanced filtering',
+					showLabel: 'Show advanced filtering',
+					fields: {
+						title: {
+							label: 'Title contains: ',
+							type: 'text',
+						},
+						comments: {
+							label: 'Comments contain: ',
+							type: 'text'
+						},
+						tags: {
+							label: 'Tags contain: ',
+							type: 'text'
+						},
+						time: {
+							label: 'Photos taken between: ',
+							type: 'datetime',
+							options: {
+								type: 'datetimerange'
+							}
+						},
+						name: {
+							label: 'Filename contains: ',
+							type: 'text'
+						},
+					}
+				}
+			};
+
+			// Merge in base options
+			mergeBaseOptions.call(this, this.filterFields);
 
 			galleryHTML.call(this, value);
 		} else {
