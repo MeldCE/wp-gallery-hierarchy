@@ -582,15 +582,6 @@
 		// Reset added filters
 	}
 
-	function toggleShortcodeBuilder() {
-		if (toggle(this.builder.div, this.builderButton,
-				'Disable shortcode builder', 'Enable shortcode builder')) {
-			this.addFilterButton.hide();
-		} else {
-			this.addFilterButton.show();
-		}
-	}
-
 	/**
 	 *
 	 * @param id {String} String id of changed field
@@ -781,17 +772,20 @@
 				= $('<a class="button">Filter</a>')
 				.click(getFilteredImages.bind(this))));
 
-		// Shortcode builder
-		this.el.append($('<div></div>').append(this.builderButton = $('<a>'
-				+ 'Enable shortcode builder' + '</a>')));
-				
+		if (!this.options.insert) {
+			// Shortcode builder
+			this.el.append($('<div></div>').append(this.builderButton = $('<a>'
+					+ 'Enable shortcode builder' + '</a>')));
+		}
+		
+		this.builder = shortcodeHTML.call(this, this.el, value);
 
 		if (!this.options.insert) {
-			this.builder = shortcodeHTML.call(this, this.el, value);
 			this.builder.div.hide();
 
 			// Add toggle to link
-			this.builderButton.click(toggleShortcodeBuilder.bind(this));
+			this.builderButton.click(toggle.bind(this, this.builder.div, this.builderButton,
+				'Disable shortcode builder', 'Enable shortcode builder', null));
 		}
 
 		// Create shortcode specific options

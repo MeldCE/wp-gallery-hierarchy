@@ -37,7 +37,7 @@ gH = (function ($) {
 			shown = el.is(':visible');
 
 			if (!(force === undefined && force === null)) {
-				if ((force && shown) || (force && !shown)) {
+				if ((force && shown) || (!force && !shown)) {
 					return shown;
 				}
 			}
