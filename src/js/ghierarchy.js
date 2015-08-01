@@ -18,10 +18,13 @@ gH = (function ($) {
 	 * @param id string Id of the gallery
 	 * @param part string Part to toggle
 	 * @param label string Label of part toggling
+	 *
 	 * @return boolean Whether the part is showing or not
 	 */
 	function toggle(el, label, onLabel, offLabel, force) {
 		var shown;
+
+		console.log('toggling');
 
 		if (el instanceof String) {
 			el = $('#' + el);
@@ -36,7 +39,7 @@ gH = (function ($) {
 		if (el.has()) {
 			shown = el.is(':visible');
 
-			if (!(force === undefined && force === null)) {
+			if (!(force === undefined || force === null)) {
 				if ((force && shown) || (!force && !shown)) {
 					return shown;
 				}
@@ -45,11 +48,11 @@ gH = (function ($) {
 			if (shown) {
 				el.hide();
 				label.html(offLabel);
-				return true;
+				return false;
 			} else {
 				el.show();
 				label.html(onLabel);
-				return false;
+				return true;
 			}
 		}
 	}

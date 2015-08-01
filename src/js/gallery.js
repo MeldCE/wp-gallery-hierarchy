@@ -671,6 +671,15 @@
 		
 		return;
 	}
+
+	function toggleBuilder() {
+		if (toggle(this.builder.div, this.builderButton,
+				'Disable shortcode builder', 'Enable shortcode builder', null)) {
+			this.pad.addClass('builderOn');
+		} else {
+			this.pad.removeClass('builderOn');
+		}
+	}
 	
 	function compileShortcode() {
 		var i, v;
@@ -784,8 +793,7 @@
 			this.builder.div.hide();
 
 			// Add toggle to link
-			this.builderButton.click(toggle.bind(this, this.builder.div, this.builderButton,
-				'Disable shortcode builder', 'Enable shortcode builder', null));
+			this.builderButton.click(toggleBuilder.bind(this));
 		}
 
 		// Create shortcode specific options
@@ -806,6 +814,7 @@
 
 		// Add insert html
 		if (this.options.insert) {
+			this.pad.addClass('builderOn');
 			this.el.append($('<div></div>')
 					.append(this.insertButton = $('<a class="button">'
 					+ 'Insert shortcode' + '</a>')
