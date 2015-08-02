@@ -23,18 +23,24 @@ class GHJSFader implements GHAlbum {
 	}
 
 	static function printAlbum(&$images, &$options) {
+		wp_enqueue_script('jsFader', plugins_url('js/fader.js', dirname(__FILE__)));
+
 		$html = '';
+		
+		$html .= '<script src="' . plugins_url('js/fader.js', dirname(__FILE__))
+				. '"></script>';
 		if ($images) {
 			$id = uniqid();
 
 			// Create div
-			$html = '<div id="' . $id . '" style="'
+			print_r($options);
+			$html .= '<div id="' . $id . '" style="'
 					. ($options['width'] ? 'width: \'' . $options['width'] . '\',' : '')
 					. ($options['height'] ? 'height: \'' . $options['height'] . '\',' : '')
 					. '"></div>';
 
-			$html .= '<script>$(\'#' . $id . '\').jsfader(' . json_encode($images)
-					. ', ' . json_encode($options) . ');</script>';
+			$html .= '<script>jQuery(function($) { $(\'#' . $id . '\').jsFader(' . json_encode($images)
+					. ', ' . json_encode($options) . ');});</script>';
 			
 			/* xxx
 			// Add script

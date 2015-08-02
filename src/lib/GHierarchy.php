@@ -591,6 +591,11 @@ class GHierarchy {
 	static function head() {
 		$me = static::instance();
 
+		echo '<script>gH = {'
+			. 'imageUrl: "' . $me->imageUrl . '",'
+			. 'cacheUrl: "' . $me->cacheUrl . '",'
+			. '};</script>';
+
 		// Enqueue lightbox script
 		switch (static::$settings->floater) {
 			case 'fancybox':
