@@ -1,7 +1,23 @@
 if(jQuery) (function($){
 	if (!$.fn.jsfader) {
+		function restartTimeout() {
+			if (this.timer) {
+				clearTimeout(this.timer);
+			}
+
+			console.log(this.options);
+
+			this.timer = setTimeout(rFunc(scroll, this, false, 1),
+					this.options.showTime);
+		}
+
+		function show(index) {
+			if (index === this.current || index < 0 || index >= this.images.length) {
+				return false;
+			}
 
 
+		}
 
 		/**
 		 * Prototype to create and managed a JSFader album
@@ -15,7 +31,7 @@ if(jQuery) (function($){
 			// Merge options with default options
 			this.options = $.extend({
 				showTime: 2000,
-				fadeTime: 2000,
+				fadeTime: 1000,
 				class: 'gHJSFader'
 			}, options);
 			
@@ -23,7 +39,6 @@ if(jQuery) (function($){
 			var id, i = 0;
 			this.images = images;
 
-			console.log('Starting a JSFader');
 			console.log(images);
 
 			// Add class to obj
@@ -31,142 +46,85 @@ if(jQuery) (function($){
 				this.obj.addClass(this.options.class);
 			}
 
-			// Add required style
-			this.obj.css({
-				position: 'relative',
-				backgroundSize: 'cover',
-				padding: '0px',
-				backgroundPosition: 'center',
-			});
-
-			// Add width to fix jQuery bug
-			if (this.options.width) {
-				this.obj.width(this.options.width);
-			}
-
-			// Create a div for the changing image
-			this.obj.append(this.transition = $('<div></div>').css({
-				width: '100%',
-				height: '100%',
-				position: 'absolute',
-				backgroundSize: 'cover',
-				top: '0px',
-				left: '0px',
-				margin: '0px',
-				padding: '0px',
-				backgroundPosition: 'center',
-			}));
-
 			// Generate arrows
 			this.obj.append($('<a class="left"></a>')
 					.click(scroll.bind(this, false, -1)));
 					//.click(rFunc(scroll, this, false, -1)));
-			this.obj.append($('<a class="right"></a>')
-					.click(scroll.bind(this, false, 1)));
+			this.obj.append($('<a class="left"></a>')
+					.click(rFunc(scroll, this, false, -1)));
 
 			// Generate index numbers
 			var indexObj;
-			if (this.options.index) {
-				this.obj.append(indexObj = $('<div class="index"></div>'));
-			}
-			this.keys = [];
+			this.obj.append(indexObj = $('<div class="index"></div>'));
 			var i;
-			var maxRatio = 0;
 			for (i in this.images) {
-				this.keys.push(i);
-				if (this.options.index) {
-					indexObj.append($('<a>' + this.keys.length + '</a>'));
-				}
+				indexObj.append($('<a>' + ((i*1) + 1) + '</a>'));
 						//.click(rFunc(scroll, this, false, 0, i)));
-				maxRatio = Math.max(this.images[i].width / this.images[i].height, maxRatio);
 			}
 
-			console.log('got maxRatio of ' + maxRatio);
+			show.call(this, 0);
 
-			// Adjust height using maxRatio if we don't have a height
-			if (!this.options.height) {
-				console.log('no height');
-				this.obj.height(this.obj.width() * maxRatio);
-			} else {
-				this.obj.height(this.options.height);
-			}
-
-			this.scroll(0);
-
-			this.start();
+			start.call(this);
 			//restartTimeout.apply(this);
 		}
 
 		JSFader.prototype = {
-			start: function() {
-				if (this.timer) {
-					clearTimeout(this.timer);
-				}
+			/**
+			 * Scrolls the images either by a certain number of steps, or to a
+			 * particular index.
+			 *
+			 * @param step Integer Number to scroll by. Positive for forwards,
+			 *             negative for backwards
+			 * @param index Integer Index (starting from 0) of the image to jump to
+			 */
+			scroll: function(step, index) {
+				var newImage;
 
-				console.log(this.options);
+				if (!step) {
+					if (!index) {
+						return;
+					}
+					if (this.images[index]) {
+						// Check if that is the current image
+						if (index == this.current) {
+							restartTimeout.apply(this);
+							return;
+						}
 
-				this.timer = setInterval(this.scroll.bind(this, false, 1, true),
-						(this.options.showTime + this.options.fadeTime));
-			},
+						newImage = imdex;
+					} else if (this.imageIndex[index]) {
+						// Check if that is the current image
+						if (this.indexImage[index] == this.current) {
+							restartTimeout.apply(this);
+							return;
+						}
 
-			scroll: function(index, step, animate) {
-				console.log('hello');
-				console.log(this);
-				if (/*!isNaN(index) &&*/ step) {
-					index = this.current + step % (this.keys.length - 1);
-				/*} else if (!parseInt(index) && !step) {
-					return false;*/
-				}
-
-				console.log('have index ' + index + ', step ' + step);
-
-				index = index % (this.keys.length - 1);
-				
-				console.log('image ' + index + ' is');
-				console.log(this.images);
-				console.log(this.images[this.keys[index]]);
-
-				if (animate) {
-					// Set the background to the current image
-					this.obj.css({
-						backgroundImage: 'url(\'' + gH.imageUrl + '/'
-								+ this.images[this.keys[this.current]].path + '\')'
-					});
-
-					this.transition.css({
-						backgroundImage: 'url(\'' + gH.imageUrl + '/'
-								+ this.images[this.keys[index]].path + '\')',
-						opacity: 0
-					});
-
-					console.log('fadeTime is ' + this.options.fadeTime);
-
-					// Start transition
-					this.transition.animate({opacity: 1}, this.options.fadeTime);
-					//		'easein');
+						newImage = this.imageIndex[index];
+					} else {
+						// Invalid index
+						return;
+					}
 				} else {
-					// Change background to correct image
-					this.obj.css({
-						backgroundImage: 'url(\'' + gH.imageUrl + '/'
-								+ this.images[this.keys[index]].path + '\')'
-					});
-
-					// Get rid of the transition
-					this.transition.css({
-						opacity: 'hide'
-					});
+					newImage = this.current + step;
+					newImage = newImage % this.images.length;
 				}
 
-				this.current = index;
-			}
+				// Bring new image to the front
+				this.obj.detach(this.images[newImage]);
+				this.obj.prepend(this.images[newImage]);
+
+				// Start fade in transition
+				this.images[newImage].fadeIn(this.options.fadeTime,
+						this.options.fadeType, rFunc(finishFade, this, false, newImage)); 
+			},
 		};
 
 		$.extend($.fn, {
-			jsFader: (function() {
+			jsfader: (function() {
 
 				return function(images, options) {
 					$(this).each( function() {
-						new JSFader($(this), images, options);
+						new JSFader($(this), options);
 					});
 				};
 			})()
