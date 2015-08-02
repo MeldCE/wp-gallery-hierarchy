@@ -12,11 +12,50 @@ gH = (function ($) {
 			imageData,
 			options;
 
-	//= include editor.js
-	//= include uploader.js
-	//= include scanner.js
-	//= include browser.js
+	/**
+	 * Used to toggle the visibility of elements.
+	 * @param id string Id of the gallery
+	 * @param part string Part to toggle
+	 * @param label string Label of part toggling
+	 *
+	 * @return boolean Whether the part is showing or not
+	 */
+	function toggle(el, label, onLabel, offLabel, force) {
+		var shown;
 
+		console.log('toggling');
+
+		if (el instanceof String) {
+			el = $('#' + el);
+		}
+		if (label instanceof String) {
+			label = $('#' + label);
+			if (!label.has()) {
+				label = false;
+			}
+		}
+
+		if (el.has()) {
+			shown = el.is(':visible');
+
+			if (!(force === undefined || force === null)) {
+				if ((force && shown) || (!force && !shown)) {
+					return shown;
+				}
+			}
+
+			if (shown) {
+				el.hide();
+				label.html(offLabel);
+				return false;
+			} else {
+				el.show();
+				label.html(onLabel);
+				return true;
+			}
+		}
+	}
+	
 	$.viewer.option('gHBrowser', {
 		generators: {
 			imageEditor: displayImageEditor.bind(this),
@@ -24,19 +63,6 @@ gH = (function ($) {
 		scroll: true,
 		default: 'imageEditor'
 	});
-
-	/**
-	 * Create html to display an image into a given JQueryDOMObject
-	 *
-	 * @param obj JQueryDOMObject JQuery object to put the image into
-	 * @param file Object Object containing information on the file
-	 */
-	function displayImage(id, obj, file) {
-		obj.append($('<a href="' + imageUrl + '/' + file.path
-				+ '" target="_blank"><img src="'
-				+ this.thumbnail(file.path) + '"></a>')
-				.viewer(null, 'gHBrowser').data('imageData', file));
-	}
 
 	/**
 	 * Used to diplay the image editor in the floater window
@@ -53,28 +79,6 @@ gH = (function ($) {
 			window.addEventListener('resize',
 					calculateImageHeight.bind(this, objects, editor));
 		}.bind(this));
-	}
-
-	/**
-	 * Shows hides the shortcode type options based on what shortcode type is
-	 * currently selected.
-	 */
-	function changeVisibleOptions(id) {
-		if (!g[id]) {
-			return;
-		}
-
-		var t, c = g[id].sctype.val();
-
-		for (t in g[id].options) {
-			if (g[id]['options-' + t]) {
-				if (c === t) {
-					g[id]['options-' + t].show();
-				} else {
-					g[id]['options-' + t].hide();
-				}
-			}
-		}
 	}
 
 	/**
@@ -109,34 +113,41 @@ gH = (function ($) {
 		}
 	}
 
-	function gallerySelect(gid, ids, files) {
-		g[gid].selectOrder = ids;
-
-		g[gid].idsOnly = (ids.length ? true : false);
-
-
-		this.redisplayShortcode(gid);
+	function thumbnail(image) {
+		return cacheUrl + '/' + image.replace(/\//g, '_');
 	}
 
-	function galleryExclude(gid, id, excluded, file) {
-		// Remove the disabled class from the Save button
-		if (g[gid]['saveButton'].hasClass('disabled')) {
-			g[gid]['saveButton'].removeClass('disabled');
-		}
-		
-		if (!g[gid].changed[id]) {
-			g[gid].changed[id] =  {};
+	function full(image) {
+		return imageUrl + '/' + image;
+	}
+
+	//= include editor.js
+	//= include types.js
+	//= include uploader.js
+	//= include scanner.js
+	//= include browser.js
+	//= include gallery.js
+
+	/**
+	 * Shows hides the shortcode type options based on what shortcode type is
+	 * currently selected.
+	 */
+	function changeVisibleOptions(id) {
+		if (!g[id]) {
+			return;
 		}
 
-		if (!g[gid].changed[id].exclude) {
-			var val = parseInt(file.exclude);
-			g[gid].changed[id].exclude = {
-				'old': val,
-			};
+		var t, c = g[id].sctype.val();
+
+		for (t in g[id].options) {
+			if (g[id]['options-' + t]) {
+				if (c === t) {
+					g[id]['options-' + t].show();
+				} else {
+					g[id]['options-' + t].hide();
+				}
+			}
 		}
-		
-		g[gid].changed[id].exclude.new = (excluded ? 1 : 0);
-		file.exclude = (excluded ? '1' : '0');
 	}
 
 	var pub = {
@@ -207,22 +218,34 @@ gH = (function ($) {
 			}
 		},
 
-		gallery: function(id, insertOnly) {
+		gallery: function(id, insertOnly, options, value) {
+			new Gallery(id, options, value);
+			/*
 			var pad;
 			if ((pad = $('#' + id + 'pad'))) {
 				g[id] = {
-						'insertOnly': insertOnly,
-						'builderOn': (insertOnly ? true : false),
-						'pad': pad,
-						'selected': {}, // Stores the selected images
-						'currentImages': null, // Stores the images displayed in pad
-						'imageIndex': null, // Used to look an image in currentImages based on its id
-						'selectOrder': [], // Stores the order of selected images
-						'changed': {}, // Stores any changed information to send to server
-						'currentOffset': 0, // Stores the current image offset
-						'currentLimit': 0,
-						'showingCurrent': false, // False if not or filtered image offset
-						'idsOnly': false, // True when only ids should be in shortcode
+						insertOnly: insertOnly,
+						builderOn: (insertOnly ? true : false),
+						pad: pad,
+						filter: $('#' + id + 'filter'),
+						selected: {}, // Stores the selected images
+						currentImages: null, // Stores the images displayed in pad
+						imageIndex: null, // Used to look an image in currentImages based on its id
+						selectOrder: [], // Stores the order of selected images
+						changed: {}, // Stores any changed information to send to server
+						currentOffset: 0, // Stores the current image offset
+						currentLimit: 0,
+						showingCurrent: false, // False if not or filtered image offset
+						idsOnly: false, // True when only ids should be in shortcode
+				};
+
+				// Put the filter into the filter div
+				createFilterHTML(id);
+
+
+
+
+
 						'input': $('#' + id + 'input'), // Input field used when inserting into post/page
 						'form': $('#' + id + 'form'), // Form used when inserting into post/page
 						'folders': [], // Selected folders array
@@ -342,7 +365,7 @@ gH = (function ($) {
 
 				this.redisplayShortcode(id);
 			}
-			
+			*/
 		},
 
 		/**
@@ -370,14 +393,6 @@ gH = (function ($) {
 					return false;
 				}
 			}
-		},
-
-		thumbnail: function(image) {
-			return cacheUrl + '/' + image.replace(/\//g, '_');
-		},
-
-		full: function(image) {
-			return imageUrl + '/' + image;
 		},
 
 		/**
