@@ -817,7 +817,8 @@
 			this.pad.addClass('builderOn');
 			this.el.append($('<div></div>')
 					.append(this.insertButton = $('<a class="button">'
-					+ 'Insert shortcode' + '</a>')
+					+ (typeof(this.options.insert) == 'string' ? this.options.insert
+					: 'Insert shortcode') + '</a>')
 					.click(submitShortcode.bind(this))));
 		}
 
@@ -832,9 +833,34 @@
 					}
 				});
 
+		if (value.ids) {
+			this.filterButton.html('Loading...');
+			// Get images
+			$.post(ajaxurl + '?action=gh_gallery', {ids: value.ids},
+					loadSelectedImages.bind(this));
+		}
 
 		redisplayShortcode.call(this);
 
+	}
+
+	/**
+	 * Loads pre-selected images and changes the browser to selected images
+	 */
+	function loadSelectedImages(data, textStatus, jqXHR) {
+		if (data.error) {
+			alert(data.error);
+			return;
+		}
+
+		/// @todo Add localisation
+		this.filterButton.html('Filter');
+
+		// Select
+		this.browser.select(data);
+		this.browser.showSelected(true);
+		
+		redisplayShortcode.call(this);
 	}
 
 	/**

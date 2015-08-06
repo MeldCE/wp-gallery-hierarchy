@@ -80,8 +80,11 @@ var Browser = (function($) {
 	function printFiles(offset) {
 		// Stop if we have no images
 		if (!this.currentFiles) {
+			this.doms.obj.hide();
 			return;
 		}
+		
+		this.doms.obj.show();
 	
 		if (offset !== null && offset !== undefined) {
 			this.currentOffset = Math.max(0,
@@ -370,21 +373,18 @@ var Browser = (function($) {
 		}
 	}
 
-	function toggleSelected(noPrint) {
+	function toggleSelected(noPrint, showSelected) {
+		if (typeof(showSelected) != "boolean") {
+			showSelected = (this.showingCurrent === false ? true : false);
+		}
+
 		var i;
-		if (this.showingCurrent !== false) {
-			// Clean up unselected
-			for (i in this.selected) {
-				if (this.selectOrder.indexOf(i) === -1) {
-					delete this.selected[i];
-				}
+		if (showSelected) {
+			if (this.showingCurrent !== false) {
+				return;
 			}
-			this.currentFiles = this.displayFiles;
-			this.currentOffset = this.showingCurrent;
-			this.doms.showSelected.html('Show selected');
-			this.showingCurrent = false;
-		} else {
-			this.displayFiles = this.currentFiles;
+
+			this.files = this.currentFiles;
 			this.currentFiles = {};
 			//this.imageIndex = {};
 			var i;
@@ -392,9 +392,25 @@ var Browser = (function($) {
 				this.currentFiles[this.selectOrder[i]] = this.selected[this.selectOrder[i]];
 				//this.imageIndex[this.selectOrder[i]] = i;
 			}
+			
 			this.showingCurrent = this.currentOffset;
 			this.currentOffset = 0;
 			this.doms.showSelected.html('Hide Selected');
+		} else {
+			if (this.showingCurrent === false) {
+				return;
+			}
+
+			// Clean up unselected
+			for (i in this.selected) {
+				if (this.selectOrder.indexOf(i) === -1) {
+					delete this.selected[i];
+				}
+			}
+			this.currentFiles = this.files;
+			this.currentOffset = this.showingCurrent;
+			this.doms.showSelected.html('Show selected');
+			this.showingCurrent = false;
 		}
 
 		if (!noPrint) {
@@ -677,7 +693,7 @@ var Browser = (function($) {
 						.append($('<div class="drop">With selected</div>').append(
 								(actions = $('<ul></ul>'))))
 						.append((this.doms.showSelected = $('<span>Show selected</span>')
-								.click(toggleSelected.bind(this, false))))
+								.click(toggleSelected.bind(this, false, null))))
 						.append($('<span></span>')
 								.append($('<input type="checkbox" id="' + r + '"'
 										+ (this.options.rememberSelection ? ' checked' : '')
@@ -796,6 +812,36 @@ var Browser = (function($) {
 				printFiles.call(this, 0);
 			}
 		},
+
+		/**
+		 * Selects the given files.
+		 *
+		 * @param files {String|Array|Object} Files to select. Can be
+		 *        a single id, an array of ids, or new files
+		 */
+		select: function(files) {
+			if (files instanceof Object) {
+				var f;
+
+				for (f in files) {
+					if (!this.selected[f]) {
+						this.selected[f] = files[f];
+						this.selectOrder.push(f);
+					}
+				}
+
+				if (this.options.selection && this.options.selection.call) {
+					this.options.selection(this.selectOrder, this.selected);
+				}
+			} else if (files instanceof Array) {
+				/// @todo
+			} else {
+			}
+		},
+
+		showSelected: function(show) {
+			toggleSelected.call(this, false, show);
+		}
 	}
 
 	return Viewer;

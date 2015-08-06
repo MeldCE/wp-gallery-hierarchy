@@ -701,12 +701,17 @@ class GHierarchy {
 			$pattern = get_shortcode_regex();
 			$sc = stripslashes($_REQUEST['sc']);
 			preg_match("/$pattern/s", $sc, $matches);
-			print_r($matches);
 			$tag = $matches[2];
 			$atts = shortcode_parse_atts($matches[3]);
 			$current = $atts;
 			$current['tag'] = $tag;
+			$current['sctype'] = $tag;
 			//$current = $_REQUEST['sc'];
+			// Parse ID string
+			if (isset($current['id'])) {
+				$current = array_merge($current, static::parseFilter($current['id']));
+				unset($current['id']);
+			}
 		}
 		
 		wp_iframe(array($me, 'printGallery'), true, $current, $error);
@@ -777,7 +782,21 @@ class GHierarchy {
 		// Build query
 		$parts = array();
 
-		// @todo Recursive
+		// IDs
+		if ($_POST['ids']) {
+			// Verfiy ids
+			$f = 0;
+			while ($f < count($_POST['ids'])) {
+				if (!gHisInt($_POST['ids'][$f])) {
+					array_splice($_POST['ids'], $f, 1);
+				} else {
+					$f++;
+				}
+			}
+
+			$parts[] = 'id IN (' . join(', ', $_POST['ids']) . ')';
+		}
+
 		if (isset($_POST['folders']) && is_array($_POST['folders'])) {
 			// Check folder ids
 			$f = 0;
@@ -881,10 +900,17 @@ class GHierarchy {
 
 
 		if (static::$lp) fwrite(static::$lp, "Ajax gallery SQL command is $q\n");
-	
+		
 		$images = $wpdb->get_results($q, ARRAY_A);
 
-		echo json_encode($images);
+		// Map images
+		$mapped = array();
+
+		foreach($images as &$image) {
+			$mapped[$image['id']] = $image;
+		}
+
+		echo json_encode($mapped);
 
 		exit;
 	}
@@ -1566,10 +1592,6 @@ class GHierarchy {
 	function printGallery($insert = false, $shortcode = false, $error = false) {
 		global $wpdb;
 		$id = uniqid();
-
-		if ($shortcode) {
-			echo '<p>Current shortcode is ' . print_r($shortcode, 1) . '</p>';
-		}
 		
 		// Get folders first to see if we have anything worth searching
 		$images = $wpdb->get_var('SELECT id FROM ' . $this->imageTable
@@ -1596,8 +1618,10 @@ class GHierarchy {
 		echo '<script>gH.gallery(\'' . $id . '\', ' . ($insert ? 1 : 0) . ',' 
 				. '{ albums: ' . json_encode(static::getAlbums()) . ','
 				. 'folders: ' . json_encode(static::ajaxFolder(true, $full)) . ','
-				. ($insert ? 'insert: true' : '')
-				. '}, ""' . /* value */ ');</script>';
+				. ($shortcode ? 'insert: \'' . __('Update shortcode',
+				'gallery_hierarchy') . '\'' : ($insert ? 'insert: true' : ''))
+				. '}, ' . ($shortcode ? json_encode($shortcode) : 'false')
+				. ');</script>';
 	}
 
 	/**
@@ -1887,6 +1911,56 @@ class GHierarchy {
 		}
 		
 		return $html;
+	}
+
+	/**
+	 * Parses the id attribute in shortcodes to return an associative array
+	 *
+	 * @param $id {String} Id filter string from shortcode
+	 *
+	 * @return {Array} Array containing filter parts
+	 */
+	static function parseFilter($id) {
+		$filter = array('ids' => array());
+		$parts = explode(',', $id);
+
+		foreach ($parts as $p => &$part) {
+			if (strpos($part, '=') !== false) {
+				$part = explode('=', $part);
+
+				switch ($part[0]) {
+					case 'rfolder':
+						$filter['recurse'] = true;
+					case 'folder':
+						$part[1] = explode('|', $part[1]);
+
+						$filter['folders'] = array();
+						// Check each id is numeric
+						foreach ($part[1] as $n) {
+							if (is_numeric($n)) {
+								array_push($filter['folder'], $n);
+							}
+						}
+
+						break;
+
+					case 'taken':
+						// @todo
+						break;
+					case 'tags':
+					case 'title':
+					case 'comment':
+						$filter[$part[0]] = $part[1];
+						break;
+				}
+
+
+			} else if (is_numeric($part)) {
+				array_push($filter['ids'], $part);
+			}
+		}
+
+		return $filter;
 	}
 
 	/**

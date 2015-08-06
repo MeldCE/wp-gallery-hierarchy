@@ -255,18 +255,21 @@ newType('select', {
 				break;
 			case 'boxes':
 				var i;
+				var selected = 'selected';
 				var type = 'radio';
 				this.inputs = {};
 				if (this.options.multiple) {
 					type = 'checkbox';
+					selected = 'checked';
 				}
 
 				if (this.options.values) {
 					for (i in this.options.values) {
-						// TODO
+						// @TODO Add handling of multiple values
 						el.append($('<label>' + this.options.values[i] + '</label>')
 								.prepend(this.inputs[i] = $('<input type="' + type
-										+ '" value="' + i + '">')
+										+ '" value="' + i + '"'
+										+ (i == value ? ' ' + selected : '') + '>')
 										.bind('change', this.change.bind(this))));
 					}
 				}
@@ -280,7 +283,8 @@ newType('select', {
 
 				if (this.options.values) {
 					for (i in this.options.values) {
-						this.input.append('<option value="' + i + '">'
+						this.input.append('<option value="' + i + '"'
+								+ (i == value ? ' selected' : '') + '>'
 								+ this.options.values[i] + '</option>');
 					}
 				}

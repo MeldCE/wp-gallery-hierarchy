@@ -23,9 +23,8 @@
 			console.log('replaceShortcodes called on content');
 			console.log(content);
 			return content.replace(/\[gh(album|thumb|image)( [^\]]*)?\]/g, function (shortcode) {
-				console.log('found shortcode ' + shortcode);
 				var encSC = window.encodeURIComponent(shortcode);
-				return '<!--gHStart ' + encSC + ' --><div ' + dataTag + '="'
+				return '<!--gHStart--><div ' + dataTag + '="'
 						+ encSC + '">&nbsp;</div><!--gHEnd-->';
 			});
 
@@ -43,14 +42,17 @@
 
 			doc.find('div[' + dataTag + ']').each(function() {
 				var div = $(this);
-				var shortcode = div.attr(dataTag)
+				var shortcode = div.attr(dataTag);
 				console.log('found div with shortcode: ' + window.decodeURIComponent(shortcode));
 				$.post(ajaxurl + '?action=gh_tiny', {
 					a: 'html',
 					sc: window.decodeURIComponent(shortcode)
 				}, function(data) {
 					console.log($(data));
-					div.replaceWith($(data)
+					var width = Math.min(1100, $(window).width() - 100);
+					var height = $(window).height() - 100;
+
+					div.html($(data)
 							// Disable standard Wordpress click function
 							.bind('click', function(ev) {
 								ev.stopPropagation();
@@ -59,12 +61,13 @@
 								// Build URL
 								var url = 'http://192.168.0.118/ngotaxi/wp-admin/media-upload.php?chromeless=1&post_id=1385&tab=ghierarchy&sc=' + shortcode;
 								editor.windowManager.open({
-									title: 'Edit Gallery Hierarchy Shortode',
+									title: 'Edit Gallery Hierarchy Shortcode',
 									file: url,
 									resizable: true,
 									maximizable: true,
-									width: 700,
-								});
+									width: width,
+									height: height
+								}, {div: div});
 								//ev.preventDefault();
 								ev.stopPropagation();
 							})
@@ -75,10 +78,11 @@
 		}
 
 		function restoreShortcodes( content ) {
-			console.log('running restoreShortcodes');
-			console.log(content);
-			return content.replace(/<!--gHStart (.*?) -->.*?<!--gHEnd-->/mg, function(match, sc) {
-				console.log('found one: ' + match);
+			//console.log('running restoreShortcodes');
+			//console.log(content);
+			return content.replace(
+					/<!--gHStart-->[^]*?<div.*? data-gh-code="(.*?)".*?>[^]*?<\/div>[^]*?<!--gHEnd-->/mg, function(match, sc) {
+				//console.log('found one: ' + match);
 				return window.decodeURIComponent(sc);
 			});
 
