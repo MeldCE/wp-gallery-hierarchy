@@ -41,6 +41,10 @@
 
 			doc.find('div[' + dataTag + ']').each(function() {
 				var div = $(this);
+				// Check that is hasn't already been updated
+				if (div.attr('data-gh-drawn')) {
+					return;
+				}
 				var shortcode = div.attr(dataTag);
 				console.log('found div with shortcode: ' + window.decodeURIComponent(shortcode));
 				$.post(ajaxurl + '?action=gh_tiny', {
@@ -75,7 +79,8 @@
 								}, {gHEditingDiv: content});
 								//ev.preventDefault();
 								ev.stopPropagation();
-							});
+							})
+							.attr('data-gh-drawn', 1);
 				});
 				console.log('sent');
 			});
@@ -199,6 +204,7 @@
 
 		// Set function to build divs once the content has been loaded
 		editor.on('LoadContent', drawShortcodes);
+		editor.on('NodeChange', drawShortcodes);
 
 		//replace from image placeholder to shortcode
 		editor.on('GetContent', function(event){

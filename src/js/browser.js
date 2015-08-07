@@ -376,12 +376,19 @@ var Browser = (function($) {
 	function toggleSelected(noPrint, showSelected) {
 		if (typeof(showSelected) != "boolean") {
 			showSelected = (this.showingCurrent === false ? true : false);
+		} else {
+			// Booleanise value
+			if (showSelected) {
+				showSelected = true;
+			} else {
+				showSelected = false;
+			}
 		}
 
 		var i;
 		if (showSelected) {
 			if (this.showingCurrent !== false) {
-				return;
+				return true;
 			}
 
 			this.files = this.currentFiles;
@@ -396,9 +403,10 @@ var Browser = (function($) {
 			this.showingCurrent = this.currentOffset;
 			this.currentOffset = 0;
 			this.doms.showSelected.html('Hide Selected');
+
 		} else {
 			if (this.showingCurrent === false) {
-				return;
+				return false;
 			}
 
 			// Clean up unselected
@@ -416,6 +424,8 @@ var Browser = (function($) {
 		if (!noPrint) {
 			printFiles.call(this);
 		}
+
+		return showSelected;
 	}
 
 	function rebuildIndexes() {
@@ -518,8 +528,8 @@ var Browser = (function($) {
 		}
 	}
 
-	function clearSelection() {
-		if (!this.showingCurrent
+	function clearSelection(force) {
+		if (!this.showingCurrent || force
 				|| confirm('Are you sure? Entire current selection will be cleared')) {
 			// Clear selected class
 			var d;
@@ -530,6 +540,14 @@ var Browser = (function($) {
 			// Clear stores
 			this.selected = {};
 			this.selectOrder = [];
+
+			// Toggle to non-selected view and redraw
+			toggleSelected.call(this, true, false);
+			printFiles.call(this);
+		
+			if (this.options.selection && this.options.selection.call) {
+				this.options.selection(this.selectOrder, this.selected);
+			}
 		}
 	}
 
@@ -835,12 +853,12 @@ var Browser = (function($) {
 				}
 			} else if (files instanceof Array) {
 				/// @todo
-			} else if (files === null) {
-				// clear selection
-				this.selected = {};
-				this.selectOrder = [];
 			} else {
 			}
+		},
+
+		clearSelection: function() {
+			clearSelection.call(this, true);
 		},
 
 		showSelected: function(show) {

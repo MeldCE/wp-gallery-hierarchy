@@ -582,6 +582,8 @@
 			if (tinyMCEPopup && (div = tinyMCEPopup.getWindowArg('gHEditingDiv'))) {
 				// Set attribute to shortcode
 				div.attr(dataTag, window.encodeURIComponent(compileShortcode.call(this)));
+				div.removeAttr('data-gh-drawn');
+				tinyMCEPopup.editor.nodeChanged();
 				tinyMCEPopup.close();
 
 				// @todo Call to get updated html
@@ -595,8 +597,8 @@
 		var win = window.dialogArguments || opener || parent || top;
 		win.send_to_editor(compileShortcode.call(this));
 
-		// Reset added filters
-		this.browser.select(null);
+		// Clear selection
+		this.browser.clearSelection();
 	}
 
 	/**
