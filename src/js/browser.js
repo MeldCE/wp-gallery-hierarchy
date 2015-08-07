@@ -835,6 +835,10 @@ var Browser = (function($) {
 				}
 			} else if (files instanceof Array) {
 				/// @todo
+			} else if (files === null) {
+				// clear selection
+				this.selected = {};
+				this.selectOrder = [];
 			} else {
 			}
 		},

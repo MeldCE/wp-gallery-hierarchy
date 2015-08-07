@@ -21,7 +21,6 @@
 
 		function replaceShortcodes( content ) {
 			console.log('replaceShortcodes called on content');
-			console.log(content);
 			return content.replace(/\[gh(album|thumb|image)( [^\]]*)?\]/g, function (shortcode) {
 				var encSC = window.encodeURIComponent(shortcode);
 				return '<!--gHStart--><div ' + dataTag + '="'
@@ -48,18 +47,24 @@
 					a: 'html',
 					sc: window.decodeURIComponent(shortcode)
 				}, function(data) {
-					console.log($(data));
 					var width = Math.min(1100, $(window).width() - 100);
 					var height = $(window).height() - 100;
 
-					div.html($(data)
+					var content = $(data);
+					content.attr(dataTag, shortcode);
+
+					div.replaceWith(content);
+
+					content
 							// Disable standard Wordpress click function
 							.bind('click', function(ev) {
 								ev.stopPropagation();
 							})
 							.bind('tap', function(ev) {
 								// Build URL
-								var url = 'http://192.168.0.118/ngotaxi/wp-admin/media-upload.php?chromeless=1&post_id=1385&tab=ghierarchy&sc=' + shortcode;
+								var url = 'http://192.168.0.118/ngotaxi/wp-admin/'
+										+ 'media-upload.php?chromeless=1&post_id=1385&'
+										+ 'tab=ghierarchy&sc=' + shortcode + '&tinymce_popup=1';
 								editor.windowManager.open({
 									title: 'Edit Gallery Hierarchy Shortcode',
 									file: url,
@@ -67,11 +72,10 @@
 									maximizable: true,
 									width: width,
 									height: height
-								}, {div: div});
+								}, {gHEditingDiv: content});
 								//ev.preventDefault();
 								ev.stopPropagation();
-							})
-					);
+							});
 				});
 				console.log('sent');
 			});

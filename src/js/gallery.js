@@ -1,4 +1,5 @@
 //(function($) {
+	var dataTag = 'data-gh-code';
 	/**
 	 * Table object for managing tables.
 	 *
@@ -575,11 +576,27 @@
 	}
 
 	function submitShortcode() {
+		var div;
+	
+		try {
+			if (tinyMCEPopup && (div = tinyMCEPopup.getWindowArg('gHEditingDiv'))) {
+				// Set attribute to shortcode
+				div.attr(dataTag, window.encodeURIComponent(compileShortcode.call(this)));
+				tinyMCEPopup.close();
+
+				// @todo Call to get updated html
+
+				return;
+			}
+		} catch(err) {
+		}
+
 		// from wp-admin/includes/media.php +239 media_send_to_editor()
 		var win = window.dialogArguments || opener || parent || top;
 		win.send_to_editor(compileShortcode.call(this));
 
 		// Reset added filters
+		this.browser.select(null);
 	}
 
 	/**

@@ -516,6 +516,9 @@ class GHierarchy {
 		if ($hook_suffix == 'gallery-hierarchy_page_gHLoad') {
 			wp_enqueue_script('moxie', 
 					plugins_url('/lib/js/moxie.min.js', dirname(__FILE__)));
+			//wp_enqueue_script('plupload');
+			//wp_enqueue_script('plupload-html4');
+			//wp_enqueue_script('plupload-html5');
 			wp_enqueue_script('plupload-full', 
 					plugins_url('/lib/js/plupload.full.min.js', dirname(__FILE__)),
 					array('moxie'));
@@ -527,16 +530,21 @@ class GHierarchy {
 			wp_enqueue_style('plupload',
 					plugins_url('/lib/css/jquery.plupload.queue.css', dirname(__FILE__)));
 		}
-		//if ($hook_suffix == 'gallery-hierarchy_page_gHierarcy') {
+		if ($hook_suffix == 'toplevel_page_gHierarchy'
+				|| $hook_suffix == 'media-upload-popup') {
 			wp_enqueue_script('jquery-hierarchy-select', 
 					plugins_url('/lib/js/folders.js', dirname(__FILE__)));
-		//}
+		}
 		if ($hook_suffix == 'gallery-hierarchy_page_gHOptions') {
 			wp_enqueue_style('wpsettings',
 					plugins_url('/lib/css/wpsettings.min.css', dirname(__FILE__)));
 			wp_enqueue_script('wpsettings', 
 					plugins_url('/lib/js/wpsettings.min.js', dirname(__FILE__)),
 					array('jquery'));
+		}
+		if ($_GET['tinymce_popup'] == 1) {
+			wp_enqueue_script('tinymce-popup',
+					includes_url('/js/tinymce/tiny_mce_popup.js'));
 		}
 		/// @todo @see http://codex.wordpress.org/I18n_for_WordPress_Developers
 		wp_enqueue_script('ghierarchy', 
