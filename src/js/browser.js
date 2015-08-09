@@ -836,9 +836,18 @@ var Browser = (function($) {
 		 *
 		 * @param files {String|Array|Object} Files to select. Can be
 		 *        a single id, an array of ids, or new files
+		 * @param ignoreChange {Boolean} If true, don't call selection function.
 		 */
-		select: function(files) {
-			if (files instanceof Object) {
+		select: function(files, ignoreChange) {
+			if (files instanceof Array) {
+				var f;
+				for (f in files) {
+					if (this.currentFiles[files[f]]) {
+						this.selected[files[f]] = this.currentFiles[files[f]];
+						this.selectOrder.push(files[f]);
+					}
+				}
+			} else if (files instanceof Object) {
 				var f;
 
 				for (f in files) {
@@ -847,13 +856,15 @@ var Browser = (function($) {
 						this.selectOrder.push(f);
 					}
 				}
-
-				if (this.options.selection && this.options.selection.call) {
-					this.options.selection(this.selectOrder, this.selected);
-				}
-			} else if (files instanceof Array) {
-				/// @todo
 			} else {
+				if (this.currentFiles[files]) {
+					this.selected[files] = this.currentFiles[files];
+					this.selectOrder.push(files);
+				}
+			}
+
+			if (!ignoreChange && this.options.selection && this.options.selection.call) {
+				this.options.selection(this.selectOrder, this.selected);
 			}
 		},
 
@@ -863,6 +874,10 @@ var Browser = (function($) {
 
 		showSelected: function(show) {
 			toggleSelected.call(this, false, show);
+		},
+
+		valueOf: function() {
+			return (this.selectOrder.length ? this.selectOrder : false);
 		}
 	}
 

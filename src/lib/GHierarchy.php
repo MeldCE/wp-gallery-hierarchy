@@ -1600,7 +1600,7 @@ class GHierarchy {
 	function printGallery($insert = false, $shortcode = false, $error = false) {
 		global $wpdb;
 		$id = uniqid();
-		
+
 		// Get folders first to see if we have anything worth searching
 		$images = $wpdb->get_var('SELECT id FROM ' . $this->imageTable
 				. ' LIMIT 1');
@@ -1929,7 +1929,8 @@ class GHierarchy {
 	 * @return {Array} Array containing filter parts
 	 */
 	static function parseFilter($id) {
-		$filter = array('ids' => array());
+		$filter = array();
+		$ids = array();
 		$parts = explode(',', $id);
 
 		foreach ($parts as $p => &$part) {
@@ -1946,7 +1947,7 @@ class GHierarchy {
 						// Check each id is numeric
 						foreach ($part[1] as $n) {
 							if (is_numeric($n)) {
-								array_push($filter['folder'], $n);
+								array_push($filter['folders'], $n);
 							}
 						}
 
@@ -1964,8 +1965,12 @@ class GHierarchy {
 
 
 			} else if (is_numeric($part)) {
-				array_push($filter['ids'], $part);
+				array_push($ids, $part);
 			}
+		}
+
+		if ($ids) {
+			$filter['ids'] = $ids;
 		}
 
 		return $filter;

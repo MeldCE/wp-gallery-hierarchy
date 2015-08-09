@@ -23,8 +23,6 @@ gH = (function ($) {
 	function toggle(el, label, onLabel, offLabel, force) {
 		var shown;
 
-		console.log('toggling');
-
 		if (el instanceof String) {
 			el = $('#' + el);
 		}
@@ -691,8 +689,6 @@ gH = (function ($) {
 			if (g[id].options[code.code]) {
 				O = O.concat(g[id].options[code.code]);
 			}
-
-			console.log('O is ' + O);
 
 			for (o in O) {
 				if ((val = code[O[o]])) {

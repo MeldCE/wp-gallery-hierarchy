@@ -1,8 +1,5 @@
 (function($) {
-	console.log('calling function');
 	tinymce.PluginManager.add('gHierarchy', function( editor, url ) {
-		console.log('plugin being init');
-		
 		var dataTag = 'data-gh-code';
 
 		//helper functions 
@@ -20,7 +17,6 @@
 		}
 
 		function replaceShortcodes( content ) {
-			console.log('replaceShortcodes called on content');
 			return content.replace(/\[gh(album|thumb|image)( [^\]]*)?\]/g, function (shortcode) {
 				var encSC = window.encodeURIComponent(shortcode);
 				return '<!--gHStart--><div ' + dataTag + '="'
@@ -34,19 +30,15 @@
 
 		
 		function drawShortcodes(ev) {
-			console.log('drawShortcodes called');
-			console.log(editor.getDoc());
-			console.log(editor);
 			var doc = $(editor.getDoc());
 
 			doc.find('div[' + dataTag + ']').each(function() {
 				var div = $(this);
 				// Check that is hasn't already been updated
-				if (div.attr('data-gh-drawn')) {
+				if (div.data('gHDrawn')) {
 					return;
 				}
 				var shortcode = div.attr(dataTag);
-				console.log('found div with shortcode: ' + window.decodeURIComponent(shortcode));
 				$.post(ajaxurl + '?action=gh_tiny', {
 					a: 'html',
 					sc: window.decodeURIComponent(shortcode)
@@ -69,6 +61,7 @@
 								var url = 'http://192.168.0.118/ngotaxi/wp-admin/'
 										+ 'media-upload.php?chromeless=1&post_id=1385&'
 										+ 'tab=ghierarchy&sc=' + shortcode + '&tinymce_popup=1';
+								
 								editor.windowManager.open({
 									title: 'Edit Gallery Hierarchy Shortcode',
 									file: url,
@@ -80,30 +73,16 @@
 								//ev.preventDefault();
 								ev.stopPropagation();
 							})
-							.attr('data-gh-drawn', 1);
+							.data('gHDrawn', true);
 				});
-				console.log('sent');
 			});
 		}
 
 		function restoreShortcodes( content ) {
-			//console.log('running restoreShortcodes');
-			//console.log(content);
 			return content.replace(
 					/<!--gHStart-->[^]*?<div.*? data-gh-code="(.*?)".*?>[^]*?<\/div>[^]*?<!--gHEnd-->/mg, function(match, sc) {
-				//console.log('found one: ' + match);
 				return window.decodeURIComponent(sc);
 			});
-
-			//return content.replace( /(?:<p(?: [^>]+)?>)*(<img [^>]+>)(?:<\/p>)*/g, function( match, image ) {
-			/*	var data = getAttr( image, 'data-sh-attr' );
-				var con = getAttr( image, 'data-sh-content' );
-
-				if ( data ) {
-					return '<p>[' + sh_tag + data + ']' + con + '[/'+sh_tag+']</p>';
-				}
-				return match;
-			});*/
 		}
 
 		/*/add popup
@@ -198,8 +177,6 @@
 		//replace from shortcode to an image placeholder
 		editor.on('BeforeSetcontent', function(event){ 
 			event.content = replaceShortcodes(event.content);
-			console.log('content now');
-			console.log(event.content);
 		});
 
 		// Set function to build divs once the content has been loaded

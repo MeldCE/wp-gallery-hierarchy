@@ -156,7 +156,6 @@
 
 						// Check for dependents
 						if (dependents[id]) {
-							console.log(dependents[id]);
 							for (t in dependents[id]) {
 								for (f in dependents[id][t]) {
 									checkDependencies.call(this, f, dependents[id][t][f], t, id);
@@ -318,7 +317,8 @@
 				.append(div = $('<div></div>')
 		));
 
-		filterObj.fields = new Table(filterObj.div, {fields: this.filterFields});
+		filterObj.fields = new Table(filterObj.div, {fields: this.filterFields},
+				value);
 
 		return filterObj;
 	}
@@ -582,7 +582,7 @@
 			if (tinyMCEPopup && (div = tinyMCEPopup.getWindowArg('gHEditingDiv'))) {
 				// Set attribute to shortcode
 				div.attr(dataTag, window.encodeURIComponent(compileShortcode.call(this)));
-				div.removeAttr('data-gh-drawn');
+				div.data('gHDrawn', false);
 				tinyMCEPopup.editor.nodeChanged();
 				tinyMCEPopup.close();
 
@@ -619,13 +619,19 @@
 		redisplayShortcode.call(this);
 	}
 
+	function redisplayShortcode() {
+		this.builder.shortcodeDiv.html(compileShortcode.call(this));
+	}
+
 	function compileFilter(filter) {
 		var compiledFilter = {};
+		var have = false;
 
 		var folders = filter.fields.folders.valueOf();
 
 		// Folders
 		if (folders.length) {
+			have = true;
 			compiledFilter.folders = folders;
 			
 			if (filter.fields.recurse.valueOf()) {
@@ -638,19 +644,26 @@
 		
 		for (f in fields) {
 			if ((v = filter.fields[fields[f]].valueOf())) {
+				have = true;
 				compiledFilter[fields[f]] = v;
 			}
 		}
 		
-		return compiledFilter;
+		if (have) {
+			return compiledFilter;
+		} else {
+			return;
+		}
 	}
 
-	function redisplayShortcode() {
-		this.builder.shortcodeDiv.html(compileShortcode.call(this));
-	}
-
-	function compileFilter(table) {
+	function compileFilterText(table) {
 		var parts = [];
+		var ids;
+
+		// IDs
+		if (ids = this.browser.valueOf()) {
+			parts = parts.concat(ids);
+		}
 
 		// Folders
 		var folders = table.fields.folders.valueOf();
@@ -671,7 +684,6 @@
 		// Date
 		var date;
 		if (v = table.fields.time.valueOf()) {
-			console.log(v);
 			// Start date
 			if (v.start) {
 				date = timeToMySQL(v.start);
@@ -709,7 +721,7 @@
 		if (this.idsOnly) {
 			shortcode += ' id="' + this.selectOrder.join(',') + '"';
 		} else {
-			if (v = compileFilter(this.browserFilter)) {
+			if (v = compileFilterText.call(this, this.browserFilter)) {
 				shortcode += ' id="' + v + '"';
 			}
 		}
@@ -791,6 +803,65 @@
 		this.baseFieldOptions = {
 			change: handleChange.bind(this)
 		};
+		
+		this.filterFields = {
+			folders: {
+				flat: true,
+				fields: {
+					folders: {
+						label: 'Folder(s): ',
+						type: 'select',
+						options: {
+							type: 'hierarchical',
+							multiple: true,
+							files: this.options.folders,
+						}
+					},
+					recurse: {
+						label: ' include subfolders',
+						type: 'bool',
+						options: {
+							prepend: true
+						}
+					}
+				}
+			},
+			advanced: {
+				flat: true,
+				hideable: true,
+				hide: true,
+				hideLabel: 'Hide advanced filtering',
+				showLabel: 'Show advanced filtering',
+				fields: {
+					title: {
+						label: 'Title contains: ',
+						type: 'text',
+					},
+					comments: {
+						label: 'Comments contain: ',
+						type: 'text'
+					},
+					tags: {
+						label: 'Tags contain: ',
+						type: 'text'
+					},
+					time: {
+						label: 'Photos taken between: ',
+						type: 'datetime',
+						options: {
+							type: 'datetimerange'
+						}
+					},
+					name: {
+						label: 'Filename contains: ',
+						type: 'text'
+					},
+				}
+			}
+		};
+
+		// Merge in base options
+		mergeBaseOptions.call(this, this.filterFields);
 
 		// Browser filter
 		this.browserFilter = filterHTML.call(this, this.el, value);
@@ -852,11 +923,13 @@
 					}
 				});
 
-		if (value.ids) {
+		// Load the filter if we have images
+		var filter;
+		if ((filter = compileFilter(this.browserFilter)) || value.ids) {
 			this.filterButton.html('Loading...');
 			// Get images
-			$.post(ajaxurl + '?action=gh_gallery', {ids: value.ids},
-					loadSelectedImages.bind(this));
+			$.post(ajaxurl + '?action=gh_gallery', (filter || {ids: value.ids}),
+					loadSelectedImages.bind(this, filter, value));
 		}
 
 		redisplayShortcode.call(this);
@@ -866,7 +939,7 @@
 	/**
 	 * Loads pre-selected images and changes the browser to selected images
 	 */
-	function loadSelectedImages(data, textStatus, jqXHR) {
+	function loadSelectedImages(filter, value, data, textStatus, jqXHR) {
 		if (data.error) {
 			alert(data.error);
 			return;
@@ -875,9 +948,17 @@
 		/// @todo Add localisation
 		this.filterButton.html('Filter');
 
+		// Add images
+		this.browser.displayFiles(data);
+
 		// Select
-		this.browser.select(data);
-		this.browser.showSelected(true);
+		if (value.ids) {
+			this.browser.select(value.ids);
+		}
+
+		if (!filter && value.ids) {
+			this.browser.showSelected(true);
+		}
 		
 		redisplayShortcode.call(this);
 	}
@@ -955,65 +1036,6 @@
 			this.el = el;
 			this.options = options;
 			this.filters = [];
-		
-			this.filterFields = {
-				folders: {
-					flat: true,
-					fields: {
-						folders: {
-							label: 'Folder(s): ',
-							type: 'select',
-							options: {
-								type: 'hierarchical',
-								multiple: true,
-								files: this.options.folders,
-							}
-						},
-						recurse: {
-							label: ' include subfolders',
-							type: 'bool',
-							options: {
-								prepend: true
-							}
-						}
-					}
-				},
-				advanced: {
-					flat: true,
-					hideable: true,
-					hide: true,
-					hideLabel: 'Hide advanced filtering',
-					showLabel: 'Show advanced filtering',
-					fields: {
-						title: {
-							label: 'Title contains: ',
-							type: 'text',
-						},
-						comments: {
-							label: 'Comments contain: ',
-							type: 'text'
-						},
-						tags: {
-							label: 'Tags contain: ',
-							type: 'text'
-						},
-						time: {
-							label: 'Photos taken between: ',
-							type: 'datetime',
-							options: {
-								type: 'datetimerange'
-							}
-						},
-						name: {
-							label: 'Filename contains: ',
-							type: 'text'
-						},
-					}
-				}
-			};
-
-			// Merge in base options
-			mergeBaseOptions.call(this, this.filterFields);
 
 			galleryHTML.call(this, value);
 		} else {

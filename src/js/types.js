@@ -249,7 +249,7 @@ newType('select', {
 		switch (this.options.type) {
 			case 'hierarchical': // Hierarchical using jquery-hierarchy-select
 				var x;
-				this.input = new $.Hierarchical(el, this.options);
+				this.input = new $.Hierarchical(el, this.options, value);
 				//el[prop](x = $('<div></div>'));
 				//x.folders(this.options);
 				break;
