@@ -760,6 +760,43 @@
 		return shortcode;
 	}
 
+	/**
+	 * Sends data back to the server to be saved
+	 */
+	function saveEdits() {
+		var i, v, data = {}, change = false;
+		for (i in this.changed) {
+			for (v in this.changed[i]) {
+				if (this.changed[i][v]['new'] !== this.changed[i][v]['old']) {
+					if (!data[i]) {
+						data[i] = {}
+					}
+					data[i][v] = this.changed[i][v]['new'];
+					change = true;
+				}
+			}
+		}
+		
+		if (change) {
+			// @todo Add localisation
+			this.saveButton.html('Saving...');
+			$.post(ajaxurl + '?action=gh_save', {a: 'save', data: data},
+					confirmSave.bind(this));
+		}
+	}
+
+	function confirmSave(data, textStatus, jqXHR) {
+		if (!(data instanceof Object) || data.error) {
+			alert(data.error);
+		} else {
+			// TODO Apply changes??
+			this.changed = {};
+			alert(data.msg);
+		}
+		// @todo Add localisation
+		this.saveButton.html('Save Image Changes');
+		this.saveButton.addClass('disabled');
+	}
 	
 
 	function getFilteredImages() {
@@ -900,6 +937,12 @@
 					.append('<div></div>');
 		}
 
+		/// @tood Redo exlusions button and shortcode attribute
+		this.el.append(this.saveButton = $('<a class="button disabled">'
+				+ 'Save image exclusions' + '</a>')
+				.click(saveEdits.bind(this)));
+
+
 		this.el.append(this.pad = $('<div></div>'));
 
 		// Add insert html
@@ -985,24 +1028,24 @@
 		redisplayShortcode.call(this);
 	}
 
-	function galleryExclude(gid, id, excluded, file) {
+	function galleryExclude(id, excluded, file) {
 		// Remove the disabled class from the Save button
-		if (g[gid]['saveButton'].hasClass('disabled')) {
-			g[gid]['saveButton'].removeClass('disabled');
+		if (this.saveButton.hasClass('disabled')) {
+			this.saveButton.removeClass('disabled');
 		}
 		
-		if (!g[gid].changed[id]) {
-			g[gid].changed[id] =  {};
+		if (!this.changed[id]) {
+			this.changed[id] =  {};
 		}
 
-		if (!g[gid].changed[id].exclude) {
+		if (!this.changed[id].exclude) {
 			var val = parseInt(file.exclude);
-			g[gid].changed[id].exclude = {
+			this.changed[id].exclude = {
 				'old': val,
 			};
 		}
 		
-		g[gid].changed[id].exclude.new = (excluded ? 1 : 0);
+		this.changed[id].exclude.new = (excluded ? 1 : 0);
 		file.exclude = (excluded ? '1' : '0');
 	}
 
@@ -1036,6 +1079,7 @@
 			this.el = el;
 			this.options = options;
 			this.filters = [];
+			this.changed = {};
 
 			galleryHTML.call(this, value);
 		} else {
