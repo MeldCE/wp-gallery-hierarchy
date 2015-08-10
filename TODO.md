@@ -9,4 +9,3 @@
 
 
 - Images if selected by id are not currently pu in order
-- Shortcode populated/updated in the visual editor when inserted/edited
