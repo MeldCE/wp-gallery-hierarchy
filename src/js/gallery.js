@@ -972,7 +972,8 @@
 		if (this.options.insert) {
 			this.el.append(el = $('<div></div>')
 					.append(this.insertButton = $('<a class="button">'
-					+ 'Insert shortcode' + '</a>'))
+					+ (this.options.update ? 'Update shortcode' : 'Insert shortcode')
+					+ '</a>'))
 					.click(submitShortcode.bind(this)));
 			if (this.options.update) {
 				el.append(' ')
