@@ -1,8 +1,5 @@
 if(jQuery) (function($){
 	if (!$.fn.jsfader) {
-
-
-
 		/**
 		 * Prototype to create and managed a JSFader album
 		 *
@@ -23,9 +20,6 @@ if(jQuery) (function($){
 			var id, i = 0;
 			this.images = images;
 
-			console.log('Starting a JSFader');
-			console.log(images);
-
 			// Add class to obj
 			if (this.options.class) {
 				this.obj.addClass(this.options.class);
@@ -43,6 +37,10 @@ if(jQuery) (function($){
 			if (this.options.width) {
 				this.obj.width(this.options.width);
 			}
+
+			// Generate divs for comments, title etc
+			//if 
+			this.obj.append(this.comment = $('<div></div>'));
 
 			// Create a div for the changing image
 			this.obj.append(this.transition = $('<div></div>').css({
@@ -81,8 +79,6 @@ if(jQuery) (function($){
 				maxRatio = Math.max(this.images[i].width / this.images[i].height, maxRatio);
 			}
 
-			console.log('got maxRatio of ' + maxRatio);
-
 			// Adjust height using maxRatio if we don't have a height
 			if (!this.options.height) {
 				console.log('no height');
@@ -103,28 +99,22 @@ if(jQuery) (function($){
 					clearTimeout(this.timer);
 				}
 
-				console.log(this.options);
-
 				this.timer = setInterval(this.scroll.bind(this, false, 1, true),
 						(this.options.showTime + this.options.fadeTime));
 			},
 
 			scroll: function(index, step, animate) {
-				console.log('hello');
-				console.log(this);
+				var val;
 				if (/*!isNaN(index) &&*/ step) {
 					index = this.current + step % (this.keys.length - 1);
 				/*} else if (!parseInt(index) && !step) {
 					return false;*/
 				}
 
-				console.log('have index ' + index + ', step ' + step);
-
 				index = index % (this.keys.length - 1);
-				
-				console.log('image ' + index + ' is');
-				console.log(this.images);
-				console.log(this.images[this.keys[index]]);
+
+				// Update the comment boxes
+				this.comment.html(((val = this.images[this.keys[index]].comment) ? val : ''));
 
 				if (animate) {
 					// Set the background to the current image
@@ -138,8 +128,6 @@ if(jQuery) (function($){
 								+ this.images[this.keys[index]].path + '\')',
 						opacity: 0
 					});
-
-					console.log('fadeTime is ' + this.options.fadeTime);
 
 					// Start transition
 					this.transition.animate({opacity: 1}, this.options.fadeTime);
