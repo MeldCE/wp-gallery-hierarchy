@@ -601,6 +601,23 @@
 		this.browser.clearSelection();
 	}
 
+	function deleteShortcode() {
+		var div;
+	
+		try {
+			if (tinyMCEPopup && (div = tinyMCEPopup.getWindowArg('gHEditingDiv'))) {
+				// Set attribute to shortcode
+				div.remove();
+				tinyMCEPopup.close();
+
+				// @todo Call to get updated html
+
+				return;
+			}
+		} catch(err) {
+		}
+	}
+
 	/**
 	 *
 	 * @param id {String} String id of changed field
@@ -951,17 +968,25 @@
 				+ 'Save image exclusions' + '</a>')
 				.click(saveEdits.bind(this)));
 
+		// Add insert html
+		if (this.options.insert) {
+			this.el.append(el = $('<div></div>')
+					.append(this.insertButton = $('<a class="button">'
+					+ 'Insert shortcode' + '</a>'))
+					.click(submitShortcode.bind(this)));
+			if (this.options.update) {
+				el.append(' ')
+						.append(this.deleteButton = $('<a class="button">'
+						+ 'Delete shortcode' + '</a>'))
+						.click(deleteShortcode.bind(this));
+			}
+		}
 
 		this.el.append(this.pad = $('<div></div>'));
 
 		// Add insert html
 		if (this.options.insert) {
 			this.pad.addClass('builderOn');
-			this.el.append($('<div></div>')
-					.append(this.insertButton = $('<a class="button">'
-					+ (typeof(this.options.insert) == 'string' ? this.options.insert
-					: 'Insert shortcode') + '</a>')
-					.click(submitShortcode.bind(this))));
 		}
 
 		// Create browser
@@ -1091,6 +1116,10 @@
 			}, options);
 			this.filters = [];
 			this.changed = {};
+
+			if (this.options.update) {
+				this.options.insert = true;
+			}
 
 			/*/ Extract current values from fields
 			if (this.options.filterInput) {

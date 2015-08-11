@@ -1720,8 +1720,7 @@ class GHierarchy {
 		echo '<script>gH.gallery(\'' . $id . '\', ' . ($insert ? 1 : 0) . ',' 
 				. '{ albums: ' . json_encode(static::getAlbums()) . ','
 				. 'folders: ' . json_encode(static::ajaxFolder(true, $full)) . ','
-				. ($shortcode ? 'insert: \'' . __('Update shortcode',
-				'gallery_hierarchy') . '\'' : ($insert ? 'insert: true' : ''))
+				. ($insert ? ($shortcode ? 'update: true' : 'insert: true') : '')
 				. '}, ' . ($shortcode ? json_encode($shortcode) : 'false')
 				. ');</script>';
 	}
