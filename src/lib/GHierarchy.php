@@ -506,6 +506,52 @@ class GHierarchy {
 		return static::$instance;
 	}
 
+	static function registerMetaboxes() {
+		$me = static::instance();
+
+		// Add featured filter metabox
+		add_meta_box('gHfeatured', __('Featured Filter',
+				'gallery_hierarchy'), array(&$me, 'printFeaturedFilterMeta'));
+	}
+
+	static function saveMetaboxes($postId) {
+		$me = static::instance();
+
+		// Check if our nonce is set.
+		if (!isset($_POST['gHFeaturedId'])) {
+			return;
+		}
+
+		// Verify that the nonce is valid.
+		if (!wp_verify_nonce($_POST['gHFeaturedId'],
+				'gallery-hierarchy')) {
+			return;
+		}
+		// If this is an autosave, our form has not been submitted, so we don't want to do anything.
+		/*if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}*/
+
+		// Check the user's permissions.
+		if (isset($_POST['post_type']) && 'page' == $_POST['post_type']) {
+			if (!current_user_can( 'edit_page', $postId)) {
+				return;
+			}
+		} else {
+			if (!current_user_can('edit_post', $postId)) {
+				return;
+			}
+		}
+		/* OK, it's safe for us to save the data now. */
+		// Save location link
+		if (isset($_POST['gHFeaturedFilter'])) {
+			// Verify that it is a valid filter
+			$filter = $_POST['gHFeaturedFilter'];
+
+			update_post_meta($postId, 'gHFeaturedFilter', $filter);
+		}
+	}
+
 	/**
 	 * Enqueues scripts and stylesheets used by Gallery Hierarchy in the admin
 	 * pages.
@@ -530,8 +576,8 @@ class GHierarchy {
 			wp_enqueue_style('plupload',
 					plugins_url('/lib/css/jquery.plupload.queue.css', dirname(__FILE__)));
 		}
-		if ($hook_suffix == 'toplevel_page_gHierarchy'
-				|| $hook_suffix == 'media-upload-popup') {
+		if (array_search(array('toplevel_page_gHierarchy', 'media-upload-popup',
+				'post.php'), $hook_suffix) !== false) {
 			wp_enqueue_script('jquery-hierarchy-select', 
 					plugins_url('/lib/js/folders.js', dirname(__FILE__)));
 		}
@@ -637,7 +683,6 @@ class GHierarchy {
 		$plugin_array['jquery-touch'] = plugins_url( 'js/jquery.mobile-events.min.js' , __FILE__ );
 		return $plugin_array;
 	}
-
 
 	static function adminPrintInit() {
 		$me = static::instance();
@@ -1048,6 +1093,26 @@ class GHierarchy {
 		echo json_encode($response);
 
 		exit;
+	}
+
+	/**
+	 * Tests whether a post has a Gallery Hierarchy featured filter
+	 *
+	 * @param $post Post ID. If left blank, get_the_ID() will be used to retrieve
+	 *        the post ID
+	 */
+	static function getFeaturedFilter($postID = null) {
+		if (is_null($postID)) {
+			if (!($postID = get_the_ID())) {
+				return false;
+			}
+		}
+
+		if (($filter = get_post_meta($postID, 'gHFeaturedFilter', true))) {
+			return $filter;
+		} else {
+			return false;
+		}
 	}
 
 	/**
@@ -1593,6 +1658,35 @@ class GHierarchy {
 			$this->disable = true;
 		}
 	}
+	
+	/**
+	 * Prints the costs metabox in the post edit view.
+	 *
+	 * @param $post Object The object of the item that is being edited.
+	 * @param $metabox array The metabox data.
+	 */
+	function printFeaturedFilterMeta($post) {
+		wp_nonce_field('gallery-hierarchy', 'gHFeaturedId');
+		
+		if ($post->ID) {
+			$data = get_post_meta($post->ID, 'gHFeaturedFilter', true);
+			$data = static::parseFilter($data);
+		} else {
+			$data = false;
+		}
+
+		$id = uniqid();
+
+		echo '<p>Filter code: <input name="gHFeaturedFilter" id="' . $id . '"> '
+			. '<a class="button" id="' . $id . 'button">'
+			. __('Show filter editor', 'gallery_hierarchy') . '</a></p>'
+			. '<div id="' . $id . 'gallery"></div>'
+			. '<script>jQuery(function($) {'
+			. 'gH.featuredEditor(\'' . $id . '\', {'
+			. 'folders: ' . json_encode(static::ajaxFolder(true, $full)) . ','
+			. '}' . ($data ? ', ' . json_encode($data) : '') . ');'
+			. '})</script>';
+	}
 
 	/**
 	 * Prints the gallery/search HTML
@@ -1924,14 +2018,14 @@ class GHierarchy {
 	/**
 	 * Parses the id attribute in shortcodes to return an associative array
 	 *
-	 * @param $id {String} Id filter string from shortcode
+	 * @param $filter {String} Id filter string from shortcode
 	 *
 	 * @return {Array} Array containing filter parts
 	 */
-	static function parseFilter($id) {
-		$filter = array();
+	static function parseFilter($filter) {
+		$parsed = array();
 		$ids = array();
-		$parts = explode(',', $id);
+		$parts = explode(',', $filter);
 
 		foreach ($parts as $p => &$part) {
 			if (strpos($part, '=') !== false) {
@@ -1939,15 +2033,15 @@ class GHierarchy {
 
 				switch ($part[0]) {
 					case 'rfolder':
-						$filter['recurse'] = true;
+						$parsed['recurse'] = true;
 					case 'folder':
 						$part[1] = explode('|', $part[1]);
 
-						$filter['folders'] = array();
+						$parsed['folders'] = array();
 						// Check each id is numeric
 						foreach ($part[1] as $n) {
 							if (is_numeric($n)) {
-								array_push($filter['folders'], $n);
+								array_push($parsed['folders'], $n);
 							}
 						}
 
@@ -1959,7 +2053,7 @@ class GHierarchy {
 					case 'tags':
 					case 'title':
 					case 'comment':
-						$filter[$part[0]] = $part[1];
+						$parsed[$part[0]] = $part[1];
 						break;
 				}
 
@@ -1969,11 +2063,11 @@ class GHierarchy {
 			}
 		}
 
-		if ($ids) {
-			$filter['ids'] = $ids;
+		if ($filters) {
+			$parsed['ids'] = $ids;
 		}
 
-		return $filter;
+		return $parsed;
 	}
 
 	/**

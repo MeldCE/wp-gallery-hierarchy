@@ -20,8 +20,9 @@ gH = (function ($) {
 	 *
 	 * @return boolean Whether the part is showing or not
 	 */
-	function toggle(el, label, onLabel, offLabel, force) {
+	function toggle(el, label, hideLabel, showLabel, force) {
 		var shown;
+		console.log('toggling');
 
 		if (el instanceof String) {
 			el = $('#' + el);
@@ -34,6 +35,8 @@ gH = (function ($) {
 		}
 
 		if (el.has()) {
+			console.log('have something');
+			console.log(force);
 			shown = el.is(':visible');
 
 			if (!(force === undefined || force === null)) {
@@ -42,13 +45,15 @@ gH = (function ($) {
 				}
 			}
 
+			console.log('shown? ' + shown);
+
 			if (shown) {
 				el.hide();
-				label.html(offLabel);
+				label.html(showLabel);
 				return false;
 			} else {
 				el.show();
-				label.html(onLabel);
+				label.html(hideLabel);
 				return true;
 			}
 		}
@@ -218,6 +223,29 @@ gH = (function ($) {
 
 		gallery: function(id, insertOnly, options, value) {
 			new Gallery(id, options, value);
+		},
+
+		featuredEditor: function(id, options, value) {
+			var input = $('#' + id);
+			var button = $('#' + id + 'button');
+			var el = $('#' + id + 'gallery');
+
+			if (!options) {
+				options = {};
+			}
+
+			options = $.extend(options, {
+				shortcodeBuilder: false,
+				filterInput: input
+			});
+
+			if (input.has() && button.has() && el.has()) {
+				// Hide the gallery
+				el.hide();
+				button.click(toggle.bind(this, el, button, 'Hide filter editor',
+						'Show filter editor', null));
+				new Gallery(el, options, value);
+			}
 		},
 
 		/**

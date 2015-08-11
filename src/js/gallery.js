@@ -620,7 +620,14 @@
 	}
 
 	function redisplayShortcode() {
-		this.builder.shortcodeDiv.html(compileShortcode.call(this));
+		if (this.options.shortcodeBuilder) {
+			this.builder.shortcodeDiv.html(compileShortcode.call(this));
+		}
+
+		if (this.options.filterInput) {
+			this.options.filterInput.val(compileFilterText.call(this,
+					this.browserFilter));
+		}
 	}
 
 	function compileFilter(filter) {
@@ -908,33 +915,35 @@
 				= $('<a class="button">Filter</a>')
 				.click(getFilteredImages.bind(this))));
 
-		if (!this.options.insert) {
-			// Shortcode builder
-			this.el.append($('<div></div>').append(this.builderButton = $('<a>'
-					+ 'Enable shortcode builder' + '</a>')));
-		}
-		
-		this.builder = shortcodeHTML.call(this, this.el, value);
+		if (this.options.shortcodeBuilder) {
+			if (!this.options.insert) {
+				// Shortcode builder
+				this.el.append($('<div></div>').append(this.builderButton = $('<a>'
+						+ 'Enable shortcode builder' + '</a>')));
+			}
 
-		if (!this.options.insert) {
-			this.builder.div.hide();
+			this.builder = shortcodeHTML.call(this, this.el, value);
 
-			// Add toggle to link
-			this.builderButton.click(toggleBuilder.bind(this));
-		}
+			if (!this.options.insert) {
+				this.builder.div.hide();
 
-		// Create shortcode specific options
-		var t, code;
-		for (t in this.options.shortcodes) {
-			code = this.options.shortcodes[t];
+				// Add toggle to link
+				this.builderButton.click(toggleBuilder.bind(this));
+			}
 
-			// Add shortcode to type chooser
-			this.builder.type.append('<option value="' + t + '">'
-					+ code.label + '</option>');
+			// Create shortcode specific options
+			var t, code;
+			for (t in this.options.shortcodes) {
+				code = this.options.shortcodes[t];
 
-			// Add options
-			this.builder.div.append(this.builder.types[t] = $('<div></div>'))
-					.append('<div></div>');
+				// Add shortcode to type chooser
+				this.builder.type.append('<option value="' + t + '">'
+						+ code.label + '</option>');
+
+				// Add options
+				this.builder.div.append(this.builder.types[t] = $('<div></div>'))
+						.append('<div></div>');
+			}
 		}
 
 		/// @tood Redo exlusions button and shortcode attribute
@@ -957,26 +966,27 @@
 
 		// Create browser
 		this.browser = new Browser(this.pad, {
-					selection: gallerySelect.bind(this),
-					orderedSelection: (true ? true : false),
-					exclusion: galleryExclude.bind(this),
-					limit: 50,
-					generators: {
-						image: displayImage.bind(this),
-					}
-				});
+			selection: gallerySelect.bind(this),
+			orderedSelection: (true ? true : false),
+			exclusion: galleryExclude.bind(this),
+			limit: 50,
+			generators: {
+				image: displayImage.bind(this),
+			}
+		});
 
 		// Load the filter if we have images
 		var filter;
-		if ((filter = compileFilter(this.browserFilter)) || value.ids) {
+		if ((filter = compileFilter(this.browserFilter)) || (value && value.ids)) {
 			this.filterButton.html('Loading...');
 			// Get images
 			$.post(ajaxurl + '?action=gh_gallery', (filter || {ids: value.ids}),
 					loadSelectedImages.bind(this, filter, value));
 		}
 
-		redisplayShortcode.call(this);
-
+		if (this.options.shortcodeBuilder) {
+			redisplayShortcode.call(this);
+		}
 	}
 
 	/**
@@ -1077,9 +1087,16 @@
 
 		if (el.has && el.length === 1) {
 			this.el = el;
-			this.options = options;
+			this.options = $.extend({
+				shortcodeBuilder: true
+			}, options);
 			this.filters = [];
 			this.changed = {};
+
+			/*/ Extract current values from fields
+			if (this.options.filterInput) {
+				var filter = 
+			}*/
 
 			galleryHTML.call(this, value);
 		} else {
