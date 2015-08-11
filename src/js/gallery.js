@@ -1076,9 +1076,6 @@
 	 * @param options {Object} Object containing options.
 	 */
 	function Gallery(el, options, value) {
-
-		console.log(value);
-
 		if (!el) { /// @todo Better element test
 			return;
 		}
