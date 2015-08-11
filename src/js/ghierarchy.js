@@ -22,7 +22,6 @@ gH = (function ($) {
 	 */
 	function toggle(el, label, hideLabel, showLabel, force) {
 		var shown;
-		console.log('toggling');
 
 		if (el instanceof String) {
 			el = $('#' + el);
@@ -35,8 +34,6 @@ gH = (function ($) {
 		}
 
 		if (el.has()) {
-			console.log('have something');
-			console.log(force);
 			shown = el.is(':visible');
 
 			if (!(force === undefined || force === null)) {
@@ -44,8 +41,6 @@ gH = (function ($) {
 					return shown;
 				}
 			}
-
-			console.log('shown? ' + shown);
 
 			if (shown) {
 				el.hide();

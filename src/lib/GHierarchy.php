@@ -2063,7 +2063,7 @@ class GHierarchy {
 			}
 		}
 
-		if ($filters) {
+		if ($ids) {
 			$parsed['ids'] = $ids;
 		}
 
