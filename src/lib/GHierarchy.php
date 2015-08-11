@@ -680,6 +680,7 @@ class GHierarchy {
 
 	function tinymceAddPlugin( $plugin_array ) {
 		$plugin_array['gHierarchy'] = plugins_url( 'js/tinymce.js' , __DIR__ );
+		$plugin_array['gHArranger'] = plugins_url( 'js/arranger.js' , __FILE__ );
 		$plugin_array['jquery-touch'] = plugins_url( 'js/jquery.mobile-events.min.js' , __FILE__ );
 		return $plugin_array;
 	}
@@ -809,7 +810,6 @@ class GHierarchy {
 				case 'html':
 					if (isset($_POST['sc'])) {
 						$sc = stripslashes($_POST['sc']);
-						echo "Found shortcode $sc\n";
 						echo do_shortcode($sc);
 					}
 
@@ -2115,6 +2115,11 @@ class GHierarchy {
 				$classAO = 'album_class_append';
 				$caption = 'album_description';
 				break;
+			case 'gharranger':
+				$classO = 'arranger_class';
+				$classAO = 'arranger_class_append';
+				$caption = 'arranger_description';
+				break;
 		}
 
 		// `id="<id1>,<id2>,..."` - list of photos (some sort of query or list)
@@ -2360,6 +2365,10 @@ class GHierarchy {
 			case 'ghthumb':
 				$atts['type'] = static::$settings->thumb_album;
 				if (static::$lp) fwrite(static::$lp, "Using album '$atts[type]' for album");
+			case 'gharranger':
+				// Validate arrangement if not in an editor
+				//if ($atts['']) {
+				$atts['type'] = 'arranger';
 			case 'ghalbum':
 				// `type="<type1>"` - of album (`ghalbum`)
 				// Check we have a valid album, if not, use the thumbnail one

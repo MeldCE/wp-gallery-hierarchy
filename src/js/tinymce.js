@@ -17,7 +17,7 @@
 		}
 
 		function replaceShortcodes( content ) {
-			return content.replace(/\[gh(album|thumb|image)( [^\]]*)?\]/g, function (shortcode) {
+			return content.replace(/\[gh(album|thumb|image|arranger)( [^\]]*)?\]/g, function (shortcode) {
 				var encSC = window.encodeURIComponent(shortcode);
 				return '<!--gHStart--><div ' + dataTag + '="'
 						+ encSC + '">&nbsp;</div><!--gHEnd-->';
@@ -42,12 +42,19 @@
 					var width = Math.min(1100, $(window).width() - 100);
 					var height = $(window).height() - 100;
 
-					var content = $(data);
-					content.attr(dataTag, shortcode);
+					console.log('received the following for ' + window.decodeURIComponent(shortcode));
+					console.log(data);
 
-					div.replaceWith(content);
+					if (data) {
+						var content = $(data);
+						content.attr(dataTag, shortcode);
 
-					content
+						div.replaceWith(content);
+
+						div = content;
+					}
+
+					div
 							// Disable standard Wordpress click function
 							.bind('click', function(ev) {
 								ev.stopPropagation();

@@ -120,6 +120,11 @@ paths.ext.packery = {
 	js: 'lib/packery/dist/packery.pkgd.min.js'
 };
 
+// arranger
+paths.ext.arranger = {
+	js: 'lib/jquery-arranger/dist/js/arranger.js'
+};
+
 gulp.task('clean', [], function() {
 	del([
 		path.join(paths.dist, '**'),
