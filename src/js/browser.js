@@ -80,8 +80,11 @@ var Browser = (function($) {
 	function printFiles(offset) {
 		// Stop if we have no images
 		if (!this.currentFiles) {
+			this.doms.obj.hide();
 			return;
 		}
+		
+		this.doms.obj.show();
 	
 		if (offset !== null && offset !== undefined) {
 			this.currentOffset = Math.max(0,
@@ -370,21 +373,25 @@ var Browser = (function($) {
 		}
 	}
 
-	function toggleSelected(noPrint) {
-		var i;
-		if (this.showingCurrent !== false) {
-			// Clean up unselected
-			for (i in this.selected) {
-				if (this.selectOrder.indexOf(i) === -1) {
-					delete this.selected[i];
-				}
-			}
-			this.currentFiles = this.displayFiles;
-			this.currentOffset = this.showingCurrent;
-			this.doms.showSelected.html('Show selected');
-			this.showingCurrent = false;
+	function toggleSelected(noPrint, showSelected) {
+		if (typeof(showSelected) != "boolean") {
+			showSelected = (this.showingCurrent === false ? true : false);
 		} else {
-			this.displayFiles = this.currentFiles;
+			// Booleanise value
+			if (showSelected) {
+				showSelected = true;
+			} else {
+				showSelected = false;
+			}
+		}
+
+		var i;
+		if (showSelected) {
+			if (this.showingCurrent !== false) {
+				return true;
+			}
+
+			this.files = this.currentFiles;
 			this.currentFiles = {};
 			//this.imageIndex = {};
 			var i;
@@ -392,14 +399,33 @@ var Browser = (function($) {
 				this.currentFiles[this.selectOrder[i]] = this.selected[this.selectOrder[i]];
 				//this.imageIndex[this.selectOrder[i]] = i;
 			}
+			
 			this.showingCurrent = this.currentOffset;
 			this.currentOffset = 0;
 			this.doms.showSelected.html('Hide Selected');
+
+		} else {
+			if (this.showingCurrent === false) {
+				return false;
+			}
+
+			// Clean up unselected
+			for (i in this.selected) {
+				if (this.selectOrder.indexOf(i) === -1) {
+					delete this.selected[i];
+				}
+			}
+			this.currentFiles = this.files;
+			this.currentOffset = this.showingCurrent;
+			this.doms.showSelected.html('Show selected');
+			this.showingCurrent = false;
 		}
 
 		if (!noPrint) {
 			printFiles.call(this);
 		}
+
+		return showSelected;
 	}
 
 	function rebuildIndexes() {
@@ -502,8 +528,8 @@ var Browser = (function($) {
 		}
 	}
 
-	function clearSelection() {
-		if (!this.showingCurrent
+	function clearSelection(force) {
+		if (!this.showingCurrent || force
 				|| confirm('Are you sure? Entire current selection will be cleared')) {
 			// Clear selected class
 			var d;
@@ -514,6 +540,14 @@ var Browser = (function($) {
 			// Clear stores
 			this.selected = {};
 			this.selectOrder = [];
+
+			// Toggle to non-selected view and redraw
+			toggleSelected.call(this, true, false);
+			printFiles.call(this);
+		
+			if (this.options.selection && this.options.selection.call) {
+				this.options.selection(this.selectOrder, this.selected);
+			}
 		}
 	}
 
@@ -677,7 +711,7 @@ var Browser = (function($) {
 						.append($('<div class="drop">With selected</div>').append(
 								(actions = $('<ul></ul>'))))
 						.append((this.doms.showSelected = $('<span>Show selected</span>')
-								.click(toggleSelected.bind(this, false))))
+								.click(toggleSelected.bind(this, false, null))))
 						.append($('<span></span>')
 								.append($('<input type="checkbox" id="' + r + '"'
 										+ (this.options.rememberSelection ? ' checked' : '')
@@ -796,6 +830,55 @@ var Browser = (function($) {
 				printFiles.call(this, 0);
 			}
 		},
+
+		/**
+		 * Selects the given files.
+		 *
+		 * @param files {String|Array|Object} Files to select. Can be
+		 *        a single id, an array of ids, or new files
+		 * @param ignoreChange {Boolean} If true, don't call selection function.
+		 */
+		select: function(files, ignoreChange) {
+			if (files instanceof Array) {
+				var f;
+				for (f in files) {
+					if (this.currentFiles[files[f]]) {
+						this.selected[files[f]] = this.currentFiles[files[f]];
+						this.selectOrder.push(files[f]);
+					}
+				}
+			} else if (files instanceof Object) {
+				var f;
+
+				for (f in files) {
+					if (!this.selected[f]) {
+						this.selected[f] = files[f];
+						this.selectOrder.push(f);
+					}
+				}
+			} else {
+				if (this.currentFiles[files]) {
+					this.selected[files] = this.currentFiles[files];
+					this.selectOrder.push(files);
+				}
+			}
+
+			if (!ignoreChange && this.options.selection && this.options.selection.call) {
+				this.options.selection(this.selectOrder, this.selected);
+			}
+		},
+
+		clearSelection: function() {
+			clearSelection.call(this, true);
+		},
+
+		showSelected: function(show) {
+			toggleSelected.call(this, false, show);
+		},
+
+		valueOf: function() {
+			return (this.selectOrder.length ? this.selectOrder : false);
+		}
 	}
 
 	return Viewer;

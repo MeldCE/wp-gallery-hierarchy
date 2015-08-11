@@ -79,8 +79,8 @@ var Editor = (function() {
 			}
 			div.append((iDiv = $('<div></div>')));
 			iDiv.append((this.img = $('<img src="'
-					+ (this.options.fullImage ? pub.full(this.file.path) 
-					: pub.thumbnail(this.file.path)) + '">')));
+					+ (this.options.fullImage ? full(this.file.path) 
+					: thumbnail(this.file.path)) + '">')));
 			div.append((this.details = $('<table></table>')));
 
 			// Print details

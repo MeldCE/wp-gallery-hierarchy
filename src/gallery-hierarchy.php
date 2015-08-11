@@ -34,9 +34,15 @@ if (!class_exists('GHierarchy')) {
 			add_action('admin_print_scripts', array('GHierarchy', 'adminPrintInit'));
 
 			add_action('wp_head', array('GHierarchy', 'head'));
-			add_action('admin_head', array('GHierarchy', 'head'));
+			add_action('admin_head', array('GHierarchy', 'adminHead'));
+				
+			// Featured filter functionality
+			add_action('add_meta_boxes', array('GHierarchy',
+					'registerMetaboxes'));
+			add_action('save_post', array('GHierarchy', 'saveMetaboxes'));
 
 			// Handle AJAX requests (from image browser)
+			add_action('wp_ajax_gh_tiny', array('GHierarchy', 'ajaxTinyMCE'));
 			add_action('wp_ajax_gh_gallery', array('GHierarchy', 'ajaxGallery'));
 			add_action('wp_ajax_gh_save', array('GHierarchy', 'ajaxSave'));
 			// Handle folder request

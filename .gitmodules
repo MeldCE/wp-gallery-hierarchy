@@ -25,6 +25,12 @@
 [submodule "src/lib/packery"]
 	path = src/lib/packery
 	url = https://github.com/metafizzy/packery.git
+[submodule "src/lib/jquery-touch-events"]
+	path = src/lib/jquery-touch-events
+	url = https://github.com/benmajor/jQuery-Touch-Events
+[submodule "src/lib/jquery-arranger"]
+	path = src/lib/jquery-arranger
+	url = https://github.com/MeldCE/jquery-arranger
 [submodule "src/lib/jquery-ui-timepicker"]
 	path = src/lib/jquery-ui-timepicker
 	url = https://github.com/trentrichardson/jQuery-Timepicker-Addon.git

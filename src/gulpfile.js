@@ -35,7 +35,7 @@ var paths = {
 	main: 'gallery-hierarchy.php',
 	readme: 'README.md',
 	//jsSrc: '{js/ghierarchy.js,albums/js/*.js}',
-	jsSrc: ['js/ghierarchy.js', 'albums/js/*.js'],
+	jsSrc: ['js/{ghierarchy,tinymce}.js', 'albums/js/*.js'],
 	cssSrc: 'css/{jquery.plupload.queue.css,ghierarchy.less}',
 	basicStylesScript: 'createBasicStyle.php',
 	basicSrc: 'js/basicStyle.css'
@@ -63,6 +63,11 @@ paths.ext.wpsettings = {
 	js: 'lib/wp-settings/js/wpsettings.min.js',
 	css: 'lib/wp-settings/css/wpsettings.min.css',
 	lib: 'lib/wp-settings/WPSettings.php'
+};
+
+// JQuery Touch Events
+paths.ext.touchEvents = {
+	js: 'lib/jquery-touch-events/src/jquery.mobile-events.min.js',
 };
 
 // JQuery Timepicker

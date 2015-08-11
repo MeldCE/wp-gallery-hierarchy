@@ -6,3 +6,6 @@
 - Add md5 hash to database to check for file movements?
 - Added uploaded by user to images and directory tables so can start doing
   permissions on stuff
+
+
+- Images if selected by id are not currently pu in order

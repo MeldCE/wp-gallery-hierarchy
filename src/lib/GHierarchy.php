@@ -506,6 +506,52 @@ class GHierarchy {
 		return static::$instance;
 	}
 
+	static function registerMetaboxes() {
+		$me = static::instance();
+
+		// Add featured filter metabox
+		add_meta_box('gHfeatured', __('Featured Filter',
+				'gallery_hierarchy'), array(&$me, 'printFeaturedFilterMeta'));
+	}
+
+	static function saveMetaboxes($postId) {
+		$me = static::instance();
+
+		// Check if our nonce is set.
+		if (!isset($_POST['gHFeaturedId'])) {
+			return;
+		}
+
+		// Verify that the nonce is valid.
+		if (!wp_verify_nonce($_POST['gHFeaturedId'],
+				'gallery-hierarchy')) {
+			return;
+		}
+		// If this is an autosave, our form has not been submitted, so we don't want to do anything.
+		/*if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}*/
+
+		// Check the user's permissions.
+		if (isset($_POST['post_type']) && 'page' == $_POST['post_type']) {
+			if (!current_user_can( 'edit_page', $postId)) {
+				return;
+			}
+		} else {
+			if (!current_user_can('edit_post', $postId)) {
+				return;
+			}
+		}
+		/* OK, it's safe for us to save the data now. */
+		// Save location link
+		if (isset($_POST['gHFeaturedFilter'])) {
+			// Verify that it is a valid filter
+			$filter = $_POST['gHFeaturedFilter'];
+
+			update_post_meta($postId, 'gHFeaturedFilter', $filter);
+		}
+	}
+
 	/**
 	 * Enqueues scripts and stylesheets used by Gallery Hierarchy in the admin
 	 * pages.
@@ -516,6 +562,9 @@ class GHierarchy {
 		if ($hook_suffix == 'gallery-hierarchy_page_gHLoad') {
 			wp_enqueue_script('moxie', 
 					plugins_url('/lib/js/moxie.min.js', dirname(__FILE__)));
+			//wp_enqueue_script('plupload');
+			//wp_enqueue_script('plupload-html4');
+			//wp_enqueue_script('plupload-html5');
 			wp_enqueue_script('plupload-full', 
 					plugins_url('/lib/js/plupload.full.min.js', dirname(__FILE__)),
 					array('moxie'));
@@ -527,6 +576,11 @@ class GHierarchy {
 			wp_enqueue_style('plupload',
 					plugins_url('/lib/css/jquery.plupload.queue.css', dirname(__FILE__)));
 		}
+		if (array_search(array('toplevel_page_gHierarchy', 'media-upload-popup',
+				'post.php'), $hook_suffix) !== false) {
+			wp_enqueue_script('jquery-hierarchy-select', 
+					plugins_url('/lib/js/folders.js', dirname(__FILE__)));
+		}
 		if ($hook_suffix == 'gallery-hierarchy_page_gHOptions') {
 			wp_enqueue_style('wpsettings',
 					plugins_url('/lib/css/wpsettings.min.css', dirname(__FILE__)));
@@ -534,9 +588,13 @@ class GHierarchy {
 					plugins_url('/lib/js/wpsettings.min.js', dirname(__FILE__)),
 					array('jquery'));
 		}
+		if ($_GET['tinymce_popup'] == 1) {
+			wp_enqueue_script('tinymce-popup',
+					includes_url('/js/tinymce/tiny_mce_popup.js'));
+		}
 		/// @todo @see http://codex.wordpress.org/I18n_for_WordPress_Developers
 		wp_enqueue_script('ghierarchy', 
-				plugins_url('/js/ghierarchy.js', dirname(__FILE__)));
+				plugins_url('/js/ghierarchy.js', dirname(__FILE__)), array('jquery'));
 		//wp_enqueue_style( 'dashicons' );
 		wp_enqueue_style('ghierarchy',
 				plugins_url('/css/ghierarchy.min.css', dirname(__FILE__)), array('dashicons'));
@@ -608,6 +666,27 @@ class GHierarchy {
 		}
 	}
 
+	static function adminHead() {
+		$me = static::instance();
+
+		// check user permissions
+		if ( !current_user_can( 'edit_posts' ) && !current_user_can( 'edit_pages' ) ) {
+			return;
+		}
+		
+		// check if WYSIWYG is enabled
+		if ( 'true' == get_user_option( 'rich_editing' ) ) {
+			add_filter( 'mce_external_plugins', array($me,'tinymceAddPlugin') );
+			//add_filter( 'mce_buttons', array($this, 'mce_buttons' ) );
+		}
+	}
+
+	function tinymceAddPlugin( $plugin_array ) {
+		$plugin_array['gHierarchy'] = plugins_url( 'js/tinymce.js' , __DIR__ );
+		$plugin_array['jquery-touch'] = plugins_url( 'js/jquery.mobile-events.min.js' , __FILE__ );
+		return $plugin_array;
+	}
+
 	static function adminPrintInit() {
 		$me = static::instance();
 
@@ -659,8 +738,11 @@ class GHierarchy {
 		$me = static::instance();
 		$error = false;
 		$shortcode = false;
+		$current = false;
 
+		// Handle submitted shortcode
 		if (isset($_REQUEST['shortcode'])) {
+			$shortcode = stripslashes($_REQUEST['shortcode']);
 			$shortcode = str_replace('\\"', '"', $_REQUEST['shortcode']);
 			if (($shortcode = json_decode($shortcode, true)) !== null) {
 				if (($shortcode = $me->generateShortcode($shortcode))) {
@@ -670,9 +752,25 @@ class GHierarchy {
 			} else {
 				$error = 'Could not decode given data.';
 			}
+		} else if (isset($_REQUEST['sc'])) { // Handle shortcode to be edited
+			// @see wp-includes/shortcodes.php for details on implementation
+			$pattern = get_shortcode_regex();
+			$sc = stripslashes($_REQUEST['sc']);
+			preg_match("/$pattern/s", $sc, $matches);
+			$tag = $matches[2];
+			$atts = shortcode_parse_atts($matches[3]);
+			$current = $atts;
+			$current['tag'] = $tag;
+			$current['sctype'] = $tag;
+			//$current = $_REQUEST['sc'];
+			// Parse ID string
+			if (isset($current['id'])) {
+				$current = array_merge($current, static::parseFilter($current['id']));
+				unset($current['id']);
+			}
 		}
 		
-		wp_iframe(array($me, 'printGallery'), true, $error);
+		wp_iframe(array($me, 'printGallery'), true, $current, $error);
 		
 		if ($shortcode) {
 			media_send_to_editor($shortcode);
@@ -700,6 +798,32 @@ class GHierarchy {
 	}
 
 	/**
+	 * Handles AJAX calls from the TinyMCE plugin
+	 */
+	static function ajaxTinyMCE() {
+		global $wpdb;
+
+		$me = static::instance();
+		if (current_user_can('edit_pages')) {
+			switch($_REQUEST['a']) {
+				/**
+				 * Parse the shortcode and return the HTML for the editor to display
+				 */
+				case 'html':
+					if (isset($_POST['sc'])) {
+						$sc = stripslashes($_POST['sc']);
+						echo "Found shortcode $sc\n";
+						echo do_shortcode($sc);
+					}
+
+					exit;
+			}
+		}
+
+		exit;
+	}
+
+	/**
 	 * Handles AJAX calls from the gallery javascript
 	 * @todo Look at merging some of the code with doShortcode
 	 * @todo Add nonce
@@ -714,7 +838,21 @@ class GHierarchy {
 		// Build query
 		$parts = array();
 
-		// @todo Recursive
+		// IDs
+		if ($_POST['ids']) {
+			// Verfiy ids
+			$f = 0;
+			while ($f < count($_POST['ids'])) {
+				if (!gHisInt($_POST['ids'][$f])) {
+					array_splice($_POST['ids'], $f, 1);
+				} else {
+					$f++;
+				}
+			}
+
+			$parts[] = 'id IN (' . join(', ', $_POST['ids']) . ')';
+		}
+
 		if (isset($_POST['folders']) && is_array($_POST['folders'])) {
 			// Check folder ids
 			$f = 0;
@@ -818,10 +956,17 @@ class GHierarchy {
 
 
 		if (static::$lp) fwrite(static::$lp, "Ajax gallery SQL command is $q\n");
-	
+		
 		$images = $wpdb->get_results($q, ARRAY_A);
 
-		echo json_encode($images);
+		// Map images
+		$mapped = array();
+
+		foreach($images as &$image) {
+			$mapped[$image['id']] = $image;
+		}
+
+		echo json_encode($mapped);
 
 		exit;
 	}
@@ -951,6 +1096,26 @@ class GHierarchy {
 		echo json_encode($response);
 
 		exit;
+	}
+
+	/**
+	 * Tests whether a post has a Gallery Hierarchy featured filter
+	 *
+	 * @param $post Post ID. If left blank, get_the_ID() will be used to retrieve
+	 *        the post ID
+	 */
+	static function getFeaturedFilter($postID = null) {
+		if (is_null($postID)) {
+			if (!($postID = get_the_ID())) {
+				return false;
+			}
+		}
+
+		if (($filter = get_post_meta($postID, 'gHFeaturedFilter', true))) {
+			return $filter;
+		} else {
+			return false;
+		}
 	}
 
 	/**
@@ -1496,14 +1661,43 @@ class GHierarchy {
 			$this->disable = true;
 		}
 	}
+	
+	/**
+	 * Prints the costs metabox in the post edit view.
+	 *
+	 * @param $post Object The object of the item that is being edited.
+	 * @param $metabox array The metabox data.
+	 */
+	function printFeaturedFilterMeta($post) {
+		wp_nonce_field('gallery-hierarchy', 'gHFeaturedId');
+		
+		if ($post->ID) {
+			$data = get_post_meta($post->ID, 'gHFeaturedFilter', true);
+			$data = static::parseFilter($data);
+		} else {
+			$data = false;
+		}
+
+		$id = uniqid();
+
+		echo '<p>Filter code: <input name="gHFeaturedFilter" id="' . $id . '"> '
+			. '<a class="button" id="' . $id . 'button">'
+			. __('Show filter editor', 'gallery_hierarchy') . '</a></p>'
+			. '<div id="' . $id . 'gallery"></div>'
+			. '<script>jQuery(function($) {'
+			. 'gH.featuredEditor(\'' . $id . '\', {'
+			. 'folders: ' . json_encode(static::ajaxFolder(true, $full)) . ','
+			. '}' . ($data ? ', ' . json_encode($data) : '') . ');'
+			. '})</script>';
+	}
 
 	/**
 	 * Prints the gallery/search HTML
 	 */
-	function printGallery($insert = false, $error = false) {
+	function printGallery($insert = false, $shortcode = false, $error = false) {
 		global $wpdb;
 		$id = uniqid();
-		
+
 		// Get folders first to see if we have anything worth searching
 		$images = $wpdb->get_var('SELECT id FROM ' . $this->imageTable
 				. ' LIMIT 1');
@@ -1523,153 +1717,15 @@ class GHierarchy {
 			$this->echoError($error);
 		}
 
-		// Submit form if inserting
-		if ($insert) {
-			echo '<form id="' . $id . 'form" method="POST">'
-					. '<input type="hidden" name="shortcode" id="' . $id . 'input">'
-					. '</form>';
-		}
+		echo '<div id="' . $id . '"></div>';
 
-		// Folders field
-		echo '<div><label for="' . $id . 'folder">' . __('Folders:',
-				'gallery_hierarchy') . '</label> '
-				. $this->createFolderSelect($id . 'folder', array(
-					'multiple' => true,
-					'selection' => 'function (files) { gH.changeFolder(\'' . $id
-							. '\', files); }'
-				)) . '</div>';
-
-		echo '<p><label for="' . $id . 'recurse">' . __('Include Subfolders:',
-				'gallery_hierarchy') . '</label> <input type="checkbox" name="' . $id
-				. 'recurse" id="' . $id . 'recurse"></p>';
-	
-		echo '<p><a onclick="gH.toggle(\'' . $id . '\', \'filter\', \''
-				. __('advanced filter', 'gallery_hierarchy') . '\');" id="' . $id
-				. 'filterLabel">' . __('Show advanced filter',
-				'gallery_hierarchy') . '</a></p>';
-
-		echo '<div id="' . $id . 'filter" class="hide">';
-		// Date fields
-		echo '<p><label for="' . $id . 'dates">' . __('Photos Taken Between:',
-				'gallery_hierarchy') . '</label> ';
-		echo '<input type="datetime" name="' . $id . 'start" id="' . $id
-				. 'start">' . __(' and ', 'gallery_hierarchy')
-				. '<input type="datetime" name="' . $id . 'end" id="' . $id
-				. 'end"></p>';
-		
-		// Filename field
-		echo '<p><label for="' . $id . 'name">' . __('Filename Contains:',
-				'gallery_hierarchy') . '</label> ';
-		echo '<input type="text" name="' . $id . 'name" id="' . $id. 'name"></p>';
-		
-		// Title field
-		echo '<p><label for="' . $id . 'title">' . __('Title Contains:',
-				'gallery_hierarchy') . '</label> ';
-		echo '<input type="text" name="' . $id . 'title" id="' . $id. 'title"></p>';
-		
-		// Comment field
-		echo '<p><label for="' . $id . 'comment">' . __('Comments Contain:',
-				'gallery_hierarchy') . '</label> ';
-		echo '<input type="text" name="' . $id . 'comment" id="' . $id. 'comment"></p>';
-		
-		// Tags field
-		echo '<p><label for="' . $id . 'tags">' . __('Has Tags:',
-				'gallery_hierarchy') . '</label> ';
-		echo '<input type="text" name="' . $id . 'tags" id="' . $id. 'tags"></p>';
-
-		echo '</div>';
-	
-		// Shortcode builder
-		echo '<p><a onclick="gH.toggleBuilder(\'' . $id . '\');" id="' . $id
-				. 'builderLabel">' . ($insert ? __('Show shortcode options',
-				'gallery_hierarchy') : __('Enable shortcode builder',
-				'gallery_hierarchy')) . '</a></p>';
-		// Builder div
-		echo '<div id="' . $id . 'builder" class="hide">';
-		// Shortcode type
-		echo '<p><label for="' . $id . 'sctype">' . __('Shortcode Type:',
-				'gallery_hierarchy') . '</label> <select name="' . $id . 'sctype" '
-				. 'id="' . $id . 'sctype">';
-		echo '<option value="ghthumb">' . __('A thumbnail', 'gallery_hierarchy')
-				. '</option>';
-		echo '<option value="ghalbum">' . __('An album', 'gallery_hierarchy')
-				. '</option>';
-		echo '<option value="ghimage">' . __('An image', 'gallery_hierarchy')
-				. '</option>';
-		echo '</select>';
-		// Shortcode options
-		echo '<div id="' . $id . 'options-ghthumb">';
-		echo '</div>';
-		echo '<div id="' . $id . 'options-ghalbum">';
-			// Albums
-			$options = '';
-			$descriptions = '';
-			foreach (static::getAlbums() as $a => $album) {
-				$descriptions .= $album['name'] . ' - ' . $album['description'] . '<br>';
-				$options .= '<option value="' . $a . '">' . $album['name']
-						. '</option>';
-			}
-			echo '<p><label for="' . $id . 'type">' . __('Album Type:',
-					'gallery_hierarchy') . '</label> <select name="' . $id
-					. 'type" id="' . $id . 'type">';
-			echo $options;
-			echo '</select>';
-			echo '<p class="description">' . $descriptions . '</p>';
-		echo '</div>';
-		echo '<div id="' . $id . 'options-ghimage">';
-		echo '</div>';
-
-		// Include current query in shortcode
-		echo '<p><label for="' . $id . 'includeFilter">' . __('Include current '
-				. 'filter in shortcode:', 'gallery_hierarchy') . '</label> ';
-		echo '<input type="checkbox" name="' . $id . 'includeFilter" id="'
-				. $id . 'includeFilter"></p>';
-		// Include excluded images
-		echo '<p><label for="' . $id . 'include_excluded">' . __('Include '
-				. 'excluded images in filter result:', 'gallery_hierarchy')
-				. '</label> ';
-		echo '<input type="checkbox" name="' . $id . 'include_excluded" id="'
-				. $id . 'include_excluded"></p>';
-		// Groups option
-		echo '<p><label for="' . $id . 'group">' . __('Image Group:',
-				'gallery_hierarchy') . '</label> ';
-		echo '<input type="text" name="' . $id . 'group" id="' . $id. 'group"></p>';
-		// Class option
-		echo '<p><label for="' . $id . 'class">' . __('Classes:',
-				'gallery_hierarchy') . '</label> ';
-		echo '<input type="text" name="' . $id . 'class" id="' . $id. 'class"></p>';
-
-
-		// Shortcode window
-		echo '<p>' . __('Shortcode:', 'gallery_hierarchy') . ' <span id="' . $id
-				. 'shortcode"></span></p>';
-		echo '</div>';
-
-
-		echo '<p><a onclick="gH.filter(\'' . $id . '\');" class="button" id="'
-				. $id . 'filterButton">' . __('Filter', 'gallery_hierarchy') . '</a> ';
-		echo '<a onclick="gH.save(\'' . $id . '\');" class="button disabled" id="'
-				. $id . 'saveButton">' . __('Save Image Exclusions', 'gallery_hierarchy')
-				. '</a>';
-		if ($insert) {
-			echo ' <a onclick="gH.insert(\'' . $id . '\');" class="button" id="'
-					. $id . 'saveButton">' . __('Insert Images', 'gallery_hierarchy')
-					. '</a>';
-		}
-		echo '</p>';
-
-		// Pagination
-		/** @xxx echo '<p class="tablenav"><label for="' . $id . 'limit">' . __('Images per page:',
-				'gallery_hierarchy') . '</label> <input type="number" name="' . $id
-				. 'limit" id="' . $id. 'limit" onchange="gH.repage(\'' . $id
-				. '\');" value="' . static::$settings->num_images . '"><span id="'
-				. $id . 'pages" class="tablenav-pages"></span></p>';*/
-
-		// Photo div
-		echo '<div id="' . $id . 'pad"' . ($insert ? ' class="builderOn"' : '')
-				. '></div>';
 		/// @todo Add admin_url('admin-ajax.php')
-		echo '<script>gH.gallery(\'' . $id . '\', ' . ($insert ? 1 : 0) . ');</script>';
+		echo '<script>gH.gallery(\'' . $id . '\', ' . ($insert ? 1 : 0) . ',' 
+				. '{ albums: ' . json_encode(static::getAlbums()) . ','
+				. 'folders: ' . json_encode(static::ajaxFolder(true, $full)) . ','
+				. ($insert ? ($shortcode ? 'update: true' : 'insert: true') : '')
+				. '}, ' . ($shortcode ? json_encode($shortcode) : 'false')
+				. ');</script>';
 	}
 
 	/**
@@ -1814,7 +1870,7 @@ class GHierarchy {
 		
 		$html = '<div id="' . $id . '"></div>'
 				. '<script>jQuery(function() {'
-				. 'jQuery(\'#' . $id . '\').folders({' . join(', ', $parts) . '})'
+				. 'jQuery(\'#' . $id . '\').hierarchical({' . join(', ', $parts) . '})'
 				. '})</script>';
 
 		if (!$writtenFolderSelectJavascript) {
@@ -1848,7 +1904,8 @@ class GHierarchy {
 						static::$albums[$className::label()] = array(
 								'name' => $className::name(),
 								'description' => $className::description(),
-								'class' => $className
+								'class' => $className,
+								'options' => $className::attributes()
 						);
 					}
 				}
@@ -1958,6 +2015,61 @@ class GHierarchy {
 		}
 		
 		return $html;
+	}
+
+	/**
+	 * Parses the id attribute in shortcodes to return an associative array
+	 *
+	 * @param $filter {String} Id filter string from shortcode
+	 *
+	 * @return {Array} Array containing filter parts
+	 */
+	static function parseFilter($filter) {
+		$parsed = array();
+		$ids = array();
+		$parts = explode(',', $filter);
+
+		foreach ($parts as $p => &$part) {
+			if (strpos($part, '=') !== false) {
+				$part = explode('=', $part);
+
+				switch ($part[0]) {
+					case 'rfolder':
+						$parsed['recurse'] = true;
+					case 'folder':
+						$part[1] = explode('|', $part[1]);
+
+						$parsed['folders'] = array();
+						// Check each id is numeric
+						foreach ($part[1] as $n) {
+							if (is_numeric($n)) {
+								array_push($parsed['folders'], $n);
+							}
+						}
+
+						break;
+
+					case 'taken':
+						// @todo
+						break;
+					case 'tags':
+					case 'title':
+					case 'comment':
+						$parsed[$part[0]] = $part[1];
+						break;
+				}
+
+
+			} else if (is_numeric($part)) {
+				array_push($ids, $part);
+			}
+		}
+
+		if ($ids) {
+			$parsed['ids'] = $ids;
+		}
+
+		return $parsed;
 	}
 
 	/**
@@ -2267,6 +2379,15 @@ class GHierarchy {
 		}
 		
 		return $html;
+	}
+
+	/**
+	 * Parses the id attribute in the shortcode and returns an associative array
+	 * containing the different parts of the id attribute
+	 *
+	 * @param $attr string String containing the value of the id attribute
+	 */
+	protected function parseIdAttr($attr) {
 	}
 
 	/**
