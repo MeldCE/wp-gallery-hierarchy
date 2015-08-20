@@ -23,7 +23,6 @@
 						+ encSC + '">&nbsp;</div><!--gHEnd-->';
 			});
 		}
-
 		
 		function drawShortcodes(ev) {
 			var doc = $(editor.getDoc());
@@ -35,10 +34,12 @@
 					return;
 				}
 				var shortcode = div.attr(dataTag);
+				div.data('gHDrawn', true);
 				$.post(ajaxurl + '?action=gh_tiny', {
 					a: 'html',
 					sc: window.decodeURIComponent(shortcode)
 				}, function(data) {
+					// Change stuff into a shortcode prototype so gH.arranger can update the shortcode and change the images
 					var width = Math.min(1100, $(window).width() - 100);
 					var height = $(window).height() - 100;
 
@@ -46,37 +47,74 @@
 					console.log(data);
 
 					if (data) {
-						var content = $(data);
-						content.attr(dataTag, shortcode);
+						var content;
 
-						div.replaceWith(content);
+						if (data instanceof Object) {
+							if (data.html) {
+								content = $(data.html);
+								content.attr(dataTag, shortcode);
 
-						div = content;
+								div.replaceWith(content);
+
+								div = content;
+							}
+							if (data.class) {
+								div.addClass(data.class);
+							}
+							if (data.func && gH[data.func]) {
+								if (data.args && data.args.unshift) {
+									// Add the div
+									data.args.unshift(div);
+
+									gH[data.func].apply(null, data.args);
+								} else {
+									gH[data.func](div);
+								}
+							}
+							if (data.extension && $.fn.extension) {
+								if (data.args && data.args.unshift) {
+									// Add the div
+									data.args.unshift(div);
+
+									$(div)[data.func].apply(null, data.args);
+								} else {
+									$(div)[data.func]();
+								}
+							}
+						} else {
+							content = $(data);
+							content.attr(dataTag, shortcode);
+
+							div.replaceWith(content);
+
+							div = content;
+
+							div
+									// Disable standard Wordpress click function
+									.bind('click', function(ev) {
+										ev.stopPropagation();
+									})
+									.bind('tap', function(ev) {
+										// Build URL
+										var url = 'http://192.168.0.118/ngotaxi/wp-admin/'
+												+ 'media-upload.php?chromeless=1&post_id=1385&'
+												+ 'tab=ghierarchy&sc=' + shortcode + '&tinymce_popup=1';
+										
+										editor.windowManager.open({
+											title: 'Edit Gallery Hierarchy Shortcode',
+											file: url,
+											resizable: true,
+											maximizable: true,
+											width: width,
+											height: height
+										}, {gHEditingDiv: content});
+										//ev.preventDefault();
+										ev.stopPropagation();
+									})
+									.data('gHDrawn', true);
+						}
 					}
 
-					div
-							// Disable standard Wordpress click function
-							.bind('click', function(ev) {
-								ev.stopPropagation();
-							})
-							.bind('tap', function(ev) {
-								// Build URL
-								var url = 'http://192.168.0.118/ngotaxi/wp-admin/'
-										+ 'media-upload.php?chromeless=1&post_id=1385&'
-										+ 'tab=ghierarchy&sc=' + shortcode + '&tinymce_popup=1';
-								
-								editor.windowManager.open({
-									title: 'Edit Gallery Hierarchy Shortcode',
-									file: url,
-									resizable: true,
-									maximizable: true,
-									width: width,
-									height: height
-								}, {gHEditingDiv: content});
-								//ev.preventDefault();
-								ev.stopPropagation();
-							})
-							.data('gHDrawn', true);
 				});
 			});
 		}

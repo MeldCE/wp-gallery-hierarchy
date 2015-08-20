@@ -23,16 +23,16 @@ class GHArranger implements GHAlbum {
 
 	static function printAlbum(&$images, &$options, $inEditor = false) {
 		$html = '';
-		if ($inEditor) {
-			$id = uniqid();
-
-			$html = '<div id="' . $id . '"></div>';
-			$html .= '<script>jQuery(function($) {'
-					. '$(\'#' . $id . '\').arranger()'
-					. '})</script>';
-		} else {
-		}
-		if ($images) {
+		if (isset($_GET['action']) && $_GET['action'] == 'gh_tiny') {
+			$html = array(
+				'func' => 'arranger',
+				'args' => array(
+					$images,
+					$options
+				),
+				'class' => 'arranger'
+			);
+		} else if ($images) {
 			$html .= '<div' . ($options['class'] ? ' class="' . $options['class'] . '"'
 					: '') . '>';
 			foreach ($images as &$image) {

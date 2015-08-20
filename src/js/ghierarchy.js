@@ -148,6 +148,10 @@ gH = (function ($) {
 		}
 	}
 
+	function arrangerUpdateShortcode(images) {
+		console.log(images);
+	}
+
 	var pub = {
 		init: function(opts) {
 			options = opts;
@@ -214,6 +218,28 @@ gH = (function ($) {
 					dir_id: files.id
 				});
 			}
+		},
+
+		arranger: function(obj, images, options) {
+			var i;
+
+			// Add hrefs to all the images
+			for (i in images) {
+				images[i].href = full(images[i].path);
+			}
+
+			/// @todo Find a better way?
+
+			//obj = doc.find('#' + obj);
+			console.log('gh arranger called');
+			console.log(arguments);
+			console.log(obj.length);
+
+			// Start arranger
+			obj.arranger({
+				images: images,
+				finishAction: arrangerUpdateShortcode
+			});
 		},
 
 		gallery: function(id, insertOnly, options, value) {

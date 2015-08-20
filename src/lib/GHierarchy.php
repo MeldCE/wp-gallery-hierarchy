@@ -42,7 +42,8 @@ class GHierarchy {
 
 	protected $dbErrors = array();
 
-	protected static $shortcodes = array('ghthumb', 'ghalbum', 'ghimage');
+	protected static $shortcodes = array('ghthumb', 'ghalbum', 'ghimage',
+			'gharranger');
 
 	protected static $lp;
 
@@ -576,8 +577,8 @@ class GHierarchy {
 			wp_enqueue_style('plupload',
 					plugins_url('/lib/css/jquery.plupload.queue.css', dirname(__FILE__)));
 		}
-		if (array_search(array('toplevel_page_gHierarchy', 'media-upload-popup',
-				'post.php'), $hook_suffix) !== false) {
+		if (array_search($hook_suffix, array('toplevel_page_gHierarchy', 'media-upload-popup',
+				'post.php')) !== false) {
 			wp_enqueue_script('jquery-hierarchy-select', 
 					plugins_url('/lib/js/folders.js', dirname(__FILE__)));
 		}
@@ -674,6 +675,7 @@ class GHierarchy {
 		// check if WYSIWYG is enabled
 		if ( 'true' == get_user_option( 'rich_editing' ) ) {
 			add_filter( 'mce_external_plugins', array($me,'tinymceAddPlugin') );
+			add_filter( 'mce_css', array($me,'tinymceAddCss') );
 			//add_filter( 'mce_buttons', array($this, 'mce_buttons' ) );
 		}
 	}
@@ -683,6 +685,13 @@ class GHierarchy {
 		$plugin_array['gHArranger'] = plugins_url( 'js/arranger.js' , __FILE__ );
 		$plugin_array['jquery-touch'] = plugins_url( 'js/jquery.mobile-events.min.js' , __FILE__ );
 		return $plugin_array;
+	}
+
+	function tinymceAddCss( $css_string ) {
+		echo 'dsfsafsdfsdafdafdsaf';
+		print_r($css_string);
+		$css_string .= ',' . plugins_url( 'css/arranger.css' , __FILE__ );
+		return $css_string;
 	}
 
 	static function adminPrintInit() {
@@ -2344,6 +2353,12 @@ class GHierarchy {
 			$atts['link'] = 'popup';
 		}
 
+		if ($tag == 'gharranger') {
+			// Validate arrangement if not in an editor
+			//if ($atts['']) {
+			$atts['type'] = 'arranger';
+		}
+
 		switch ($tag) {
 			case 'ghimage':
 				// `size="(<width>x<height>)"` - size of image (`ghimage`)
@@ -2366,9 +2381,6 @@ class GHierarchy {
 				$atts['type'] = static::$settings->thumb_album;
 				if (static::$lp) fwrite(static::$lp, "Using album '$atts[type]' for album");
 			case 'gharranger':
-				// Validate arrangement if not in an editor
-				//if ($atts['']) {
-				$atts['type'] = 'arranger';
 			case 'ghalbum':
 				// `type="<type1>"` - of album (`ghalbum`)
 				// Check we have a valid album, if not, use the thumbnail one
@@ -2379,12 +2391,18 @@ class GHierarchy {
 
 				if (isset($albums[$atts['type']])) {
 					$albums[$atts['type']]['class']::enqueue();
-					$html = $albums[$atts['type']]['class']::printAlbum($images, $atts);
+					$html = $albums[$atts['type']]['class']::printAlbum($images, $atts,
+							$inEditor);
 				}
 				break;
 		}
-		
-		return $html;
+
+		if (is_array($html)) {
+			header('Content-Type: application/json');
+			echo json_encode($html);
+		} else {
+			return $html;
+		}
 	}
 
 	/**
