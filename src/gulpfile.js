@@ -122,7 +122,7 @@ paths.ext.packery = {
 
 // arranger
 paths.ext.arranger = {
-	js: 'lib/jquery-arranger/dist/js/arranger.js',
+	js: 'lib/jquery-arranger/dist/js/arrange{r,ment}.js',
 	css: 'lib/jquery-arranger/dist/css/arranger.css'
 };
 

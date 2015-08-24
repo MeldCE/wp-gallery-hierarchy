@@ -1,6 +1,166 @@
 (function($) {
+	var dataTag = 'data-gh-code';
+
+	function setDataTag(obj) {
+		if (!obj) {
+			obj = this.div;
+		}
+
+		obj.attr(dataTag,
+				window.encodeURIComponent(this.shortcode.string()));
+	}
+
+	function completeRedraw(data) {
+		// Change stuff into a shortcode prototype so gH.arranger can update the shortcode and change the images
+
+		console.log('received the following for ' + this.shortcode.string());
+		console.log(data);
+
+		if (data) {
+			var content;
+
+			if (data instanceof Object) {
+				if (data.html) {
+					content = $(data.html);
+					setDataTag.call(this, content);
+
+					this.div.replaceWith(content);
+
+					this.div = content;
+				}
+				if (data.class) {
+					this.div.addClass(data.class);
+				}
+				if (data.func && gH[data.func]) {
+					if (data.args && data.args.unshift) {
+						// Add the div and this
+						data.args.unshift(this);
+						data.args.unshift(this.div);
+
+						gH[data.func].apply(null, data.args);
+					} else {
+						gH[data.func](this.div, this);
+					}
+				}
+				if (data.extension && $.fn.extension) {
+					if (data.args && data.args.unshift) {
+						// Add the div
+						data.args.unshift(this.div);
+
+						this.div[data.func].apply(null, data.args);
+					} else {
+						this.div[data.func]();
+					}
+				}
+			} else {
+				content = $(data);
+				setDataTag.call(this, content);
+
+				this.div.replaceWith(content);
+
+				this.div = content;
+
+				this.div
+						// Disable standard Wordpress click function
+						.bind('click', function(ev) {
+							ev.stopPropagation();
+						})
+						.bind('tap', this.popupGallery.bind(this))
+						.data('gHDrawn', true);
+			}
+		}
+	}
+
+	function GHTinyDiv (div, editor) {
+		this.shortcode = window.decodeURIComponent(div.attr(dataTag));
+
+		console.log(this.shortcode);
+
+		this.editor = editor;
+
+		// Convert shortcode to an object
+		if (!(this.shortcode = wp.shortcode.next(
+				'ghalbum|gharranger|ghthumb|ghimage', this.shortcode))) {
+			/// @todo Add error
+			return;
+		}
+
+		this.shortcode = this.shortcode.shortcode;
+
+		console.log(this.shortcode);
+
+		this.div = div;
+		this.div.data('gHObject', this);
+
+		this.redraw();
+	}
+
+	GHTinyDiv.prototype = {
+		redraw: function() {
+			this.div.data('gHDrawn', true);
+
+			$.post(ajaxurl + '?action=gh_tiny', {
+				a: 'html',
+				/// @todo Pass object instead of text
+				sc: this.shortcode.string()
+			}, completeRedraw.bind(this));
+		},
+
+		popupGallery: function(ev) {
+			if (ev && ev.preventDefault) {
+				if (ev.isDefaultPrevented()) {
+					return;
+				}
+
+				ev.preventDefault();
+			}
+			
+			var width = Math.min(1100, $(window).width() - 100);
+			var height = $(window).height() - 100;
+
+			// Build URL
+			var url = 'http://192.168.0.118/ngotaxi/wp-admin/'
+					+ 'media-upload.php?chromeless=1&post_id=1385&'
+					+ 'tab=ghierarchy&sc=' + window.encodeURIComponent(this.shortcode.string()) + '&tinymce_popup=1';
+		
+			console.log('URL is: ' + url);
+
+			this.editor.windowManager.open({
+				title: 'Edit Gallery Hierarchy Shortcode',
+				file: url,
+				resizable: true,
+				maximizable: true,
+				width: width,
+				height: height
+			}, {gHEditingDiv: this.div});
+			//ev.preventDefault();
+			ev.stopPropagation();
+		},
+
+		/**
+		 * Set an attribute in the shortcode
+		 *
+		 * @param attr {String} Attribute to set/delete
+		 * @param value {Any} Value to set
+		 */
+		setSCAttr: function(attr, value) {
+			var ret = this.shortcode.set(attr, value);
+
+			setDataTag.call(this);
+
+			return ret;
+		},
+
+		getSCAttr: function(attr) {
+			var ret = this.shortcode.get(attr);
+
+			setDataTag.call(this);
+
+			return ret;
+		}
+	};
+
 	tinymce.PluginManager.add('gHierarchy', function( editor, url ) {
-		var dataTag = 'data-gh-code';
 
 		//helper functions 
 		function getAttr(s, n) {
@@ -33,89 +193,8 @@
 				if (div.data('gHDrawn')) {
 					return;
 				}
-				var shortcode = div.attr(dataTag);
-				div.data('gHDrawn', true);
-				$.post(ajaxurl + '?action=gh_tiny', {
-					a: 'html',
-					sc: window.decodeURIComponent(shortcode)
-				}, function(data) {
-					// Change stuff into a shortcode prototype so gH.arranger can update the shortcode and change the images
-					var width = Math.min(1100, $(window).width() - 100);
-					var height = $(window).height() - 100;
 
-					console.log('received the following for ' + window.decodeURIComponent(shortcode));
-					console.log(data);
-
-					if (data) {
-						var content;
-
-						if (data instanceof Object) {
-							if (data.html) {
-								content = $(data.html);
-								content.attr(dataTag, shortcode);
-
-								div.replaceWith(content);
-
-								div = content;
-							}
-							if (data.class) {
-								div.addClass(data.class);
-							}
-							if (data.func && gH[data.func]) {
-								if (data.args && data.args.unshift) {
-									// Add the div
-									data.args.unshift(div);
-
-									gH[data.func].apply(null, data.args);
-								} else {
-									gH[data.func](div);
-								}
-							}
-							if (data.extension && $.fn.extension) {
-								if (data.args && data.args.unshift) {
-									// Add the div
-									data.args.unshift(div);
-
-									$(div)[data.func].apply(null, data.args);
-								} else {
-									$(div)[data.func]();
-								}
-							}
-						} else {
-							content = $(data);
-							content.attr(dataTag, shortcode);
-
-							div.replaceWith(content);
-
-							div = content;
-
-							div
-									// Disable standard Wordpress click function
-									.bind('click', function(ev) {
-										ev.stopPropagation();
-									})
-									.bind('tap', function(ev) {
-										// Build URL
-										var url = 'http://192.168.0.118/ngotaxi/wp-admin/'
-												+ 'media-upload.php?chromeless=1&post_id=1385&'
-												+ 'tab=ghierarchy&sc=' + shortcode + '&tinymce_popup=1';
-										
-										editor.windowManager.open({
-											title: 'Edit Gallery Hierarchy Shortcode',
-											file: url,
-											resizable: true,
-											maximizable: true,
-											width: width,
-											height: height
-										}, {gHEditingDiv: content});
-										//ev.preventDefault();
-										ev.stopPropagation();
-									})
-									.data('gHDrawn', true);
-						}
-					}
-
-				});
+				new GHTinyDiv(div, editor);
 			});
 		}
 

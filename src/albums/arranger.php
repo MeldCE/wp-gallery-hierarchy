@@ -33,11 +33,28 @@ class GHArranger implements GHAlbum {
 				'class' => 'arranger'
 			);
 		} else if ($images) {
-			$html .= '<div' . ($options['class'] ? ' class="' . $options['class'] . '"'
-					: '') . '>';
+			$id = uniqid();
+			$html .= '<div id="' . $id . '"'
+					. ($options['class'] ? ' class="' . $options['class'] . '"' : '')
+					. ($options['width'] ? ' style="width: ' . $options['width']
+					. 'px"' : '')
+					. '>';
+
+			// Parse map for the arrangement
+			if (isset($options['layout'])) {
+				if ($options['layout']) {
+					$layout = static::makeMap($options['layout']);
+				}
+			}
+
 			foreach ($images as &$image) {
+				// Create an array to pass to the arrangement
+
+
 				// Create link
-				$html .= '<a';
+				$html .= '<a data-id="' . $image->id . '"'
+					. ' style="background: url(' . GHierarchy::getImageURL($image)
+					. ')' . '"';
 				switch ($options['link']) {
 					case 'none':
 						break;
@@ -74,7 +91,7 @@ class GHArranger implements GHAlbum {
 
 				$html .= GHierarchy::lightboxData($image, $options['group'], $caption);
 
-				$html .= '><img src="' . GHierarchy::getCImageURL($image) . '">';
+				$html .= '>';
 				
 				// Add comment
 				switch ($options['caption']) {
@@ -93,10 +110,65 @@ class GHArranger implements GHAlbum {
 				$html .= '</a>';
 			}
 
-			$html .= '</div>';
+
+			$html .= '</div>'
+					. '<script src="' . plugins_url('/lib/js/arrangement.js', __DIR__) . '"></script>'
+					. '<script src=""></script>'
+					. '<script>'
+					. 'console.log(' . json_encode($layout) . ');'
+					. 'jQuery(\'#' . $id . '\').arrangement({'
+					. 'images: ' . json_encode($layout)
+					. '});'
+					.'</script>';
 		}
 
 		return $html;
+	}
+
+	protected static function makeMap($layout) {
+		// Remove percentage maarker at start
+		$layout = ltrim($layout, '%');
+		
+		$layout = explode('|', $layout);
+
+		$map = array();
+
+		foreach ($layout as &$image) {
+			// Split off the id
+			$parts = explode(':', $image);
+			$id = array_shift($parts);
+
+			$map[$id] = array();
+
+			switch (count($parts)) {
+				case 4:
+					$map[$id]['offset'] = static::dimStringToArray($parts[3]);
+				case 3:
+					$map[$id]['scale'] = static::dimStringToArray($parts[2]);
+				case 2:
+					$map[$id]['box'] = static::dimStringToArray($parts[0]);
+					$map[$id]['position'] = static::dimStringToArray($parts[1]);
+
+					break;
+				default:
+					// @todo error
+			}
+		}
+
+		return $map;
+	}
+
+	protected static function dimStringToArray($dim) {
+		$dim = explode(',', $dim);
+
+		if (count($dim) == 1) {
+			return $dim[0];
+		} else {
+			return array(
+				(($f = floatval($dim[0])) ? $f : $dim[0]),
+				(($f = floatval($dim[1])) ? $f : $dim[1])
+			);
+		}
 	}
 
 	static function printStyle() {

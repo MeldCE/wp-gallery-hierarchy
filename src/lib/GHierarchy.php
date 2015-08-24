@@ -2242,7 +2242,7 @@ class GHierarchy {
 			. (isset($atts['include_excluded']) && $atts['include_excluded']
 			? '' : ' AND exclude=0') . ')';
 		}
-		$q = 'SELECT f.*, CONCAT(d.dir, \'/\', f.file) AS path FROM '
+		$q = 'SELECT f.id, f.*, CONCAT(d.dir, \'/\', f.file) AS path FROM '
 				. $me->imageTable . ' AS f JOIN ' . $me->dirTable
 				. ' AS d ON d.id = f.dir_id '
 				. ($w ? ' WHERE ' . join(' OR ', $w) : '') . ' ORDER BY taken';
