@@ -53,8 +53,8 @@ class GHArranger implements GHAlbum {
 
 				// Create link
 				$html .= '<a data-id="' . $image->id . '"'
-					. ' style="background: url(' . GHierarchy::getImageURL($image)
-					. ')' . '"';
+					. ' style="background: url(\'' . GHierarchy::getImageURL($image)
+					. '\')' . '"';
 				switch ($options['link']) {
 					case 'none':
 						break;
