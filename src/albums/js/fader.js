@@ -80,7 +80,7 @@ if(jQuery) (function($){
 			}
 
 			// Adjust height using maxRatio if we don't have a height
-			if (!this.options.height) {
+			if (!this.options.height && !this.obj.height()) {
 				console.log('no height');
 				this.obj.height(this.obj.width() * maxRatio);
 			} else {
