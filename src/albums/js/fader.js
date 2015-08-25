@@ -89,7 +89,9 @@ if(jQuery) (function($){
 
 			this.scroll(0);
 
-			this.start();
+			if (this.keys.length > 1) {
+				this.start();
+			}
 			//restartTimeout.apply(this);
 		}
 
@@ -111,7 +113,11 @@ if(jQuery) (function($){
 					return false;*/
 				}
 
-				index = index % (this.keys.length - 1);
+				if (this.keys.length === 1) {
+					index = 0;
+				} else {
+					index = index % (this.keys.length - 1);
+				}
 
 				// Update the comment boxes
 				this.comment.html(((val = this.images[this.keys[index]].comment) ? val : ''));
