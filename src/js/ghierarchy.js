@@ -139,7 +139,7 @@ gH = (function ($) {
 	}
 
 	//= include editor.js
-	//= include types.js
+	//= include table.js
 	//= include uploader.js
 	//= include scanner.js
 	//= include browser.js
