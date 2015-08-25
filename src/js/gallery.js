@@ -382,9 +382,10 @@
 				type: 'select',
 				options: {
 					values: {
-						'ghthumb': 'Thumbnails',
-						'ghalbum': 'An album',
-						'ghimage': 'An image'
+						ghthumb: 'Thumbnails',
+						ghalbum: 'An album',
+						ghimage: 'An image',
+						gharranger: 'Image arranger'
 					}
 				}
 			},
@@ -606,6 +607,7 @@
 	
 		try {
 			if (tinyMCEPopup && (div = tinyMCEPopup.getWindowArg('gHEditingDiv'))) {
+				// Set attribute to shortcode
 				div.remove();
 				tinyMCEPopup.close();
 
@@ -626,6 +628,7 @@
 		var i, browserFilter;
 		// Check to see if the browser filter has changed
 		//console.log(compileFilter.call(this, this.browserFilter));
+
 		if (this.browserFilter.fields.fields.indexOf(id) !== -1) {
 			this.filterRetrieved = false;
 			this.filterButton.removeClass('disabled');
@@ -636,6 +639,28 @@
 	}
 
 	function redisplayShortcode() {
+		if (this.options.insert) {
+			console.log(this.builder.fields.sctype);
+			console.log(this.builder.fields.sctype.valueOf());
+			if (this.builder.fields.sctype.valueOf() === 'gharranger') {
+				console.log('forcing');
+				this.idsMust = true;
+				console.log(this.selectOrder);
+				// Disable insert button if don't have any ids
+				if (!this.selectOrder.length && !this.insertButton.hasClass('disabled')) {
+					this.insertButton.addClass('disabled');
+				} else if (this.selectOrder.length && this.insertButton.hasClass('disabled')) {
+					this.insertButton.removeClass('disabled');
+				}
+			} else {
+				this.idsMust = false;
+				
+				if (this.insertButton.hasClass('disabled')) {
+					this.insertButton.removeClass('disabled');
+				}
+			}
+		}
+
 		if (this.options.shortcodeBuilder) {
 			this.builder.shortcodeDiv.html(compileShortcode.call(this));
 		}
@@ -740,8 +765,10 @@
 		var shortcode = '[' + this.builder.fields.sctype;
 		var options;
 
+		console.log('idsOnly? ' + this.idsMust);
+
 		// Add filter/selected ids
-		if (this.idsOnly) {
+		if (this.imagesSelected || this.idsMust) {
 			shortcode += ' id="' + this.selectOrder.join(',') + '"';
 		} else {
 			if (v = compileFilterText.call(this, this.browserFilter)) {
@@ -851,7 +878,7 @@
 
 			this.browser.displayFiles(images);
 
-			this.idsOnly = false;
+			this.imagesSelected = false;
 			this.filterRetrieved = true;
 			this.filterButton.addClass('disabled');
 			redisplayShortcode.call(this);
@@ -967,18 +994,18 @@
 				+ 'Save image exclusions' + '</a>')
 				.click(saveEdits.bind(this)));
 
+		// Add insert html
 		if (this.options.insert) {
 			this.el.append(el = $('<div></div>')
 					.append(this.insertButton = $('<a class="button">'
-					+ (this.options.update ? 'Update shortcode'
-					: 'Insert shortcode') + '</a> ')
-					.click(submitShortcode.bind(this))));
-
+					+ (this.options.update ? 'Update shortcode' : 'Insert shortcode')
+					+ '</a>'))
+					.click(submitShortcode.bind(this)));
 			if (this.options.update) {
 				el.append(' ')
 						.append(this.deleteButton = $('<a class="button">'
-						+ 'Delete shortcode' + '</a>')
-						.click(deleteShortcode.bind(this)));
+						+ 'Delete shortcode' + '</a>'))
+						.click(deleteShortcode.bind(this));
 			}
 		}
 
@@ -1047,17 +1074,17 @@
 	 * @param obj JQueryDOMObject JQuery object to put the image into
 	 * @param file Object Object containing information on the file
 	 */
-	function displayImage(obj, file) {
+	/*function displayImage(obj, file) {
 		obj.append($('<a href="' + imageUrl + '/' + file.path
 				+ '" target="_blank"><img src="'
 				+ thumbnail(file.path) + '"></a>')
 				.viewer(null, 'gHBrowser').data('imageData', file));
-	}
+	}*/
 	
 	function gallerySelect(ids, files) {
 		this.selectOrder = ids;
 
-		this.idsOnly = (ids.length ? true : false);
+		this.imagesSelected = (ids.length ? true : false);
 
 
 		redisplayShortcode.call(this);
@@ -1114,13 +1141,14 @@
 			this.options = $.extend({
 				shortcodeBuilder: true
 			}, options);
+			this.selectOrder = [];
+			this.filters = [];
+			this.changed = {};
+			this.idsMust = false;
 
 			if (this.options.update) {
 				this.options.insert = true;
 			}
-
-			this.filters = [];
-			this.changed = {};
 
 			/*/ Extract current values from fields
 			if (this.options.filterInput) {

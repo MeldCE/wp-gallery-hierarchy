@@ -33,7 +33,6 @@ class GHJSFader implements GHAlbum {
 			$id = uniqid();
 
 			// Create div
-			print_r($options);
 			$html .= '<div id="' . $id . '" style="'
 					. ($options['width'] ? 'width: \'' . $options['width'] . '\',' : '')
 					. ($options['height'] ? 'height: \'' . $options['height'] . '\',' : '')

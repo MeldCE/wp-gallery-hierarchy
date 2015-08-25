@@ -56,7 +56,7 @@ gH = (function ($) {
 	
 	$.viewer.option('gHBrowser', {
 		generators: {
-			imageEditor: displayImageEditor.bind(this),
+			imageEditor: displayImageEditor,
 		},
 		scroll: true,
 		default: 'imageEditor'
@@ -68,12 +68,14 @@ gH = (function ($) {
 	 * @param obj JQueryDOMObject JQuery object to put the image into
 	 * @param file Object Object containing information on the file
 	 */
-	function displayImage(id, obj, file) {
+	function displayImage(obj, file) {
+		console.log(arguments);
+
 		obj.append($('<a href="' + imageUrl + '/' + file.path
 				+ '" title="' 
 				+ (file.title ? file.title + ' (#' + file.id + ')' : '#' + file.id)
 				+ '" target="_blank"><img src="'
-				+ this.thumbnail(file.path) + '"></a>')
+				+ thumbnail(file.path) + '"></a>')
 				.viewer(null, 'gHBrowser').data('imageData', file));
 	}
 
@@ -127,6 +129,8 @@ gH = (function ($) {
 	}
 
 	function thumbnail(image) {
+		console.log(image);
+		console.log(image.replace);
 		return cacheUrl + '/' + image.replace(/\//g, '_');
 	}
 
@@ -161,6 +165,98 @@ gH = (function ($) {
 				}
 			}
 		}
+	}
+
+	function arrangerParseLayout(images, tinyDiv) {
+		console.log('arrangerParseLayout called');
+		var layout, i, id, parts;
+
+		if (layout = tinyDiv.getSCAttr('layout')) {
+			// Remove percentage maarker at start
+			layout = layout.replace(/^%+/, '');
+			console.log('got value for layout attribute of ' + layout);
+			layout = layout.split('|');
+
+			console.log(layout);
+
+			for (i in layout) {
+				// Split off the id
+				parts = layout[i].split(':');
+				id = parts.splice(0,1);
+
+				if (images[id]) {
+					console.log('got ' + parts.length + ' parts');
+
+					switch (parts.length) {
+						case 4:
+							images[id].offset = dimStringToArray(parts[3]);
+						case 3:
+							images[id].scale = dimStringToArray(parts[2]);
+						case 2:
+							images[id].box = dimStringToArray(parts[0]);
+							images[id].position = dimStringToArray(parts[1]);
+
+							break;
+						default:
+							// @todo error
+					}
+				}
+			}
+		}
+	}
+
+	function dimStringToArray(dim) {
+		console.log('dimtoArray called on ' + dim);
+		dim = dim.split(',');
+		var f;
+
+		if (dim.length == 1) {
+			return dim[0];
+		} else {
+			return [
+				(isNaN(f = parseFloat(dim[0])) ? dim[0] : f),
+				(isNaN(f = parseFloat(dim[1])) ? dim[1] : f),
+			];
+		}
+	}
+
+	function arrangerUpdateShortcode(tinyDiv, images) {
+		console.log(images);
+
+		// Compile layout parameter
+		var i, layouts = [], layout;
+		for (i in images) {
+			layout = images[i].id + ':'
+					// Box (size)
+					+ images[i].box[0].toFixed(2) + ','
+					+ images[i].box[1].toFixed(2)
+					+ ':'
+					// Position
+					+ images[i].position[0].toFixed(2) + ','
+					+ images[i].position[1].toFixed(2);
+
+			if (images[i].scale) {
+				layout += ':'
+						+ images[i].scale[0].toFixed(2) + ','
+						+ images[i].scale[1].toFixed(2);
+			}
+
+			if (images[i].offset) {
+				layout += ':'
+						+ images[i].offset[0].toFixed(2) + ','
+						+ images[i].offset[1].toFixed(2);
+			}
+
+			layouts.push(layout);
+		}
+
+		layout = '%' + layouts.join('|');
+
+		// Add to shortcode
+
+		console.log(layout);
+
+		tinyDiv.setSCAttr('layout', layout);
 	}
 
 	var pub = {
@@ -207,7 +303,7 @@ gH = (function ($) {
 					selection: true,
 					exclusion: galleryExclude.bind(this, id),
 					generators: {
-						image: displayImage.bind(this, id)
+						image: displayImage
 					}
 				});
 				
@@ -229,6 +325,39 @@ gH = (function ($) {
 					dir_id: files.id
 				});
 			}
+		},
+
+		arranger: function(obj, tinyDiv, images, options) {
+			var i;
+			var imageObject = {};
+
+			// Add hrefs to all the images
+			for (i in images) {
+				images[i].href = full(images[i].path);
+
+				imageObject[images[i].id] = images[i];
+			}
+
+			arrangerParseLayout(imageObject, tinyDiv);
+
+			//obj = doc.find('#' + obj);
+			console.log('gh arranger called');
+			console.log(arguments);
+			console.log(obj.length);
+
+			var options = {
+				images: images,
+				finishAction: arrangerUpdateShortcode.bind(null, tinyDiv)
+			};
+
+			var layout;
+
+			if ((layout = tinyDiv.getSCAttr('layout')) && layout.startsWith('%')) {
+				options.percent = true;
+			}
+
+			// Start arranger
+			obj.arranger(options);
 		},
 
 		gallery: function(id, insertOnly, options, value) {

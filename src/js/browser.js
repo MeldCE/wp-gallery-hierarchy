@@ -271,7 +271,9 @@ var Browser = (function($) {
 		} else {
 			this.selected[id] = file;
 			this.selectOrder.push(id);
-			this.fileDoms[id].order.html(this.selectOrder.length);
+			if (this.options.orderedSelection) {
+				this.fileDoms[id].order.html(this.selectOrder.length);
+			}
 			this.fileDoms[id].div.addClass(this.options.selectedClass);
 			this.fileDoms[id].selected = true;
 		}
@@ -311,13 +313,13 @@ var Browser = (function($) {
 	/**
 	 * Bulk exclude/un-exclude currently selected files
 	 *
-	 * @param exclude {boolean|undefined} If true, selected will be excluded
+	 * @param toExclude {boolean|undefined} If true, selected will be excluded
 	 */
-	function excludeSelected(exclude) {
+	function excludeSelected(toExclude) {
 		var f;
 
 		for (f in this.selected) {
-			exclude.call(this, f, this.selected[f], exclude);
+			exclude.call(this, f, this.selected[f], toExclude);
 		}
 	}
 

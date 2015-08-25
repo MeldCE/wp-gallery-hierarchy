@@ -42,7 +42,8 @@ class GHierarchy {
 
 	protected $dbErrors = array();
 
-	protected static $shortcodes = array('ghthumb', 'ghalbum', 'ghimage');
+	protected static $shortcodes = array('ghthumb', 'ghalbum', 'ghimage',
+			'gharranger');
 
 	protected static $lp;
 
@@ -576,8 +577,8 @@ class GHierarchy {
 			wp_enqueue_style('plupload',
 					plugins_url('/lib/css/jquery.plupload.queue.css', dirname(__FILE__)));
 		}
-		if (array_search(array('toplevel_page_gHierarchy', 'media-upload-popup',
-				'post.php'), $hook_suffix) !== false) {
+		if (array_search($hook_suffix, array('toplevel_page_gHierarchy', 'media-upload-popup',
+				'post.php')) !== false) {
 			wp_enqueue_script('jquery-hierarchy-select', 
 					plugins_url('/lib/js/folders.js', dirname(__FILE__)));
 		}
@@ -677,14 +678,22 @@ class GHierarchy {
 		// check if WYSIWYG is enabled
 		if ( 'true' == get_user_option( 'rich_editing' ) ) {
 			add_filter( 'mce_external_plugins', array($me,'tinymceAddPlugin') );
+			add_filter( 'mce_css', array($me,'tinymceAddCss') );
 			//add_filter( 'mce_buttons', array($this, 'mce_buttons' ) );
 		}
 	}
 
 	function tinymceAddPlugin( $plugin_array ) {
 		$plugin_array['gHierarchy'] = plugins_url( 'js/tinymce.js' , __DIR__ );
+		$plugin_array['gHArranger'] = plugins_url( 'js/arranger.js' , __FILE__ );
 		$plugin_array['jquery-touch'] = plugins_url( 'js/jquery.mobile-events.min.js' , __FILE__ );
 		return $plugin_array;
+	}
+
+	function tinymceAddCss( $css_string ) {
+		echo 'dsfsafsdfsdafdafdsaf';
+		$css_string .= ',' . plugins_url( 'css/arranger.css' , __FILE__ );
+		return $css_string;
 	}
 
 	static function adminPrintInit() {
@@ -812,7 +821,6 @@ class GHierarchy {
 				case 'html':
 					if (isset($_POST['sc'])) {
 						$sc = stripslashes($_POST['sc']);
-						echo "Found shortcode $sc\n";
 						echo do_shortcode($sc);
 					}
 
@@ -2118,6 +2126,11 @@ class GHierarchy {
 				$classAO = 'album_class_append';
 				$caption = 'album_description';
 				break;
+			case 'gharranger':
+				$classO = 'arranger_class';
+				$classAO = 'arranger_class_append';
+				$caption = 'arranger_description';
+				break;
 		}
 
 		// `id="<id1>,<id2>,..."` - list of photos (some sort of query or list)
@@ -2231,7 +2244,7 @@ class GHierarchy {
 			. (isset($atts['include_excluded']) && $atts['include_excluded']
 			? '' : ' AND exclude=0') . ')';
 		}
-		$q = 'SELECT f.*, CONCAT(d.dir, \'/\', f.file) AS path FROM '
+		$q = 'SELECT f.id, f.*, CONCAT(d.dir, \'/\', f.file) AS path FROM '
 				. $me->imageTable . ' AS f JOIN ' . $me->dirTable
 				. ' AS d ON d.id = f.dir_id '
 				. ($w ? ' WHERE ' . join(' OR ', $w) : '') . ' ORDER BY taken';
@@ -2342,6 +2355,12 @@ class GHierarchy {
 			$atts['link'] = 'popup';
 		}
 
+		if ($tag == 'gharranger') {
+			// Validate arrangement if not in an editor
+			//if ($atts['']) {
+			$atts['type'] = 'arranger';
+		}
+
 		switch ($tag) {
 			case 'ghimage':
 				// `size="(<width>x<height>)"` - size of image (`ghimage`)
@@ -2363,6 +2382,7 @@ class GHierarchy {
 			case 'ghthumb':
 				$atts['type'] = static::$settings->thumb_album;
 				if (static::$lp) fwrite(static::$lp, "Using album '$atts[type]' for album");
+			case 'gharranger':
 			case 'ghalbum':
 				// `type="<type1>"` - of album (`ghalbum`)
 				// Check we have a valid album, if not, use the thumbnail one
@@ -2373,12 +2393,18 @@ class GHierarchy {
 
 				if (isset($albums[$atts['type']])) {
 					$albums[$atts['type']]['class']::enqueue();
-					$html = $albums[$atts['type']]['class']::printAlbum($images, $atts);
+					$html = $albums[$atts['type']]['class']::printAlbum($images, $atts,
+							$inEditor);
 				}
 				break;
 		}
-		
-		return $html;
+
+		if (is_array($html)) {
+			header('Content-Type: application/json');
+			echo json_encode($html);
+		} else {
+			return $html;
+		}
 	}
 
 	/**

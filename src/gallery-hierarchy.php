@@ -28,6 +28,7 @@ if (!class_exists('GHierarchy')) {
 			add_shortcode('ghalbum', array('GHierarchy', 'doShortcode'));
 			add_shortcode('ghthumb', array('GHierarchy', 'doShortcode'));
 			add_shortcode('ghimage', array('GHierarchy', 'doShortcode'));
+			add_shortcode('gharranger', array('GHierarchy', 'doShortcode'));
 			
 			add_action('wp_enqueue_scripts', array('GHierarchy', 'enqueue'));
 			add_action('admin_enqueue_scripts', array('GHierarchy', 'adminEnqueue'));
