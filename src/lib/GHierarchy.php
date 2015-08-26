@@ -2081,6 +2081,53 @@ class GHierarchy {
 	}
 
 	/**
+	 * Parses a string in the format
+	 * [<id>:]<value>[,...]
+	 *
+	 * @param $string {string} String to parse
+	 */
+	protected function parseOptionString($string) {
+		$options = array();
+
+		$regex =
+				'/' .
+					'(' .
+						'(?P<id>[0-9]+):' .
+					')?' .
+					'(?P<value>' .
+						'(?P<non>([^\'"\[][^,]*)?)|' .
+						'(\[([^\]]|\\\])+\])|' .
+						'(\'(?P<single>[^\']|\\\\\')+\')|' .
+						'("(?P<quote>[^"]|\\\\")+")' .
+					')' .
+					'(,|$)' .
+				'/';
+		if (preg_match_all($regex, $string, $matches)) {
+			foreach ($matches['value'] as $i => $value) {
+				if (!$value) {
+					continue;
+				}
+				if (!$matches['id'][$i]) {
+					$options[null] = $value;
+				} else {
+					// Unquote values
+					if (strpos($value, '\'') === 0) {
+						$options[$matches['id'][$i]] = $matches['single'][$id];
+					} else if (strpos($value, '"') === 0) {
+						$options[$matches['id'][$i]] = $matches['quote'][$id];
+					} else {
+						$options[$matches['id'][$i]] = $value;
+					}
+				}
+			}
+
+			return $options;
+		} else {
+			return false;
+		}
+	}
+
+	/**
 	 * Controls the generation of HTML for the shortcode replacement.
 	 * This function will also fill out the attributes with the default
 	 * values from the plugin options (does not use the Wordpress function to do
@@ -2333,8 +2380,12 @@ class GHierarchy {
 				'ghthumb' => 'gh_thumb_description',
 				'ghimage' => 'gh_image_description'
 		);
-		if (!isset($atts['caption'])) {
-			$atts['caption'] = static::$settings->get_option($captionMap[$tag]);
+		if (isset($atts['caption'])) {
+			$atts['caption'] = $me->parseOptionString($atts['caption']);
+		} else {
+			$atts['caption'] = array(
+				null => static::$settings->get_option($captionMap[$tag])
+			);
 		}
 
 		// add_title
@@ -2343,16 +2394,107 @@ class GHierarchy {
 		// `popup_caption="(none|title|comment)"` - Type of caption to show on
 		//	popup. Default set in plugin options (`ghalbum` `ghthumbnail`
 		// `ghimage`)
-		if (!isset($atts['popup_caption'])) {
-			$atts['popup_caption'] =
-					static::$settings->popup_description;
+		if (isset($atts['popup_caption'])) {
+			$atts['popup_caption'] = $me->parseOptionString($atts['popup_caption']);
+		} else {
+			$atts['popup_caption'] = array(
+				null => static::$settings->popup_description
+			);
 		}
-		
-		// `link="(none|popup|<url>)"` - URL link on image, by default it will be
+	
+		// `link="[<id>:](none|popup|[<post_id>]|'<url>'),..."` - URL link on image, by default it will be
 		// the image url and will cause a lightbox popup
-		/// @todo Make it a setting?
-		if (!isset($atts['link'])) {
-			$atts['link'] = 'popup';
+		if (isset($atts['link'])) {
+			$atts['link'] = $me->parseOptionString($atts['link']);
+
+			// Convert [] to links
+			foreach ($atts['link'] as $i => $value) {
+				if (preg_match('/^\[(.*)\]$/', $value, $matches)) {
+					if (gHisInt($matches[1])) {
+						if ($link = get_permalink($matches[1])) {
+							$atts['link'][$i] = $link;
+							continue;
+						}
+					}
+					
+					unset($atts['link'][$i]);
+				}
+			}
+		} else {
+			$atts['link'] = array(null => 'popup');
+		}
+
+		// Generate captions and links
+		foreach($images as $i => &$image) {
+			// Popup caption
+			$caption =	(isset($atts['popup_caption'][$image->id])
+					? $atts['popup_caption'][$image->id]
+					: $atts['popup_caption'][null]);
+			switch ($caption) {
+				case 'title':
+					$images->popup_caption = $image->title;
+					break;
+				case 'comment':
+					$images->popup_caption = '';
+					if ($atts['add_title']) {
+						if (($images->popup_caption = $image->title)) {
+							if (substr($images->popup_caption, count($images->popup_caption)-1,1) !== '.') {
+								$images->popup_caption .=  '. ';
+							}
+						}
+					}
+					$images->popup_caption .= $image->comment;
+					break;
+				case 'none':
+					$images->popup_caption = null;
+					break;
+				default:
+					$images->popup_caption = $caption;
+					break;
+			}
+
+			// Caption
+			$caption =	(isset($atts['caption'][$image->id])
+					? $atts['caption'][$image->id]
+					: $atts['caption'][null]);
+			switch ($caption) {
+				case 'title':
+					$images->caption = $image->title;
+					break;
+				case 'comment':
+					$images->caption = '';
+					if ($atts['add_title']) {
+						if (($images->caption = $image->title)) {
+							if (substr($images->caption, count($images->caption)-1,1) !== '.') {
+								$images->caption .=  '. ';
+							}
+						}
+					}
+					$images->caption .= $image->comment;
+					break;
+				case 'none':
+					$images->caption = null;
+					break;
+				default:
+					$images->caption = $caption;
+					break;
+			}
+
+			// Link
+			$link =	(isset($atts['link'][$image->id])
+					? $atts['link'][$image->id]
+					: $atts['link'][null]);
+			switch($link) {
+					case 'none':
+						$image->link = null;
+					case 'popup':
+						$image->link = static::getImageURL($image);
+						break;
+					default:
+						/// @todo Add the ability to have a link per thumbnail
+						$image->link = $atts['link'];
+						break;
+			}
 		}
 
 		if ($tag == 'gharranger') {

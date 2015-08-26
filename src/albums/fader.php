@@ -43,42 +43,10 @@ class GHFader implements GHAlbum {
 					continue;
 				}
 				//$url = $image->path;
-				$html .= '<a';
-				switch ($options['link']) {
-					case 'none':
-						break;
-					case 'popup':
-						$html .= ' href="' . $url . '"';
-						break;
-					default:
-						/// @todo Add the ability to have a link per thumbnail
-						$html .= ' href="' . $options['link'] . '"';
-						break;
-				}
+				$html .= '<a' . ($image->link ? ' href="' . $image->link . '"' : '');
 				
 				// Add comment
-				switch ($options['popup_caption']) {
-					case 'title':
-						$caption = $image->title;
-						break;
-					case 'comment':
-						$caption = '';
-						if ($options['add_title']) {
-							if (($caption = $image->title)) {
-								if (substr($caption, count($caption)-1,1) !== '.') {
-									$caption .=  '. ';
-								}
-							}
-						}
-						$caption .= $image->comment;
-						break;
-					case 'none':
-					default:
-						$caption = null;
-						break;
-				}
-
-				$html .= GHierarchy::lightboxData($image, $options['group'], $caption);
+				$html .= GHierarchy::lightboxData($image, $options['group'], $image->popup_caption);
 
 				$html .= '><img src="'
 				// @todo Need to get cached for specific image size...?
@@ -86,18 +54,8 @@ class GHFader implements GHAlbum {
 				. '">';
 				
 				// Add comment
-				switch ($options['caption']) {
-					case 'title':
-						$html .= '<span>' . $image->title . '&nbsp;</span>';
-						break;
-					case 'caption':
-						$html .= '<span>' . $image->caption . '&nbsp;</span>';
-						break;
-					case 'none':
-					default:
-						$html .= '<span>&nbsp;</span>';
-						break;
-				}
+				$html .= '<span>' . ($image->caption ? $image->caption : '&nbsp;')
+						. '</span>';
 						
 				$html .= '</a>';
 			}

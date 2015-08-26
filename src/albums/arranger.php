@@ -54,58 +54,15 @@ class GHArranger implements GHAlbum {
 				// Create link
 				$html .= '<a data-id="' . $image->id . '"'
 					. ' style="background: url(\'' . GHierarchy::getImageURL($image)
-					. '\')' . '"';
-				switch ($options['link']) {
-					case 'none':
-						break;
-					case 'popup':
-						$html .= ' href="' . GHierarchy::getImageURL($image) . '"';
-						break;
-					default:
-						/// @todo Add the ability to have a link per thumbnail
-						$html .= ' href="' . $options['link'] . '"';
-						break;
-				}
+					. '\')' . '"' . ($image->link ? ' href="' . $image->link . '"' : '');
 				
-				// Add comment
-				switch ($options['popup_caption']) {
-					case 'title':
-						$caption = $image->title;
-						break;
-					case 'comment':
-						$caption = '';
-						if ($options['add_title']) {
-							if (($caption = $image->title)) {
-								if (substr($caption, count($caption)-1,1) !== '.') {
-									$caption .=  '. ';
-								}
-							}
-						}
-						$caption .= $image->comment;
-						break;
-					case 'none':
-					default:
-						$caption = null;
-						break;
-				}
-
-				$html .= GHierarchy::lightboxData($image, $options['group'], $caption);
+				// Add lightbox data
+				$html .= GHierarchy::lightboxData($image, $options['group'], $image->popup_caption);
 
 				$html .= '>';
 				
-				// Add comment
-				switch ($options['caption']) {
-					case 'title':
-						$html .= '<span>' . $image->title . '&nbsp;</span>';
-						break;
-					case 'caption':
-						$html .= '<span>' . $image->caption . '&nbsp;</span>';
-						break;
-					case 'none':
-					default:
-						$html .= '<span>&nbsp;</span>';
-						break;
-				}
+				$html .= '<span>' . ($image->caption ? $image->caption : '&nbsp;')
+						. '</span>';
 						
 				$html .= '</a>';
 			}
