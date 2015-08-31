@@ -72,15 +72,22 @@
 	 */
 	function dependancyMatch(dependancy, and) {
 		var i;
-		var result = false;
+		var result;
 
 		for (i in dependancy) {
+			// @todo temp - if we don't know how to handle it, assume true...
+			result = true;
 			// Check for basic type
-			if (!(dependancy[i] instanceof Object || dependancy[i] instanceof Array)) {
-				result = (this[i].valueOf() === dependancy[i]);
-				if ((!result && and) || (result && !and)) {
-					break;
+			if (dependancy[i] instanceof Object) {
+				if (dependancy[i].in && dependancy[i].in instanceof Array) {
+					result = (dependancy[i].in.indexOf(this[i].valueOf()) !== -1);
 				}
+			} else if (!(dependancy[i] instanceof Object || dependancy[i] instanceof Array)) {
+				result = (this[i].valueOf() === dependancy[i]);
+			}
+
+			if ((!result && and) || (result && !and)) {
+				break;
 			}
 		}
 
@@ -212,11 +219,6 @@
 					size: {
 						label: 'Size: ',
 						type: 'dimension',
-						dependencies: {
-							visible: {
-								sctype: 'ghimage', 
-							}
-						}
 					},
 					/** @todo For captions would be better to have text replace */
 					caption: {
