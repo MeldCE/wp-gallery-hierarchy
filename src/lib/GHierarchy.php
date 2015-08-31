@@ -2390,6 +2390,43 @@ class GHierarchy {
 			);
 		}
 
+		// `width="<width>"` - width of image/album
+		// `height="<height>"` - height of image/album
+		// `size="([<width>][x<height>])"` - size of image/album
+		if (!(isset($atts['size']) && $atts['size'])) {
+			$atts['size'] = '';
+
+			if (isset($atts['width']) && gHisInt($atts['width'])) {
+				$atts['size'] = $atts['width'];
+			}
+
+			if (isset($atts['height']) && gHisInt($atts['height'])) {
+				$atts['size'] = 'x' . $atts['height'];
+			}
+		}
+
+		if (isset($atts['size']) && $atts['size']) {
+			$atts['size'] = explode('x', $atts['size']);
+			if (count($atts['size']) == 2) {
+				$size = array();
+				if (gHisInt($atts['size'][0])) {
+					$size['width'] = $atts['size'][0];
+				}
+				if (gHisInt($atts['size'][1])) {
+					$size['height'] = $atts['size'][1];
+				}
+				$atts['size'] = $size;
+			} else {
+				if (gHisInt($atts['size'][0])) {
+					$atts['size'] = array(
+						'width' => $atts['size'][0]
+					);
+				}
+			}
+		} else {
+			unset($atts['size']);
+		}
+
 		// add_title
 		$atts['add_title'] = static::$settings->add_title;
 
@@ -2507,29 +2544,6 @@ class GHierarchy {
 
 		switch ($tag) {
 			case 'ghimage':
-				// `size="([<width>][x<height>])"` - size of image (`ghimage`)
-				if (isset($atts['size']) && $atts['size']) {
-					$atts['size'] = explode('x', $atts['size']);
-					if (count($atts['size']) == 2) {
-						$size = array();
-						if (gHisInt($atts['size'][0])) {
-							$size['width'] = $atts['size'][0];
-						}
-						if (gHisInt($atts['size'][1])) {
-							$size['height'] = $atts['size'][1];
-						}
-						$atts['size'] = $size;
-					} else {
-						if (gHisInt($atts['size'][0])) {
-							$atts['size'] = array(
-								'width' => $atts['size'][0]
-							);
-						}
-					}
-				} else {
-					unset($atts['size']);
-				}
-
 				$html = $me->printImage($images, $atts);
 				break;
 			case 'ghthumb':
