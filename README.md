@@ -69,14 +69,15 @@ The following shortcode attributes are available for the included shortcodes
   (`ghthumbnail` `ghimage`)
 - `class="<class1> <class2> ...` - additional classes to put on the images
   (`ghthumbnail` `ghimage`)
-- `caption="(none|title|comment)"` - Type of caption to show. Default set in
-  plugin options (`ghalbum` `ghthumbnail` `ghimage`)
-- `popup_caption="(none|title|comment)"` - Type of caption to show on popup.
-  Default set in plugin options (`ghalbum` `ghthumbnail` `ghimage`)
-<!-- `link="(none|popup|<url>)"` - URL link on image, by default it will be the-->
-- `link="[<id>:](none|popup|[<post_id>]|'<url>'),..."` - URL link on image, by
-  default it will be the image url and will cause a lightbox popup
-- `size="<width>x<height>"` - size of image (`ghimage`)
+- `caption="[<id>:](none|title|comment|'<caption>')[,...]"` - Type of caption
+  to show on/below the image. Default set in plugin options (`ghalbum`
+	`ghthumbnail` `ghimage`)
+- `popup_caption="[<id>:](none|title|comment|'<caption>')[,...]"` - Type
+  of caption to show on popup. Default set in plugin options (`ghalbum`
+	`ghthumbnail` `ghimage`)
+- `link="[<id>:](none|popup|[<post_id>]|'<url>')[,...]"` - URL link on image,
+  by default it will be the image url and will cause a lightbox popup
+- `size="[<width>][x<height>]"` - size of image (`ghimage`)
 - `type="<type1>"` - of album (`ghalbum`)
 - `include_excluded="(0|1)" - include excluded images in the query result.
   Default is to not (`ghalbum` `ghthumbnail` `ghimage`)

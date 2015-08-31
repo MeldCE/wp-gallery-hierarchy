@@ -1,11 +1,13 @@
 /**
  * Table object for managing tables.
  *
+ * @param obj {JQueryDOMObject} JQuery DOM Object to write table into
  * @param table {Object} Object containing information on the table to
- *        generate the HTML for.
+ *        generate the HTML for and options for generation.
+ * @param value {Object} Object containing the current value
  */
 var Table = (function($) {
-
+	/// Stores the available types
 	var Types = {};
 
 	var typeOptions = {
@@ -564,7 +566,7 @@ var Table = (function($) {
 		return value;
 	}
 
-	function Table(parentEl, table, value) { //, subFields) {
+	function Table(obj, table, value) { //, subFields) {
 		var fObjects = {};
 		var f, g, x;
 		var fields;
@@ -584,7 +586,7 @@ var Table = (function($) {
 		//}
 
 		// Generate HTML
-		HTML.call(this, parentEl, fields, value);
+		HTML.call(this, obj, fields, value);
 	}
 
 	Table.prototype = {

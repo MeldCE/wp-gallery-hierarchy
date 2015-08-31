@@ -691,8 +691,10 @@ class GHierarchy {
 	}
 
 	function tinymceAddCss( $css_string ) {
-		echo 'dsfsafsdfsdafdafdsaf';
 		$css_string .= ',' . plugins_url( 'css/arranger.css' , __FILE__ );
+		if (static::$settings->use_included_styles) {
+			$css_string .= ',' . plugins_url( 'css/basicStyle.min.css' , __DIR__ );
+		}
 		return $css_string;
 	}
 
@@ -2432,24 +2434,24 @@ class GHierarchy {
 					: $atts['popup_caption'][null]);
 			switch ($caption) {
 				case 'title':
-					$images->popup_caption = $image->title;
+					$image->popup_caption = $image->title;
 					break;
 				case 'comment':
-					$images->popup_caption = '';
+					$image->popup_caption = '';
 					if ($atts['add_title']) {
-						if (($images->popup_caption = $image->title)) {
-							if (substr($images->popup_caption, count($images->popup_caption)-1,1) !== '.') {
-								$images->popup_caption .=  '. ';
+						if (($image->popup_caption = $image->title)) {
+							if (substr($image->popup_caption, count($image->popup_caption)-1,1) !== '.') {
+								$image->popup_caption .=  '. ';
 							}
 						}
 					}
-					$images->popup_caption .= $image->comment;
+					$image->popup_caption .= $image->comment;
 					break;
 				case 'none':
-					$images->popup_caption = null;
+					$image->popup_caption = null;
 					break;
 				default:
-					$images->popup_caption = $caption;
+					$image->popup_caption = $caption;
 					break;
 			}
 
@@ -2459,24 +2461,24 @@ class GHierarchy {
 					: $atts['caption'][null]);
 			switch ($caption) {
 				case 'title':
-					$images->caption = $image->title;
+					$image->caption = $image->title;
 					break;
 				case 'comment':
-					$images->caption = '';
+					$image->caption = '';
 					if ($atts['add_title']) {
-						if (($images->caption = $image->title)) {
-							if (substr($images->caption, count($images->caption)-1,1) !== '.') {
-								$images->caption .=  '. ';
+						if (($image->caption = $image->title)) {
+							if (substr($image->caption, count($image->caption)-1,1) !== '.') {
+								$image->caption .=  '. ';
 							}
 						}
 					}
-					$images->caption .= $image->comment;
+					$image->caption .= $image->comment;
 					break;
 				case 'none':
-					$images->caption = null;
+					$image->caption = null;
 					break;
 				default:
-					$images->caption = $caption;
+					$image->caption = $caption;
 					break;
 			}
 
@@ -2505,18 +2507,27 @@ class GHierarchy {
 
 		switch ($tag) {
 			case 'ghimage':
-				// `size="(<width>x<height>)"` - size of image (`ghimage`)
+				// `size="([<width>][x<height>])"` - size of image (`ghimage`)
 				if (isset($atts['size']) && $atts['size']) {
 					$atts['size'] = explode('x', $atts['size']);
-					if (count($atts['size']) == 2 && gHisInt($atts['size'][0])
-							&& gHisInt($atts['size'][1])) {
-						$atts['size'] = array('width' => $atts['size'][0],
-								'height' => $atts['size'][1]);
+					if (count($atts['size']) == 2) {
+						$size = array();
+						if (gHisInt($atts['size'][0])) {
+							$size['width'] = $atts['size'][0];
+						}
+						if (gHisInt($atts['size'][1])) {
+							$size['height'] = $atts['size'][1];
+						}
+						$atts['size'] = $size;
 					} else {
-						$atts['size'] = false;
+						if (gHisInt($atts['size'][0])) {
+							$atts['size'] = array(
+								'width' => $atts['size'][0]
+							);
+						}
 					}
 				} else {
-					$atts['size'] = false;
+					unset($atts['size']);
 				}
 
 				$html = $me->printImage($images, $atts);
@@ -2641,57 +2652,15 @@ class GHierarchy {
 
 		foreach ($images as &$image) {
 			// Create link
-			$html .= '<a';
-			switch ($options['link']) {
-				case 'none':
-					break;
-				case 'popup':
-					$html .= ' href="' . GHierarchy::getImageURL($image) . '"';
-					break;
-				default:
-					/// @todo Add the ability to have a link per thumbnail
-					$html .= ' href="' . $options['link'] . '"';
-					break;
-			}
-			
-			// Add comment
-			switch ($options['popup_caption']) {
-				case 'title':
-					$caption = $image->title;
-					break;
-				case 'comment':
-					$caption = '';
-					if ($options['add_title']) {
-						if (($caption = $image->title)) {
-							if (substr($caption, count($caption)-1,1) !== '.') {
-								$caption .=  '. ';
-							}
-						}
-					}
-					$caption .= $image->comment;
-					break;
-				case 'none':
-				default:
-					$caption = null;
-					break;
-			}
+			$html .= '<a' . ($image->link ? ' href="' . $image->link . '"' : '');
 
-			$html .= GHierarchy::lightboxData($image, $options['group'], $caption);
+			$html .= GHierarchy::lightboxData($image, $options['group'], $image->popup_caption);
 
 			$html .= ' class= "' . $options['class'] . '"><img src="' . GHierarchy::getCImageURL($image, $options['size'])
 				. '">';
 			
-			// Add comment
-			switch ($options['caption']) {
-				case 'none':
-					break;
-				case 'title':
-					$html .= '<span>' . $image->title . '</span>';
-					break;
-				case 'caption':
-					$html .= '<span>' . $image->caption . '</span>';
-					break;
-			}
+			$html .= '<span>' . ($image->caption ? $image->caption : '&nbsp;')
+					. '</span>';
 					
 			$html .= '</a>';
 		}
@@ -3293,6 +3262,15 @@ class GHierarchy {
 		if ($size === false) {
 			return static::getImageURL($image);
 		}
+
+		// Fill in size blanks if we have any
+		if (isset($size['width']) && !isset($size['height'])) {
+			// Calculate height based on ratio and width
+			$size['height'] = round($size['width'] * $image->height / $image->width);
+		} else if (!isset($size['width']) && isset($size['height'])) {
+			$size['width'] = round($size['height'] * $image->width / $image->height);
+		}
+
 		$iName = $me->getCImagePath($image, $size);
 
 		$iPath = gHpath($me->cacheDir, $iName);
@@ -3302,7 +3280,7 @@ class GHierarchy {
 			if (!$size) {
 				$me->createThumbnail($iName);
 			} else {
-				$me->resizeImage($image->file, null, $size, false, $iPath);
+				$me->resizeImage($image->path, null, $size, false, $iPath);
 			}
 		}
 
@@ -3363,7 +3341,7 @@ class GHierarchy {
 	 * @retval false If the image was not resized.
 	 * @note If given, the Imagick object will be modified!
 	 */
-	protected function resizeImage($image, &$imagick, $newSize, $crop = false,
+	protected function resizeImage($image, $imagick, $newSize, $crop = false,
 			$newImagePath = false) {
 		if (static::$lp) fwrite(static::$lp, "resizeImage called with newSize "
 				. "wxh of " . $newSize['width'] // static::$lp
@@ -4072,6 +4050,9 @@ class GHierarchy {
 }
 
 /* Style ghimage shortcode images */
+.ghimage {
+	padding: 20px;
+}
 .gh.ghimage img {
 	max-width: 100%;
 	height: auto;

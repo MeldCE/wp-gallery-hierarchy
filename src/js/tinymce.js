@@ -205,7 +205,8 @@
 
 		function restoreShortcodes( content ) {
 			return content.replace(
-					/<!--gHStart-->[^]*?<div.*? data-gh-code="(.*?)".*?>[^]*?<\/div>[^]*?<!--gHEnd-->/mg, function(match, sc) {
+					/*@todo Make it so the a|div isn't captured if you can? */
+					/<!--gHStart-->[^]*?<(a|div) .*?data-gh-code="(.*?)".*?>[^]*?[^]*?<!--gHEnd-->/mg, function(match, el, sc) {
 				return window.decodeURIComponent(sc);
 			});
 		}

@@ -282,7 +282,7 @@ gulp.task('watch', function() {
 	gulp.watch(paths.main, ['markupMainPhp']);
 	gulp.watch(paths.allJsSrc, ['js']);
 	gulp.watch(paths.cssSrc, ['css']);
-	gulp.watch(paths.basicStylesScript, ['basicStyle']);
+	gulp.watch([paths.basicStylesScript, paths.albumsSrc, 'lib/GHierarchy.php'], ['basicStyle']);
 	gulp.watch(paths.int, ['intFiles']);
 	gulp.watch(paths.albumsSrc, ['albumFiles', 'basicStyle']);
 	for (e in paths.ext) {

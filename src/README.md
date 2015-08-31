@@ -73,7 +73,7 @@ The following shortcode attributes are available for the included shortcodes
 	`ghthumbnail` `ghimage`)
 - `link="[<id>:](none|popup|[<post_id>]|'<url>')[,...]"` - URL link on image,
   by default it will be the image url and will cause a lightbox popup
-- `size="<width>x<height>"` - size of image (`ghimage`)
+- `size="[<width>][x<height>]"` - size of image (`ghimage`)
 - `type="<type1>"` - of album (`ghalbum`)
 - `include_excluded="(0|1)" - include excluded images in the query result.
   Default is to not (`ghalbum` `ghthumbnail` `ghimage`)
