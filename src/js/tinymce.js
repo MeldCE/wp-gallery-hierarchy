@@ -69,7 +69,7 @@
 						.data('gHDrawn', true);
 			}
 			
-			this.div.attr('contenteditable', false);
+			//this.div.attr('contenteditable', false);
 		}
 	}
 
@@ -102,7 +102,7 @@
 		redraw: function() {
 			this.div.data('gHDrawn', true);
 			
-			this.div.attr('contenteditable', false);
+			//this.div.attr('contenteditable', false);
 
 			$.post(ajaxurl + '?action=gh_tiny', {
 				a: 'html',
@@ -124,9 +124,9 @@
 			var height = $(window).height() - 100;
 
 			// Build URL
-			var url = 'http://192.168.0.118/ngotaxi/wp-admin/'
-					+ 'media-upload.php?chromeless=1&post_id=1385&'
-					+ 'tab=ghierarchy&sc=' + window.encodeURIComponent(this.shortcode.string()) + '&tinymce_popup=1';
+			console.log(gH);
+			var url = gH.mediaUrl
+					+ '?tab=ghierarchy&sc=' + window.encodeURIComponent(this.shortcode.string()) + '&tinymce_popup=1';
 		
 			console.log('URL is: ' + url);
 

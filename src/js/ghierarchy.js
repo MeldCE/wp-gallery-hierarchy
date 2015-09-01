@@ -7,8 +7,6 @@ gH = (function ($) {
 			scanner = {},
 			uploaders = {},
 			hideClass = 'hide',
-			imageUrl,
-			cacheUrl,
 			imageData,
 			options;
 
@@ -71,7 +69,7 @@ gH = (function ($) {
 	function displayImage(obj, file) {
 		console.log(arguments);
 
-		obj.append($('<a href="' + imageUrl + '/' + file.path
+		obj.append($('<a href="' + gH.imageUrl + '/' + file.path
 				+ '" title="' 
 				+ (file.title ? file.title + ' (#' + file.id + ')' : '#' + file.id)
 				+ '" target="_blank"><img src="'
@@ -131,11 +129,11 @@ gH = (function ($) {
 	function thumbnail(image) {
 		console.log(image);
 		console.log(image.replace);
-		return cacheUrl + '/' + image.replace(/\//g, '_');
+		return gH.cacheUrl + '/' + image.replace(/\//g, '_');
 	}
 
 	function full(image) {
-		return imageUrl + '/' + image;
+		return gH.imageUrl + '/' + image;
 	}
 
 	//= include editor.js
@@ -262,8 +260,9 @@ gH = (function ($) {
 	var pub = {
 		init: function(opts) {
 			options = opts;
-			if (opts.imageUrl) imageUrl = opts.imageUrl;
-			if (opts.cacheUrl) cacheUrl = opts.cacheUrl;
+			if (opts.imageUrl) this.imageUrl = opts.imageUrl;
+			if (opts.cacheUrl) this.cacheUrl = opts.cacheUrl;
+			if (opts.mediaUrl) this.mediaUrl = opts.mediaUrl;
 		},
 
 		/**

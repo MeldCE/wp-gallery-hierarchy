@@ -706,6 +706,8 @@ class GHierarchy {
 			. 'gH.init({'
 			. 'imageUrl: "' . $me->imageUrl . '",'
 			. 'cacheUrl: "' . $me->cacheUrl . '",'
+			. 'mediaUrl: "' . admin_url('media-upload.php') . '",'
+			// @todo . 'baseUrl: "' . admin_url('media-upload.php') . '",'
 			. '});'
 			. '});'
 			. '</script>';
@@ -966,7 +968,7 @@ class GHierarchy {
 
 
 		if (static::$lp) fwrite(static::$lp, "Ajax gallery SQL command is $q\n");
-		
+	
 		$images = $wpdb->get_results($q, ARRAY_A);
 
 		// Map images
