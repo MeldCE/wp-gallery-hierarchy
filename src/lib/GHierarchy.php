@@ -462,6 +462,55 @@ class GHierarchy {
 									. 'upgraded.', 'gallery_hierarchy'),
 							'type' => 'internal',
 						),
+						'metadata_fields' => array(
+							'title' => __('Metadata fields to store about each image and '
+									. 'field in the image metadata that contains the value.',
+									'gallery_hierarchy'),
+							'type' => 'internal',
+							/* @todo
+							 * Need to be able to say which ones can't be deleted
+							 * Need to be able to allow to specify special formatting, eg tags
+							 * Need to be able to specify data type
+							 */
+							'default' => array(
+								'title' => array(
+									'type' => 'text',
+									'fields' => array(
+										array('type' => 'exif', 'key' => 'Title'),
+										array('type' => 'xmp', 'key' => 'Title')
+									)
+								),
+								'comment' => array(
+									'type' => 'text',
+									'fields' => array(
+										array('type' => 'exif', 'key' => 'Comments'),
+										array('type' => 'xmp', 'key' => 'Description'),
+										array('type' => 'exif', 'key' => 'ImageDescription')
+									)
+								),
+								'tags' => array(
+									'type' => 'csv',
+									'fields' => array(
+										array('type' => 'exif', 'key' => 'Keywords'),
+										array('type' => 'xmp', 'key' => 'Keywords')
+									)
+								),
+								'artist' => array(
+									'type' => 'text',
+									'fields' => array(
+										array('type' => 'exif', 'key' => 'Artist'),
+										array('type' => 'exif', 'key' => 'Author'),
+										array('type' => 'xmp', 'key' => 'Creator')
+									)
+								),
+								'copyright' => array(
+									'type' => 'text',
+									'fields' => array(
+										array('type' => 'exif', 'key' => 'Copyright')
+									)
+								)
+							)
+						)
 					)
 				)
 			)
@@ -3614,37 +3663,50 @@ class GHierarchy {
 		// Create thumbnail
 		$this->createThumbnail($img, $imagick);
 
+		// Start building data
+		if (static::$lp) fwrite(static::$lp, "$img date will be " . time() . " " 
+				. gmdate('Y-m-d H:i:s', time()) . "\n"); // static::$lp
+
+
+		// Write image to database
+		$data = array(
+				'file' => basename($img),
+				'width' => $width,
+				'height' => $height,
+				'updated' => gmdate('Y-m-d H:i:s', time())
+		);
+
 		// Build metadata information
 		// Try and get XMP data
 		$xmp = $this->getXMP($iPath);
 
-		// Title
-		if (isset($exif['Title'])) { // "windows" information
-			$title = $exif['Title'];
-		} else if (isset($xmp['Title'])) {
-			$title = $xmp['Title'];
-		} else {
-			$title = '';
-		}
-		// Just grab the first title if it is an array
-		if (is_array($title)) {
-			$title = $title[0];
+		// Grab metadata according to settings
+		$fields = static::$settings->metadata_fields;
+
+		foreach ($fields as $f => &$keys) {
+			foreach ($keys as &$key) {
+				switch($key[0]) {
+					case 'exif':
+						if (isset($exif[$key[1]]) && $exif[$key[1]]) {
+							$data[$f] = $exif[$key[1]];
+							break 2;
+						}
+						break;
+					case 'xmp':
+						if (isset($xmp[$key[1]]) && $xmp[$key[1]]) {
+							$data[$f] = $xmp[$key[1]];
+							break 2;
+						}
+						break;
+				}	
+			}
+
+			// Grab only the first one @todo need to not do for tags
+			if (isset($data[$f]) && is_array($data[$f])) {
+				$data[$f] = $data[$f][0];
+			}
 		}
 
-		// Comment
-		if (isset($exif['ImageDescription']) && $exif['ImageDescription']) {
-			$comment = $exif['ImageDescription'];
-		} else if (isset($exif['Comments']) && $exif['Comments']) { // "windows" information
-			$comment = $exif['Comments'];
-		} else if (isset($xmp['Description']) && $xmp['Description']) {
-			$comment = $xmp['Description'];
-		} else {
-			$comment = '';
-		}
-		// Just grab the first comment if it is an array
-		if (is_array($comment)) {
-			$comment = $comment[0];
-		}
 
 		// Created Date
 		$taken = '';
@@ -3660,21 +3722,6 @@ class GHierarchy {
 		if (!$taken) {
 			$taken = '';
 		}
-
-		// Author
-		if (isset($exif['Artist']) && $exif['Artist']) {
-			$author = $exif['Artist'];
-		} else if (isset($exif['Author']) && $exif['Author']) { // "windows" information
-			$author = $exif['Author'];
-		} else if (isset($xmp['Creator']) && $xmp['Creator']) {
-			$author = $xmp['Creator'];
-		} else {
-			$author = '';
-		}
-
-		// Other metadata
-		// Author (or whatever it is), focal length, camera model, iso,
-		// apature
 
 		// Build Tags
 		if (isset($exif['Keywords']) && $exif['Keywords']) {
@@ -3703,18 +3750,6 @@ class GHierarchy {
 		if ($tags) {
 			$tags = join(',', $tags);
 		}
-
-		if (static::$lp) fwrite(static::$lp, "$img date will be " . time() . " " 
-				. gmdate('Y-m-d H:i:s', time()) . "\n"); // static::$lp
-
-
-		// Write image to database
-		$data = array(
-				'file' => basename($img),
-				'width' => $width,
-				'height' => $height,
-				'updated' => gmdate('Y-m-d H:i:s', time())
-		);
 		
 		// Build file and dir
 		if (($dirId = $this->getDirectoryId(dirname($img)))) {
@@ -3725,8 +3760,6 @@ class GHierarchy {
 		}
 		
 		if ($taken) $data['taken'] = $taken;
-		if ($title) $data['title'] = $title;
-		if ($comment) $data['comment'] = $comment;
 		if ($tags) $data['tags'] = $tags;
 		//if ($) $data[''] = $;
 
