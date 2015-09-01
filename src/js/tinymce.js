@@ -102,6 +102,10 @@
 		redraw: function() {
 			this.div.data('gHDrawn', true);
 			
+			/**
+			 * @todo Enable again once figured out why this is causing div contents
+			 * to replace all the editor contents after popupGallery has been called.
+			 */
 			//this.div.attr('contenteditable', false);
 
 			$.post(ajaxurl + '?action=gh_tiny', {
