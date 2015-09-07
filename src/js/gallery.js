@@ -170,6 +170,8 @@
 							 */
 							id: {
 								label: 'Image ids: ',
+								description: 'Seperate mulitple ids with a comma (,) and no '
+										+ 'spaces',
 								type: 'text', /// @todo Change to something more useful
 							},
 							link: {
@@ -456,6 +458,28 @@
 			}
 		}	
 
+		// Build links
+		var links = '';
+
+		// Handle default link
+		if (v = this.builder.fields['defaultLink'].valueOf()) {
+			links += v;
+		}
+
+		// Get individual links
+		if (v = this.builder.fields['link'].valueOf()) {
+			for (i in v) {
+				// Check that we have a value for id and link first
+				if (v[i].id && v[i].link) {
+					links += ';' + v[i].id + ':' + v[i].link;
+				}
+			}
+			console.log(v);
+		}
+
+		if (links) {
+			shortcode += ' link="' + links + '"';
+		}
 
 		shortcode += ']';
 

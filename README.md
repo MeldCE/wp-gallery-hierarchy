@@ -69,13 +69,13 @@ The following shortcode attributes are available for the included shortcodes
   (`ghthumbnail` `ghimage`)
 - `class="<class1> <class2> ...` - additional classes to put on the images
   (`ghthumbnail` `ghimage`)
-- `caption="[<id>:](none|title|comment|'<caption>')[,...]"` - Type of caption
+- `caption="[<id>[,<id>[,...]]:](none|title|comment|'<caption>')[;...]"` - Type of caption
   to show on/below the image. Default set in plugin options (`ghalbum`
 	`ghthumbnail` `ghimage`)
-- `popup_caption="[<id>:](none|title|comment|'<caption>')[,...]"` - Type
+- `popup_caption="[<id>[,<id>[,...]]:](none|title|comment|'<caption>')[;...]"` - Type
   of caption to show on popup. Default set in plugin options (`ghalbum`
 	`ghthumbnail` `ghimage`)
-- `link="[<id>:](none|popup|[<post_id>]|'<url>')[,...]"` - URL link on image,
+- `link="[<id>[,<id>[,...]]:](none|popup|[<post_id>]|'<url>')[;...]"` - URL link on image,
   by default it will be the image url and will cause a lightbox popup
 - `width="<width>"` - width of image/album
 - `height="<height>"` - height of image/album

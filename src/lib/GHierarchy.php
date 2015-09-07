@@ -2134,7 +2134,7 @@ class GHierarchy {
 
 	/**
 	 * Parses a string in the format
-	 * [<id>:]<value>[,...]
+	 * [<id>[,<id>[,...]]:]<value>[;...]
 	 *
 	 * @param $string {string} String to parse
 	 */
@@ -2144,7 +2144,7 @@ class GHierarchy {
 		$regex =
 				'/' .
 					'(' .
-						'(?P<id>[0-9]+):' .
+						'(?P<id>[0-9,]+):' .
 					')?' .
 					'(?P<value>' .
 						'(?P<non>([^\'"\[][^,]*)?)|' .
@@ -2152,7 +2152,7 @@ class GHierarchy {
 						'(\'(?P<single>[^\']|\\\\\')+\')|' .
 						'("(?P<quote>[^"]|\\\\")+")' .
 					')' .
-					'(,|$)' .
+					'(;|$)' .
 				'/';
 		if (preg_match_all($regex, $string, $matches)) {
 			foreach ($matches['value'] as $i => $value) {
@@ -2164,9 +2164,18 @@ class GHierarchy {
 				} else {
 					// Unquote values
 					if (strpos($value, '\'') === 0) {
-						$options[$matches['id'][$i]] = $matches['single'][$id];
+						$value = $matches['single'][$id];
 					} else if (strpos($value, '"') === 0) {
-						$options[$matches['id'][$i]] = $matches['quote'][$id];
+						$value = $matches['quote'][$id];
+					}
+					
+					// Split ids if have mulitple
+					if (strpos($matches['id'][$i], ',')) {
+						$matches['id'][$i] = explode(',', $matches['id'][$i]);
+
+						foreach($matches['id'][$i] as $id) {
+							$options[$id] = $value;
+						}
 					} else {
 						$options[$matches['id'][$i]] = $value;
 					}

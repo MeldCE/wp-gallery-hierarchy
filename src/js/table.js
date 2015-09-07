@@ -373,8 +373,6 @@ var Table = (function($) {
 	});
 	*/
 	
-	var dependents = {};
-
 	/** @internal
 	 * Generates the HTML for the fields.
 	 *
@@ -382,7 +380,7 @@ var Table = (function($) {
 	 * @param fields {Object} Object containing the fields to generate HTML for
 	 */
 	function HTML(el, fields, value, store, parentField) {
-		var field, dependencies = {}, i, id, div;
+		var field, i, id, div;
 		var hideLabel, showLabel;
 
 		if (!store) {
@@ -403,129 +401,150 @@ var Table = (function($) {
 			id = (parentField ? parentField + '.' : '') + f;
 
 			field = fields[f];
-			
-			// Handle group
-			if (field.fields) {
-				store[id] = {};
-			
-				// @todo Move to outside of for loop (so can be used for a table
-				if (field.hideable) {
-					hideLabel = (field.hideLabel ? field.hideLabel : 'Hide');
-					showLabel = (field.showLabel ? field.showLabel : 'Show');
 
-					el.append($('<div></div>')
-							.append(store[id].hideLink = $('<a></a>')));
-				}
-					
-				el.append(store[id].div = $('<div' + (field.inline
-						? ' class="inline"' : '') + '>'
-						+ (field.label ? field.label : '') + '</div>'));
+			// Handle if multiple
+			if (field.multiple) {
+				store[id] = {
+					pad: mainEl(),
+					pads: [],
+					fields: [],
+					valueOf: multipleFieldsValueOf.bind(this, id)
+				};
 
-				if (field.multiple) {
-					// Add valueOf function
-					store[id].pads = [];
-					store[id].fields = [];
-					store[id].valueOf = multipleFieldsValueOf.bind(this, id);
-					store[id].div.append(store[id].pad = $('<div></div>'),
-							store[id].removeButton = $('<a>' + 'Add new' + '</a>')
-							.click(addNewFields.bind(this, id, field)));
+				el.append(store[id].div = drawFieldRow(
+					field.label ? field.label : false,
+					[
+						store[id].pad,
+						$('<div></div>').append(
+								store[id].addButton = $('<a>Add</a>').
+								click(addNewFields.bind(this, id, field))
+						)
+					],
+					field.description ? field.description : false
+				));
 
-					// Add field to field list
-					store.fields.push(id);
-				} else {
-
-					if (field.hideable) {
-						// Hide if should be
-						if (field.hide) {
-							store[id].div.hide();
-
-							store[id].hideLink.html(showLabel);
-						} else {
-							store[id].hideLink.html(hideLabel);
-						}
-
-						// Add action
-						store[id].hideLink.click(toggle.bind(this, store[id].div,
-								store[id].hideLink, hideLabel, showLabel, null));
-					}
-
-					//if (field.label) {
-					//	divs[f].append('<div>' + field.label + '</div>');
-					//}
-					if (!field.flat) {
-						HTML.call(this, store[id].div, field.fields, value, store, f);
-					} else {
-						HTML.call(this, store[id].div, field.fields, value, store);
-					}
-				}
-			} else if (field.type && Types[field.type]) {
-				// Encase change in table change so can implement dependencies
-				if (!field.options) {
-					field.options = {};
-				}
-
-				/* Replace change function with extended change function
-				 * Pass previous change function so that it cam be called by the new
-				 * function.
-				 */
-				field.options.change = function(field, id, change) {
-					var t, f;
-					var result;
-
-					// Check for dependents
-					if (dependents[id]) {
-						for (t in dependents[id]) {
-							for (f in dependents[id][t]) {
-								checkDependencies.call(this, f, dependents[id][t][f], t, id);
-							}
-						}
-					}
-
-					// Call original change function
-					if (change) {
-						change(id, field);
-					}
-				}.bind(this, field, id, field.options.change);
-
-				if (field.multiple) {
-
-				} else {
-					store[id]
-							= new Types[field.type](
-							((value && value[id]) ? value[id] : false), field.options);
-				}
-
-				// Create the field row
-				el.append(store[id].div = drawFieldRow(field.label ? field.label : false, store[id].html(),
-				field.description ? field.description : false));
-
-				// Register dependencies
-				var d;
-				if (field.dependencies) {
-					dependencies[id] = field; //s[f];
-					var dependencyMap = mapDependencies(field.dependencies);
-					for (t in dependencyMap) {
-						for (i in dependencyMap[t]) {
-							d = dependencyMap[t][i];
-							if (!dependents[d]) {
-								dependents[d] = {};
-							}
-							if (!dependents[d][t]) {
-								dependents[d][t] = {};
-							}
-							dependents[d][t][f] = field;
-						}
-					}
-				}
-				
-				// Add field to field list
-				store.fields.push(id);
+				/// @todo Is there a better way to do this?
+				if (field.label) delete field.label;
+				if (field.description) delete field.description;
+			} else {
+				/// @todo Should we only pass the value for this field...?
+				fieldHTML.call(this, el, store, id, field, value);
 			}
 		}
 
 		// Initialise dependencies
-		for (f in dependencies) {
-			checkDependencies.call(this, f, dependencies[f]);
+		for (f in this.dependencies) {
+			checkDependencies.call(this, f, this.dependencies[f]);
+		}
+	}
+
+	function fieldHTML(el, store, id, field, value, flatten) {
+		// Build options to pass to drawFieldRow
+		if (field.inline) {
+		}
+
+		// Handle group
+		if (field.fields) {
+			store[id] = {};
+		
+			// @todo Move to outside of for loop (so can be used for a table
+			if (field.hideable) {
+				hideLabel = (field.hideLabel ? field.hideLabel : 'Hide');
+				showLabel = (field.showLabel ? field.showLabel : 'Show');
+
+				el.append($('<div></div>')
+						.append(store[id].hideLink = $('<a></a>')));
+			}
+				
+			el.append(store[id].div = $('<div' + (field.inline
+					? ' class="inline"' : '') + '>'
+					+ (field.label ? field.label : '') + '</div>'));
+
+			if (field.hideable) {
+				// Hide if should be
+				if (field.hide) {
+					store[id].div.hide();
+
+					store[id].hideLink.html(showLabel);
+				} else {
+					store[id].hideLink.html(hideLabel);
+				}
+
+				// Add action
+				store[id].hideLink.click(toggle.bind(this, store[id].div,
+						store[id].hideLink, hideLabel, showLabel, null));
+			}
+
+			//if (field.label) {
+			//	divs[f].append('<div>' + field.label + '</div>');
+			//}
+			if (!flatten && !field.flat) {
+				HTML.call(this, store[id].div, field.fields, value, store, f);
+			} else {
+				HTML.call(this, store[id].div, field.fields, value, store);
+			}
+		} else if (field.type && Types[field.type]) {
+			// Encase change in table change so can implement dependencies
+			if (!field.options) {
+				field.options = {};
+			}
+
+			/* Replace change function with extended change function
+			 * Pass previous change function so that it cam be called by the new
+			 * function.
+			 */
+			field.options.change = function(field, id, change) {
+				var t, f;
+				var result;
+
+				// Check for this.dependents
+				if (this.dependents[id]) {
+					for (t in this.dependents[id]) {
+						for (f in this.dependents[id][t]) {
+							checkDependencies.call(this, f, this.dependents[id][t][f], t, id);
+						}
+					}
+				}
+
+				// Call original change function
+				if (change) {
+					change(id, field);
+				}
+			}.bind(this, field, id, field.options.change);
+
+			if (field.multiple) {
+
+			} else {
+				store[id]
+						= new Types[field.type](
+						((value && value[id]) ? value[id] : false), field.options);
+			}
+
+			// Create the field row
+			el.append(store[id].div = drawFieldRow(field.label ? field.label : false, store[id].html(),
+			field.description ? field.description : false));
+
+			// Register dependencies
+			var d;
+			if (field.dependencies) {
+				this.dependencies[id] = field; //s[f];
+				var dependencyMap = mapDependencies(field.dependencies);
+				for (t in dependencyMap) {
+					for (i in dependencyMap[t]) {
+						d = dependencyMap[t][i];
+						if (!this.dependents[d]) {
+							this.dependents[d] = {};
+						}
+						if (!this.dependents[d][t]) {
+							this.dependents[d][t] = {};
+						}
+						this.dependents[d][t][f] = field;
+					}
+				}
+			}
+			
+			// Add field to field list
+			store.fields.push(id);
 		}
 	}
 
@@ -563,15 +582,15 @@ var Table = (function($) {
 	function addNewFields(id, field) {
 		var div;
 		var fid = this[id].fields.length;
-		this[id].fields[fid] = [];
+		this[id].fields[fid] = {};
 
 		// Add div for new fields
 		this[id].pad.append(this[id].pads[fid] = $('<div'
 				+ (field.inline ? ' class="inline"' : '') + '></div>'));
 
 		// Generate HTML
-		HTML.call(this, this[id].pads[fid], field.fields, null,
-				this[id].fields[fid]);
+		fieldHTML.call(this, this[id].pads[fid], this[id].fields[fid], id, field,
+				undefined, true);
 
 		// Add delete
 		this[id].pads[fid].append($('<a>' + 'Delete' + '</a>')
@@ -591,6 +610,8 @@ var Table = (function($) {
 		if (!this[id].fields.length) {
 			return undefined;
 		}
+
+		console.log(this[id].fields);
 
 		for (i in this[id].fields) {
 			n = value.length;
@@ -705,6 +726,11 @@ var Table = (function($) {
 
 		// Create a map of all the fields
 		this.fields = [];
+
+		// Store for dependencies
+		this.dependencies = {};
+		// Store for field dependents
+		this.dependents = {}
 
 		//if (!subFields) {
 			// Return if don't have any fields
