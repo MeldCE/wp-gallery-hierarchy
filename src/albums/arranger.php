@@ -19,6 +19,12 @@ class GHArranger implements GHAlbum {
 	}
 
 	static function attributes() {
+		return array(
+			'idsOnly' => array(
+				'type' => 'system',
+				'value' => true
+			)
+		);
 	}
 
 	static function printAlbum(&$images, &$options, $inEditor = false) {

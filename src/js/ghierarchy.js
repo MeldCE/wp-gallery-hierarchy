@@ -346,7 +346,13 @@ gH = (function ($) {
 
 			var options = {
 				images: images,
-				finishAction: arrangerUpdateShortcode.bind(null, tinyDiv)
+				finishAction: arrangerUpdateShortcode.bind(null, tinyDiv),
+				actions: [
+					{ 
+						label: 'Modify images/shortcode',
+						func: tinyDiv.popupGallery.bind(tinyDiv)
+					}
+				]
 			};
 
 			var layout;

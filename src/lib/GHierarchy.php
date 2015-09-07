@@ -42,8 +42,7 @@ class GHierarchy {
 
 	protected $dbErrors = array();
 
-	protected static $shortcodes = array('ghthumb', 'ghalbum', 'ghimage',
-			'gharranger');
+	protected static $shortcodes = array('ghthumb', 'ghalbum', 'ghimage');
 
 	protected static $lp;
 
@@ -2226,11 +2225,6 @@ class GHierarchy {
 				$classAO = 'album_class_append';
 				$caption = 'album_description';
 				break;
-			case 'gharranger':
-				$classO = 'arranger_class';
-				$classAO = 'arranger_class_append';
-				$caption = 'arranger_description';
-				break;
 		}
 
 		// `id="<id1>,<id2>,..."` - list of photos (some sort of query or list)
@@ -2587,12 +2581,6 @@ class GHierarchy {
 			}
 		}
 
-		if ($tag == 'gharranger') {
-			// Validate arrangement if not in an editor
-			//if ($atts['']) {
-			$atts['type'] = 'arranger';
-		}
-
 		switch ($tag) {
 			case 'ghimage':
 				$html = $me->printImage($images, $atts);
@@ -2600,7 +2588,6 @@ class GHierarchy {
 			case 'ghthumb':
 				$atts['type'] = static::$settings->thumb_album;
 				if (static::$lp) fwrite(static::$lp, "Using album '$atts[type]' for album");
-			case 'gharranger':
 			case 'ghalbum':
 				// `type="<type1>"` - of album (`ghalbum`)
 				// Check we have a valid album, if not, use the thumbnail one

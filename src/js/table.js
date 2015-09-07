@@ -18,10 +18,6 @@ var Table = (function($) {
 		 *        changed.
 		 */
 		oneshot: false,
-		/** @prop {bool} prepend Set to true to prepend the input elements to the
-		 *        front of the element given (default is to append)
-		 */
-		prepend: false
 	};
 
 	/**
@@ -31,7 +27,15 @@ var Table = (function($) {
 	 *
 	 * @param {String} name String identifier of the new type
 	 * @param {Object} prototype Object containing the prototype functions and
-	 *        variables for the new type
+	 *        variables for the new type. The type must contain at least
+	 *   @attr initiate {Function} The function called to generate the
+	 *         JQueryDOMObjects for the field. It will be passed the current
+	 *         value as the only parameter.
+	 *   @attr html {Function} Called to retrieve the JQueryDOMObjects for the
+	 *         field. It must return the JQueryDOMObject(s) as either a single
+	 *         JQueryDOMObject, or an array of JQueryDOMObjects.
+	 *   @attr valueOf {Function} Called to retrieve the current value of the
+	 *         field.
 	 * @param {String} baseType String identifier of the type to base the new type
 	 *        off - the prototype of this type will be the base for the new type.
 	 */
@@ -47,16 +51,24 @@ var Table = (function($) {
 			return;
 		}
 
-		Types[name] = function(el, value, options) {
+		/**
+		 * Create a new field of the type.
+		 *
+		 * @param value {Any} The current value of the field
+		 * @param options {Object} Options of the field (dependant on type
+		 *        @see typeoptions)
+		 * @param _clone {Undefined} @internal Used for cloning types. DO NOT SET
+		 */
+		Types[name] = function(value, options, _clone) {
 			/* Don't properly initiate if we don't have an element (probably another
 			 * type basing itself on this one
 			 */
-			if (el) { /// @todo Add tests for JQueryDOMElement
+			if (!_clone) {
 				// Build options from base options
 				this.options = $.extend({}, typeOptions, options);
 
-				if (el !== true) { ///xxx && this.html && this.html.call) {
-					this.html.call(this, el, value);
+				if (this.initiate && this.initiate.call) {
+					this.initiate.call(this, value);
 					this.drawn = true;
 				}
 			}
@@ -64,7 +76,9 @@ var Table = (function($) {
 
 
 		if (baseType && Types[baseType]) {
-			Types[name].prototype = $.extend(new Types[baseType], prototype);
+			Types[name].prototype
+					= $.extend(new Types[baseType](undefined, undefined, true),
+					prototype);
 		} else {
 			Types[name].prototype = prototype;
 		}
@@ -95,17 +109,13 @@ var Table = (function($) {
 	}
 
 	newType('text', {
-		html: function(el, value) {
-			var prop;
-			if (this.options.prepend) {
-				prop = 'prepend';
-			} else {
-				prop = 'append';
-			}
-
-			el[prop]((this.input = $('<input' + (value ? ' value="' + value
+		initiate: function(value) {
+			this.input = $('<input' + (value ? ' value="' + value
 					+ '"' : '') + '>')
-					.bind('change', this.change.bind(this))));
+					.bind('change', this.change.bind(this));
+		},
+		html: function() {
+			return this.input;
 		},
 		valueOf: function() {
 			return this.input.val();
@@ -113,17 +123,13 @@ var Table = (function($) {
 	});
 
 	newType(['bool', 'boolean'], {
-		html: function(el, value) {
-			var prop;
-			if (this.options.prepend) {
-				prop = 'prepend';
-			} else {
-				prop = 'append';
-			}
-
-			el[prop]((this.input = $('<input type="checkbox"'
+		initiate: function(value) {
+			this.input = $('<input type="checkbox"'
 					+ (value ? ' checked' : '') + '>')
-					.bind('change', this.change.bind(this))));
+					.bind('change', this.change.bind(this));
+		},
+		html: function() {
+			return this.input;
 		},
 		valueOf: function() {
 			return (this.input.attr('checked') ? true : false);
@@ -131,37 +137,32 @@ var Table = (function($) {
 	});
 
 	newType('datetime', {
-		html: function(el, value) {
-			var prop;
-			if (this.options.prepend) {
-				prop = 'prepend';
-			} else {
-				prop = 'append';
-			}
-
+		initiate: function(value) {
 			switch (this.options.type) {
 				case 'time':
-					el[prop](this.input = $('<input type="time">')
-							.bind('change', this.change.bind(this)));
+					this.htmlParts = this.input = $('<input type="time">')
+							.bind('change', this.change.bind(this));
 					// Use jquery timeselect if time not a valid input type
 					if (this.input.attr('type') !== 'time') {
 						this.input.timepicker();
 					}
 					break;
 				case 'datetime':
-					el[prop](this.input = $('<input type="datetime">')
-							.bind('change', this.change.bind(this)));
+					this.htmlParts = this.input = $('<input type="datetime">')
+							.bind('change', this.change.bind(this));
 					// Use jquery timeselect if time not a valid input type
 					if (this.input.attr('type') !== 'datetime') {
 						this.input.datetimepicker();
 					}
 					break;
 				case 'daterange':
-					el[prop](this.start = $('<input type="date">')
-							.bind('change', this.change.bind(this)), ' to ',
-							this.stop = $('<input type="date">')
+					this.htmlParts = [
+						this.start = $('<input type="date">')
+								.bind('change', this.change.bind(this)),
+						' to ',
+						this.stop = $('<input type="date">')
 							.bind('change', this.change.bind(this))
-					);
+					];
 
 					// Use jquery timeselect if time not a valid input type
 					if (this.start.attr('type') !== 'date') {
@@ -170,11 +171,13 @@ var Table = (function($) {
 					}
 					break;
 				case 'timerange':
-					el[prop](this.start = $('<input type="time">')
-							.bind('change', this.change.bind(this)), ' to ',
-							this.stop = $('<input type="time">')
-							.bind('change', this.change.bind(this))
-					);
+					this.htmlParts = [
+						this.start = $('<input type="time">')
+								.bind('change', this.change.bind(this)),
+						' to ',
+						this.stop = $('<input type="time">')
+								.bind('change', this.change.bind(this))
+					];
 
 					// Use jquery timeselect if time not a valid input type
 					if (this.start.attr('type') !== 'time') {
@@ -183,11 +186,13 @@ var Table = (function($) {
 					}
 					break;
 				case 'datetimerange':
-					el[prop](this.start = $('<input type="datetime-local">')
-							.bind('change', this.change.bind(this)), ' to ',
-							this.stop = $('<input type="datetime-local">')
-							.bind('change', this.change.bind(this))
-					);
+					this.htmlParts = [
+						this.start = $('<input type="datetime-local">')
+								.bind('change', this.change.bind(this)),
+						' to ',
+						this.stop = $('<input type="datetime-local">')
+								.bind('change', this.change.bind(this))
+					];
 
 					// Use jquery timeselect if time not a valid input type
 					if (this.start.attr('type') !== 'datetime-local') {
@@ -197,14 +202,17 @@ var Table = (function($) {
 					break;
 				case 'date':
 				default:
-					el[prop](this.input = $('<input type="date">')
-							.bind('change', this.change.bind(this)));
+					this.htmlParts = this.input = $('<input type="date">')
+							.bind('change', this.change.bind(this));
 					// Use jquery timeselect if time not a valid input type
 					if (this.input.attr('type') !== 'date') {
 						this.input.datepicker();
 					}
 					break;
 			}
+		},
+		html: function() {
+			return this.htmlParts;
 		},
 		valueOf: function() {
 			switch (this.options.type) {
@@ -248,18 +256,12 @@ var Table = (function($) {
 	});
 
 	newType('select', {
-		html: function(el, value) {
-			var prop;
-			if (this.options.prepend) {
-				prop = 'prepend';
-			} else {
-				prop = 'append';
-			}
-
+		initiate: function(value) {
 			switch (this.options.type) {
 				case 'hierarchical': // Hierarchical using jquery-hierarchy-select
 					var x;
-					this.input = new $.Hierarchical(el, this.options, value);
+					this.htmlParts = $('<div></div>');
+					this.input = new $.Hierarchical(this.htmlParts, this.options, value);
 					//el[prop](x = $('<div></div>'));
 					//x.folders(this.options);
 					break;
@@ -273,10 +275,12 @@ var Table = (function($) {
 						selected = 'checked';
 					}
 
+					this.htmlParts = [];
 					if (this.options.values) {
 						for (i in this.options.values) {
 							// @TODO Add handling of multiple values
-							el.append($('<label>' + this.options.values[i] + '</label>')
+							this.htmlParts.push($('<label>' + this.options.values[i]
+									+ '</label>')
 									.prepend(this.inputs[i] = $('<input type="' + type
 											+ '" value="' + i + '"'
 											+ (i == value ? ' ' + selected : '') + '>')
@@ -286,10 +290,10 @@ var Table = (function($) {
 
 					break;
 				default:
-					el[prop](this.input = $('<select'
+					this.htmlParts = this.input = $('<select'
 							+ (this.options.multiple ? ' multiple' : '')
 							+ '></select>')
-							.bind('change', this.change.bind(this)));
+							.bind('change', this.change.bind(this));
 
 					if (this.options.values) {
 						for (i in this.options.values) {
@@ -301,6 +305,9 @@ var Table = (function($) {
 
 					break;
 			}
+		},
+		html: function() {
+			return this.htmlParts;
 		},
 		valueOf: function() {
 			switch (this.options.type) {
@@ -319,20 +326,17 @@ var Table = (function($) {
 	});
 
 	newType('dimension', {
-		html: function(el, value) {
-			var prop;
-			if (this.options.prepend) {
-				prop = 'prepend';
-			} else {
-				prop = 'append';
-			}
-
-			el[prop](this.x = $('<input type="number">')
-					.bind('change', this.change.bind(this)),
-					' x ',
-					this.y = $('<input type="number">')
-					.bind('change', this.change.bind(this))
-			);
+		initiate: function(value) {
+			this.htmlParts = [
+				this.x = $('<input type="number">')
+						.bind('change', this.change.bind(this)),
+				' x ',
+				this.y = $('<input type="number">')
+						.bind('change', this.change.bind(this))
+			];
+		},
+		html: function() {
+			return this.htmlParts;
 		},
 		valueOf: function() {
 			if (!this.x.val() || ! this.y.val()) {
@@ -350,6 +354,15 @@ var Table = (function($) {
 			}
 		}
 	});
+
+	/*
+	newType('mulitple', {
+		html: function(el, value) {
+		},
+		valueOf: function() {
+		}
+	});
+	*/
 
 	/*
 	newType('', {
@@ -413,10 +426,8 @@ var Table = (function($) {
 					store[id].pads = [];
 					store[id].fields = [];
 					store[id].valueOf = multipleFieldsValueOf.bind(this, id);
-					store[id].div
-							.append(store[id].pad = $('<div></div>'))
-							.append(store[id].removeButton
-							= $('<a>' + 'Add new' + '</a>')
+					store[id].div.append(store[id].pad = $('<div></div>'),
+							store[id].removeButton = $('<a>' + 'Add new' + '</a>')
 							.click(addNewFields.bind(this, id, field)));
 
 					// Add field to field list
@@ -474,22 +485,19 @@ var Table = (function($) {
 					if (change) {
 						change(id, field);
 					}
-
 				}.bind(this, field, id, field.options.change);
 
-				el.append(div = $('<div>' + (field.label ? field.label : '')
-						+ '</div>'));
-				store[id]
-						= new Types[field.type](div,
-						((value && value[id]) ? value[id] : false), field.options);
+				if (field.multiple) {
 
-				// Add description
-				if (field.description) {
-					div.append('<div class="description">' + field.description + '</div.');
+				} else {
+					store[id]
+							= new Types[field.type](
+							((value && value[id]) ? value[id] : false), field.options);
 				}
 
-				// Add div to field
-				store[id].div = div;
+				// Create the field row
+				el.append(store[id].div = drawFieldRow(field.label ? field.label : false, store[id].html(),
+				field.description ? field.description : false));
 
 				// Register dependencies
 				var d;
@@ -519,6 +527,37 @@ var Table = (function($) {
 		for (f in dependencies) {
 			checkDependencies.call(this, f, dependencies[f]);
 		}
+	}
+
+	/**
+	 * Draws the element where field rows will be inserted into
+	 */
+	function mainEl() {
+		return $('<div></div>');
+	}
+
+	/**
+	 * Draws a field row.
+	 *
+	 * @param label {String} Label of field
+	 * @param field {JQueryDOMObject} Field object
+	 * @param description {String} Optional field description
+	 * @param options {Object} Options object
+	 *   @attr class {String} Class(es) to add to the row
+	 */
+	function drawFieldRow(label, field, description, options) {
+		if (!(options instanceof Object) || !options) {
+			options = {};
+		}
+		
+		var div = $('<div'
+				+ (options.class ? ' class="' + options.class + '"' : '') + '>'
+				+ (label ? label : '') + '</div>');
+		if (field) div.append(field);
+		if (description) div.append('<div class="description">' + description
+				+ '</div>');
+
+		return div;
 	}
 
 	function addNewFields(id, field) {
@@ -565,6 +604,99 @@ var Table = (function($) {
 
 		return value;
 	}
+	
+	/**
+	 * Parse a dependency object and map the fields to each type of dependency
+	 *
+	 * @param dependencies {Object} Dependency object to map.
+	 *
+	 * @returns {Object} Object containing an array of fields for each type of
+	 *          dependencies
+	 */
+	var logicalCommands = ['$and', '$or', '$not', '$nor'];
+	function mapDependencies(dependencies, mapped) {
+		if (mapped === undefined) {
+			mapped = {};
+		}
+
+		var t,i;
+
+		for (t in dependencies) {
+			mapped[t] = [];
+
+			for (i in dependencies[t]) {
+				// Go into logical command and then merge
+				if (i.startsWith('$')) {
+					if (logicalCommands.indexOf(i) !== -1) {
+						mapped = mapDependencies(dependencies[t][i], mapped);
+					}
+				} else {
+					if (mapped[t].indexOf(i) === -1) {
+						mapped[t].push(i);
+					}
+				}
+			}
+		}
+		
+		return mapped;
+	}
+	
+	/**
+	 * Check and action a specific or all dependency types
+	 *
+	 * @param id {String} String identifier of field to check dependencies of.
+	 * @param field {Object} Object containing field to check dependencies of.
+	 * @param type {String|false} Dependency type to check, or false to check all
+	 * @param changedField {String} String identifier of field that has changed.
+	 */
+	function checkDependencies(id, field, type, changedField) {
+		if (field.dependencies) {
+			// Do visible/hide tests
+			if ((!type || type === 'visible')
+					&& field.dependencies.visible) {
+				if (dependancyMatch.call(this, field.dependencies.visible)) {
+					this[id].div.show();
+				} else {
+					this[id].div.hide();
+				}
+			}
+			if (!field.dependencies.visible && (!type || type === 'hide')
+					&& field.dependencies.hide) {
+				if (dependancyMatch.call(this, field.dependencies.hide)) {
+					this[id].div.hide();
+				} else {
+					this[id].div.show();
+				}
+			}
+		}
+	}
+
+	/**
+	 * Checks a dependency and returns either true or false
+	 */
+	function dependancyMatch(dependancy, and) {
+		var i;
+		var result;
+
+		for (i in dependancy) {
+			// @todo temp - if we don't know how to handle it, assume true...
+			result = true;
+			// Check for basic type
+			if (dependancy[i] instanceof Object) {
+				if (dependancy[i].in && dependancy[i].in instanceof Array) {
+					result = (dependancy[i].in.indexOf(this[i].valueOf()) !== -1);
+				}
+			} else if (!(dependancy[i] instanceof Object || dependancy[i] instanceof Array)) {
+				result = (this[i].valueOf() === dependancy[i]);
+			}
+
+			if ((!result && and) || (result && !and)) {
+				break;
+			}
+		}
+
+		return result;
+	}
 
 	function Table(obj, table, value) { //, subFields) {
 		var fObjects = {};
@@ -595,7 +727,7 @@ var Table = (function($) {
 			var f, v, values = {};
 
 			for (f in this.fields) {
-				id = this.fields[f]
+				id = this.fields[f];
 				if (v = this[id].valueOf()) {
 					values[id] = v;
 				}

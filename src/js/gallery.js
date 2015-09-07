@@ -2,99 +2,6 @@
 	var dataTag = 'data-gh-code';
 	
 	/**
-	 * Parse a dependency object and map the fields to each type of dependency
-	 *
-	 * @param dependencies {Object} Dependency object to map.
-	 *
-	 * @returns {Object} Object containing an array of fields for each type of
-	 *          dependencies
-	 */
-	var logicalCommands = ['$and', '$or', '$not', '$nor'];
-	function mapDependencies(dependencies, mapped) {
-		if (mapped === undefined) {
-			mapped = {};
-		}
-
-		var t,i;
-
-		for (t in dependencies) {
-			mapped[t] = [];
-
-			for (i in dependencies[t]) {
-				// Go into logical command and then merge
-				if (i.startsWith('$')) {
-					if (logicalCommands.indexOf(i) !== -1) {
-						mapped = mapDependencies(dependencies[t][i], mapped);
-					}
-				} else {
-					if (mapped[t].indexOf(i) === -1) {
-						mapped[t].push(i);
-					}
-				}
-			}
-		}
-		
-		return mapped;
-	}
-	
-	/**
-	 * Check and action a specific or all dependency types
-	 *
-	 * @param id {String} String identifier of field to check dependencies of.
-	 * @param field {Object} Object containing field to check dependencies of.
-	 * @param type {String|false} Dependency type to check, or false to check all
-	 * @param changedField {String} String identifier of field that has changed.
-	 */
-	function checkDependencies(id, field, type, changedField) {
-		if (field.dependencies) {
-			// Do visible/hide tests
-			if ((!type || type === 'visible')
-					&& field.dependencies.visible) {
-				if (dependancyMatch.call(this, field.dependencies.visible)) {
-					this[id].div.show();
-				} else {
-					this[id].div.hide();
-				}
-			}
-			if (!field.dependencies.visible && (!type || type === 'hide')
-					&& field.dependencies.hide) {
-				if (dependancyMatch.call(this, field.dependencies.hide)) {
-					this[id].div.hide();
-				} else {
-					this[id].div.show();
-				}
-			}
-		}
-	}
-
-	/**
-	 * Checks a dependency and returns either true or false
-	 */
-	function dependancyMatch(dependancy, and) {
-		var i;
-		var result;
-
-		for (i in dependancy) {
-			// @todo temp - if we don't know how to handle it, assume true...
-			result = true;
-			// Check for basic type
-			if (dependancy[i] instanceof Object) {
-				if (dependancy[i].in && dependancy[i].in instanceof Array) {
-					result = (dependancy[i].in.indexOf(this[i].valueOf()) !== -1);
-				}
-			} else if (!(dependancy[i] instanceof Object || dependancy[i] instanceof Array)) {
-				result = (this[i].valueOf() === dependancy[i]);
-			}
-
-			if ((!result && and) || (result && !and)) {
-				break;
-			}
-		}
-
-		return result;
-	}
-
-	/**
 	 * Creates the HTML for a single filter.
 	 *
 	 * @param el {JQueryDOMObject} Element to append the filter HTML to.fields
@@ -178,7 +85,6 @@
 						ghthumb: 'Thumbnails',
 						ghalbum: 'An album',
 						ghimage: 'An image',
-						gharranger: 'Image arranger'
 					}
 				}
 			},
@@ -382,13 +288,16 @@
 	}
 
 	function redisplayShortcode() {
+		var type;
 		if (this.options.insert) {
-			console.log(this.builder.fields.sctype);
-			console.log(this.builder.fields.sctype.valueOf());
-			if (this.builder.fields.sctype.valueOf() === 'gharranger') {
-				console.log('forcing');
+			// If an album (@todo or thumbnail) and the type requires ids only
+			if (this.builder.fields.sctype.valueOf() === 'ghalbum'
+					&& this.options.albums) {
+				type = this.options.albums[this.builder.fields.type.valueOf()];
+			}
+			if (type && type.options && type.options.idsOnly
+					&& type.options.idsOnly.value) {
 				this.idsMust = true;
-				console.log(this.selectOrder);
 				// Disable insert button if don't have any ids
 				if (!this.selectOrder.length && !this.insertButton.hasClass('disabled')) {
 					this.insertButton.addClass('disabled');
