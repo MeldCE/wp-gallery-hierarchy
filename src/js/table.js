@@ -113,6 +113,13 @@ var Table = (function($) {
 			this.input = $('<input' + (value ? ' value="' + value
 					+ '"' : '') + '>')
 					.bind('change', this.change.bind(this));
+			if (this.options.preText || this.options.postText) {
+				this.htmlParts = [this.input];
+				if (this.options.preText) this.htmlParts.unshift(this.options.preText);
+				if (this.options.postText) this.htmlParts.push(this.options.postText);
+			} else {
+				this.htmlParts = this.input;
+			}
 		},
 		html: function() {
 			return this.input;
@@ -265,6 +272,23 @@ var Table = (function($) {
 					//el[prop](x = $('<div></div>'));
 					//x.folders(this.options);
 					break;
+				case 'complex': // Complex select
+					this.htmlParts = $('<div></div>');
+
+					/* fields: for custom value as per Table
+					 * values: { for collections of selects
+					 *   <name>: {
+					 *     label: // Title of collection
+					 *     description: // description of collection
+					 *     values: // As per normal select
+					 *     ajax: // AJAX url to retrieve collection
+					 *     search: {Boolean} // Boolean whether to enable search for collection
+					 *     mulitple: {Boolean} // If true, and mulitple for the field is false, 
+					 *               mulitple values can be selected for this valeue
+					 *   }, ...
+					 * }
+					 */
+					break;
 				case 'boxes':
 					var i;
 					var selected = 'selected';
@@ -327,11 +351,34 @@ var Table = (function($) {
 
 	newType('dimension', {
 		initiate: function(value) {
+			// Parse value
+			var x, y;
+
+			if (value) {
+				if (typeof value === 'string') {
+					if (this.options.delimeter) {
+						value = value.split(this.options.delimeter);
+					} else {
+						value = value.split(',');
+					}
+					x = value[0];
+					y = (value.length > 2 ? value[1] : false);
+				} else if (value instanceof Object) {
+					if (value.x) x = value.x;
+					else if (value[0]) x = value[0];
+
+					if (value.y) y = value.y;
+					else if (value[1]) y = value[1];
+				}
+			}
+
 			this.htmlParts = [
-				this.x = $('<input type="number">')
+				this.x = $('<input type="number"' + (x ? ' value="' + x + '"' : '')
+						+ '>')
 						.bind('change', this.change.bind(this)),
 				' x ',
-				this.y = $('<input type="number">')
+				this.y = $('<input type="number"' + (y ? ' value="' + y + '"' : '')
+						+ '>')
 						.bind('change', this.change.bind(this))
 			];
 		},
@@ -339,10 +386,14 @@ var Table = (function($) {
 			return this.htmlParts;
 		},
 		valueOf: function() {
-			if (!this.x.val() || ! this.y.val()) {
+			if (!this.x.val() && ! this.y.val()) {
 				return;
 			}
-			if (this.options.associative) {
+			if (this.options.string) {
+				return this.x.val()
+						+ (this.options.delimeter ? this.options.delimeter : ',')
+						+ this.y.val();
+			} else if (this.options.associative) {
 				return {
 					x: this.x.val(),
 					0: this.x.val(),
@@ -352,6 +403,94 @@ var Table = (function($) {
 			} else {
 				return [this.x.val(), this.y.val()];
 			}
+		}
+	});
+
+	newType('action', {
+		initiate: function(value) {
+			this.input = $('<input type="hidden"'
+					+ (value ? ' value="' + value + '"' : '') + '>');
+
+			this.htmlParts = [this.input];
+			
+			// Add action buttons
+			if (this.options.actions && this.options.actions instanceof Object) {
+				this.actions = {};
+
+				var a;
+				for (a in this.options.actions) {
+					if (this.options.actions[a] instanceof Object) {
+						if (this.options.actions[a].func
+								&& this.options.actions[a].func.call) {
+							//if
+						}
+					}
+				}
+			}
+
+			// Clear button
+			if (this.options.clear) {
+				this.clear = $('<a class="button"></a>')
+						.click(this.clear.bind(this));
+
+				if (typeof this.options.clear === 'string') {
+					this.clear.html(this.options.clear);
+				} else {
+					this.clear.html('Clear');
+				}
+				
+				// Disable if we don't have a value
+				if (!value) {
+					this.clear.disable();
+				}
+
+				this.htmlParts.push(this.clear);
+			}
+			
+			// See value button
+			if (this.options.show) {
+				this.show = $('<a class="button"></a>')
+						.click(this.show.bind(this));
+
+				if (typeof this.options.show === 'string') {
+					this.show.html(this.options.show);
+				} else {
+					this.show.html('Show');
+				}
+
+				this.htmlParts.push(this.show);
+			}
+		},
+
+		html: function() {
+			return this.htmlParts;
+		},
+
+		valueOf: function() {
+			return this.input.val();
+		},
+
+		clear: function() {
+			this.input.val('');
+			this.clear.disable();
+		},
+
+		checkClear: function() {
+			if (this.input.val()) {
+				this.input.enable();
+			} else {
+				this.input.disable();
+			}
+		},
+
+		show: function() {
+			this.input.attr('type', 'text');
+			this.show.disable();
+			// Hook onto change to check if clear button should be active
+			this.input.change(this.checkClear.bind(this));
+		},
+
+		runAction: function(action) {
 		}
 	});
 
@@ -423,6 +562,14 @@ var Table = (function($) {
 					field.description ? field.description : false
 				));
 
+				// Add current value
+				if (value && value[id] && value[id] instanceof Array) {
+					var v;
+					for (v in value[id]) {
+						addNewFields.call(this, id, field, value[id][v]);
+					}
+				}
+
 				/// @todo Is there a better way to do this?
 				if (field.label) delete field.label;
 				if (field.description) delete field.description;
@@ -444,7 +591,7 @@ var Table = (function($) {
 		}
 
 		// Handle group
-		if (field.fields) {
+		if (!field.type && field.fields) {
 			store[id] = {};
 		
 			// @todo Move to outside of for loop (so can be used for a table
@@ -579,7 +726,7 @@ var Table = (function($) {
 		return div;
 	}
 
-	function addNewFields(id, field) {
+	function addNewFields(id, field, value) {
 		var div;
 		var fid = this[id].fields.length;
 		this[id].fields[fid] = {};
@@ -590,11 +737,13 @@ var Table = (function($) {
 
 		// Generate HTML
 		fieldHTML.call(this, this[id].pads[fid], this[id].fields[fid], id, field,
-				undefined, true);
+				value, true);
 
 		// Add delete
-		this[id].pads[fid].append($('<a>' + 'Delete' + '</a>')
-				.click(deleteFields.bind(this, id, fid)));
+		if (value._delete !== false) {
+			this[id].pads[fid].append($('<a>' + 'Delete' + '</a>')
+					.click(deleteFields.bind(this, id, fid)));
+		}
 	}
 
 	function deleteFields(id, fid) {

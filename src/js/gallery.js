@@ -125,6 +125,10 @@
 					size: {
 						label: 'Size: ',
 						type: 'dimension',
+						options: {
+							string: true,
+							delimeter: 'x'
+						}
 					},
 					/** @todo For captions would be better to have text replace */
 					caption: {
@@ -200,7 +204,10 @@
 			
 			// Add options
 			if (album.options) {
-				fields[i + 'Options'] = album.options;
+				fields.options.fields[i + 'Options'] = {
+					flat: true,
+					fields: album.options
+				};
 			}
 		}
 		fields.type.description = descs.join('<br/>');
@@ -229,7 +236,7 @@
 
 	function submitShortcode() {
 		var div;
-	
+
 		try {
 			if (tinyMCEPopup && (div = tinyMCEPopup.getWindowArg('gHEditingDiv'))) {
 				// Set attribute to shortcode
@@ -243,6 +250,8 @@
 				return;
 			}
 		} catch(err) {
+			// Silently fail
+			return;
 		}
 
 		// from wp-admin/includes/media.php +239 media_send_to_editor()
@@ -445,9 +454,17 @@
 				break;
 			case 'ghalbum':
 				options.push('type');
-				break;
-			case 'ghimage':
-				options.push('size');
+
+				// Add custom album options
+				if (v = this.builder.fields['type'].valueOf()
+						&& this.options.albums[v]) {
+					var o, options;
+					if (options = this.options.albums[v].options) {
+						for (o in options) {
+							options.push(o);
+						}
+					}
+				}
 				break;
 		}
 
@@ -531,6 +548,9 @@
 			
 			this.filterButton.html('Loading...');
 
+			// Add fake data just so we aren't sending an empty request (and
+			// producing a PHP warning)
+			data.f = 3;
 
 			$.post(ajaxurl + '?action=gh_gallery', data,
 					receiveImages.bind(this));

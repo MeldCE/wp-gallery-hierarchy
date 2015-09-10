@@ -23,6 +23,10 @@ class GHArranger implements GHAlbum {
 			'idsOnly' => array(
 				'type' => 'system',
 				'value' => true
+			),
+			'layout' => array(
+				'type' => 'text', /// @todo Change so only shows clear current layout button
+				'label' => __('Current Layout', 'gallery_hierarchy')
 			)
 		);
 	}

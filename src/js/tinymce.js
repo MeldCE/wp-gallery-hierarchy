@@ -13,9 +13,6 @@
 	function completeRedraw(data) {
 		// Change stuff into a shortcode prototype so gH.arranger can update the shortcode and change the images
 
-		console.log('received the following for ' + this.shortcode.string());
-		console.log(data);
-
 		if (data) {
 			var content;
 
@@ -65,35 +62,35 @@
 						.bind('click', function(ev) {
 							ev.stopPropagation();
 						})
-						.bind('tap', this.popupGallery.bind(this))
-						.data('gHDrawn', true);
+						.bind('tap', this.popupGallery.bind(this));
 			}
 			
-			//this.div.attr('contenteditable', false);
+			this.div
+					//.attr('contenteditable', false)
+					.data('gHDrawn', true)
+					.data('gHObject', this);
 		}
 	}
 
-	function GHTinyDiv (div, editor) {
-		this.shortcode = window.decodeURIComponent(div.attr(dataTag));
-
-		console.log(this.shortcode);
-
-		this.editor = editor;
-
+	function parseShortcode(shortcode) {
 		// Convert shortcode to an object
-		if (!(this.shortcode = wp.shortcode.next(
-				'ghalbum|gharranger|ghthumb|ghimage', this.shortcode))) {
+		if (!(shortcode = wp.shortcode.next(
+				'ghalbum|gharranger|ghthumb|ghimage', shortcode))) {
 			/// @todo Add error
 			return;
 		}
 
-		this.shortcode = this.shortcode.shortcode;
+		return shortcode.shortcode;
+	}
 
-		console.log(this.shortcode);
+	function GHTinyDiv (div, editor) {
+		this.shortcode = parseShortcode(window.decodeURIComponent(div.attr(dataTag)));
+
+
+		this.editor = editor;
 
 		this.div = div;
 		this.div.data('gHObject', this);
-		// Make the content not editable
 
 		this.redraw();
 	}
@@ -142,8 +139,11 @@
 				width: width,
 				height: height
 			}, {gHEditingDiv: this.div});
-			//ev.preventDefault();
-			ev.stopPropagation();
+		},
+
+		setShortcode: function(value) {
+			this.shortcode = parseShortcode(value);
+			this.redraw();
 		},
 
 		/**
@@ -170,7 +170,6 @@
 	};
 
 	tinymce.PluginManager.add('gHierarchy', function( editor, url ) {
-
 		//helper functions 
 		function getAttr(s, n) {
 			n = new RegExp(n + '=\"([^\"]+)\"', 'g').exec(s);
@@ -195,15 +194,20 @@
 		
 		function drawShortcodes(ev) {
 			var doc = $(editor.getDoc());
+			var generator;
 
-			doc.find('div[' + dataTag + ']').each(function() {
+			doc.find('[' + dataTag + ']').each(function() {
 				var div = $(this);
 				// Check that is hasn't already been updated
 				if (div.data('gHDrawn')) {
 					return;
 				}
 
-				new GHTinyDiv(div, editor);
+				if (generator = div.data('gHObject')) {
+					generator.setShortcode(window.decodeURIComponent(div.attr(dataTag)));
+				} else {
+					new GHTinyDiv(div, editor);
+				}
 			});
 		}
 

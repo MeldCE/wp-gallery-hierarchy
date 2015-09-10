@@ -899,7 +899,7 @@ class GHierarchy {
 		$parts = array();
 
 		// IDs
-		if ($_POST['ids']) {
+		if (isset($_POST['ids']) && $_POST['ids']) {
 			// Verfiy ids
 			$f = 0;
 			while ($f < count($_POST['ids'])) {

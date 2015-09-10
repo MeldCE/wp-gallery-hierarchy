@@ -67,8 +67,6 @@ gH = (function ($) {
 	 * @param file Object Object containing information on the file
 	 */
 	function displayImage(obj, file) {
-		console.log(arguments);
-
 		obj.append($('<a href="' + gH.imageUrl + '/' + file.path
 				+ '" title="' 
 				+ (file.title ? file.title + ' (#' + file.id + ')' : '#' + file.id)
@@ -127,8 +125,6 @@ gH = (function ($) {
 	}
 
 	function thumbnail(image) {
-		console.log(image);
-		console.log(image.replace);
 		return gH.cacheUrl + '/' + image.replace(/\//g, '_');
 	}
 
@@ -166,16 +162,12 @@ gH = (function ($) {
 	}
 
 	function arrangerParseLayout(images, tinyDiv) {
-		console.log('arrangerParseLayout called');
 		var layout, i, id, parts;
 
 		if (layout = tinyDiv.getSCAttr('layout')) {
 			// Remove percentage maarker at start
 			layout = layout.replace(/^%+/, '');
-			console.log('got value for layout attribute of ' + layout);
 			layout = layout.split('|');
-
-			console.log(layout);
 
 			for (i in layout) {
 				// Split off the id
@@ -183,8 +175,6 @@ gH = (function ($) {
 				id = parts.splice(0,1);
 
 				if (images[id]) {
-					console.log('got ' + parts.length + ' parts');
-
 					switch (parts.length) {
 						case 4:
 							images[id].offset = dimStringToArray(parts[3]);
