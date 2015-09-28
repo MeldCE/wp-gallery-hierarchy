@@ -75,6 +75,11 @@ The following shortcode attributes are available for the included shortcodes
 - `popup_caption="[<id>[,<id>[,...]]:](none|title|comment|'<caption>')[;...]"` - Type
   of caption to show on popup. Default set in plugin options (`ghalbum`
 	`ghthumbnail` `ghimage`)
+- `info="[<id>[,<id>[,...]]:](none|(title|comment|...)+)[;...]"` - information
+  (image metadata) to include when image is displayed. Possible options are
+	`caption`, `title`, `comment`, `date`, `tags`, or any of the custom metadata
+	fields. Mulitple information can be specified by using a comma `,`. A value
+	of `none` will display no information.
 - `link="[<id>[,<id>[,...]]:](none|popup|[<post_id>]|'<url>')[;...]"` - URL link on image,
   by default it will be the image url and will cause a lightbox popup
 - `width="<width>"` - width of image/album

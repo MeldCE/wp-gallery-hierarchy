@@ -81,6 +81,7 @@ class GHierarchy {
 	);
 
 	protected static $albums = null;
+	protected static $metadata = null;
 
 	/// Rescan variables
 	protected static $nextSet = 0;
@@ -300,7 +301,7 @@ class GHierarchy {
 							'default' => false
 						),
 						'thumb_description' => array(
-							'title' => __('Thumbnail Description',
+							'title' => __('Thumbnail Caption',
 									'gallery_hierarchy'),
 							'description' => __('What is shown by default underneath '
 									. 'a thumbnail.', 'gallery_hierarchy'),
@@ -310,6 +311,15 @@ class GHierarchy {
 									 'title' => __('Image Title', 'gallery_hierarchy'),
 									 'comment' => __('Image Comment', 'gallery_hierarchy')
 							),
+							'default' => ''
+						),
+						'thumb_metadata' => array(
+							'title' => __('Thumbnail Metadata',
+									'gallery_hierarchy'),
+							'description' => __('What is included (displayed) as metadata '
+									. 'with a thumbnail.', 'gallery_hierarchy'),
+							'type' => 'select',
+							'multiple' => true,
 							'default' => ''
 						),
 						'album_class' => array(
@@ -331,7 +341,7 @@ class GHierarchy {
 							'default' => false
 						),
 						'album_description' => array(
-							'title' => __('Album Description', 'gallery_hierarchy'),
+							'title' => __('Album Caption', 'gallery_hierarchy'),
 							'description' => __('What is shown by default underneath '
 									. 'an album image.', 'gallery_hierarchy'),
 							'type' => 'select',
@@ -341,6 +351,15 @@ class GHierarchy {
 								 'comment' => __('Image Comment', 'gallery_hierarchy')
 							),
 							'default' => 'comment'
+						),
+						'album_metadata' => array(
+							'title' => __('Album Metadata',
+									'gallery_hierarchy'),
+							'description' => __('What is included (displayed) as metadata '
+									. 'with an album.', 'gallery_hierarchy'),
+							'type' => 'select',
+							'multiple' => true,
+							'default' => ''
 						),
 						'image_class' => array(
 							'title' => __('Default Image Class', 'gallery_hierarchy'),
@@ -360,7 +379,7 @@ class GHierarchy {
 							'default' => false
 						),
 						'image_description' => array(
-							'title' => __('Image Description', 'gallery_hierarchy'),
+							'title' => __('Image Caption', 'gallery_hierarchy'),
 							'description' => __('What is shown by default underneath '
 									. 'an image.', 'gallery_hierarchy'),
 							'type' => 'select',
@@ -371,8 +390,19 @@ class GHierarchy {
 							),
 							'default' => 'title'
 						),
+						/// @todo Make one setting so you can have a setting for each type of album
+						/// @todo Need to migrate to JS setting
+						'image_metadata' => array(
+							'title' => __('Image Metadata',
+									'gallery_hierarchy'),
+							'description' => __('What is included (displayed) as metadata '
+									. 'with an image.', 'gallery_hierarchy'),
+							'type' => 'select',
+							'multiple' => true,
+							'default' => ''
+						),
 						'popup_description' => array(
-							'title' => __('Image Popup Description',
+							'title' => __('Image Popup Caption',
 									'gallery_hierarchy'),
 							'description' => __('What is shown by default underneath '
 									. 'an image popup.', 'gallery_hierarchy'),
@@ -473,6 +503,7 @@ class GHierarchy {
 							 */
 							'default' => array(
 								'title' => array(
+									'label' => 'Title',
 									'type' => 'text',
 									'fields' => array(
 										array('type' => 'exif', 'key' => 'Title'),
@@ -480,6 +511,7 @@ class GHierarchy {
 									)
 								),
 								'comment' => array(
+									'label' => 'Comment',
 									'type' => 'text',
 									'fields' => array(
 										array('type' => 'exif', 'key' => 'Comments'),
@@ -488,6 +520,7 @@ class GHierarchy {
 									)
 								),
 								'tags' => array(
+									'label' => 'Tags',
 									'type' => 'csv',
 									'fields' => array(
 										array('type' => 'exif', 'key' => 'Keywords'),
@@ -495,6 +528,7 @@ class GHierarchy {
 									)
 								),
 								'artist' => array(
+									'label' => 'Artist',
 									'type' => 'text',
 									'fields' => array(
 										array('type' => 'exif', 'key' => 'Artist'),
@@ -503,6 +537,8 @@ class GHierarchy {
 									)
 								),
 								'copyright' => array(
+									'label' => 'Copyright',
+									'showLabel' => false,
 									'type' => 'text',
 									'fields' => array(
 										array('type' => 'exif', 'key' => 'Copyright')
@@ -515,6 +551,12 @@ class GHierarchy {
 			)
 		);
 		static::$settings = new WPSettings($options);
+
+		// Add values to metadata options
+		foreach (array('album', 'thumb', 'image') as $p) {
+			$options['settings']['gHDisplay']['fields'][$p . '_metadata']['values']
+					= static::getMetadata();
+		}
 
 		// Create path to image Directory
 		$imageDir = static::$settings->folder;
@@ -1973,6 +2015,27 @@ class GHierarchy {
 		}
 	
 		return static::$albums;
+	}
+
+	/**
+	 * Returns an array containing the possible metadata items for images.
+	 */
+	static function &getMetadata() {
+		if (!static::$metadata) {
+			static::$metadata = array(
+				'caption' => __('Caption', 'gallery_hierarchy')
+			);
+
+			// Go through the metadata fields and add them to the array
+			$metadata = static::$settings->metadata_fields;
+
+			foreach ($metadata as $m => &$meta) {
+				static::$metadata[$m] = (isset($meta['label']) && $meta['label']
+						? $meta['label'] : $m);
+			}
+		}
+
+		return static::$metadata;
 	}
 
 	/**
