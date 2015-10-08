@@ -26,7 +26,7 @@ class GHThumbnails implements GHAlbum {
 		if ($images) {
 			$html .= '<div' . ($options['class'] ? ' class="' . $options['class'] . '"'
 					: '') . '>';
-			
+		
 			foreach ($images as &$image) {
 				// Create link
 				$html .= '<a' . ($image->link ? ' href="' . $image->link . '"' : '');
@@ -35,7 +35,20 @@ class GHThumbnails implements GHAlbum {
 				$html .= GHierarchy::lightboxData($image, $options['group'], $image->popup_caption);
 
 				$html .= '><img src="' . GHierarchy::getCImageURL($image) . '">';
-				
+
+				// Metadata
+				if ($metadata = GHierarchy::imageMetadata($image->id, $options)) {
+					$html .= '<span class="metadata">';
+
+					foreach ($metadata as $m) {
+						if (property_exists($image, $m)) {
+							$html .= '<span class="' . $m . '">' . $image->$m . '</span>';
+						}
+					}
+
+					$html .= '</span>';
+				}
+
 				$html .= '<span>' . ($image->caption ? $image->caption : '&nbsp;')
 						. '</span>';
 						

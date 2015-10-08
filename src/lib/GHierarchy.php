@@ -35,7 +35,7 @@ class GHierarchy {
 	protected static $statusTimeTransientTime = DAY_IN_SECONDS;
 	protected static $filesTransientTime = DAY_IN_SECONDS;
 	protected static $runAdminInit = false;
-	protected static $dbVersion = 4;
+	protected static $dbVersion = 5;
 	protected $directories = false;
 
 	protected static $runInit = false;
@@ -58,7 +58,6 @@ class GHierarchy {
 				'title' => 'text',
 				'comment' => 'text',
 				'tags' => 'text',
-				'metadata' => 'text',
 				'exclude' => 'tinyint(1) unsigned NOT NULL DEFAULT 0',
 			),
 			'indexes' => array(
@@ -136,7 +135,7 @@ class GHierarchy {
 										. 'inside of wp-content to a folder containing your '
 										. 'images.', 'gallery_hierarchy'),
 								'type' => 'folder',
-								'default' => 'gHImages'
+								'default' => 'uploads/gHImages'
 						),
 						'cache_folder' => array(
 								'title' => __('Cache Image Folder', 'gallery_hierarchy'),
@@ -146,7 +145,7 @@ class GHierarchy {
 										. 'Hierarchy, including thumbnails.',
 										'gallery_hierarchy'),
 								'type' => 'folder',
-								'default' => 'gHCache'
+								'default' => 'uploads/gHCache'
 						),
 						'upload_folder' => array(
 								'title' => __('Upload Folder', 'gallery_hierarchy'),
@@ -495,14 +494,53 @@ class GHierarchy {
 							'title' => __('Metadata fields to store about each image and '
 									. 'field in the image metadata that contains the value.',
 									'gallery_hierarchy'),
-							'type' => 'internal',
+							//'type' => 'internal',
+							'type' => 'multiple',
+							'multiple' => true,
+							'update' => array($this, 'checkDatabase'),
+							'noDeleteField' => 'id',
+							'noDeleteEntries' => array('title', 'comment'),
 							/* @todo
 							 * Need to be able to say which ones can't be deleted
 							 * Need to be able to allow to specify special formatting, eg tags
 							 * Need to be able to specify data type
 							 */
+							'fields' => array(
+								'id' => array(
+									'type' => 'text',
+									'oneshot' => true,
+									'title' => __('Metadata Field Slug')
+								),
+								'label' => array(
+									'type' => 'text',
+									'title' => __('Metatdata Field Label',
+											'gallery_hierarchy'),
+									'required' => true,
+								),
+								//'type' => array(
+								'fields' => array(
+									'type' => 'multiple',
+									'title' => __('Image Metadata Field', 'gallery_hierarchy'),
+									'multiple' => true,
+									'fields' => array(
+										'type' => array(
+											'type' => 'select',
+											'title' => __('Type', 'gallery_hierarchy'),
+											'values' => array(
+												'exif' => 'Exif',
+												'xmp' => 'XMP'
+											)
+										),
+										'key' => array(
+											'type' => 'text',
+											'title' => __('Field', 'gallery_hierarchy'),
+										)
+									)
+								)
+							),
 							'default' => array(
-								'title' => array(
+								array(
+									'id' => 'title',
 									'label' => 'Title',
 									'type' => 'text',
 									'fields' => array(
@@ -510,7 +548,8 @@ class GHierarchy {
 										array('type' => 'xmp', 'key' => 'Title')
 									)
 								),
-								'comment' => array(
+								array(
+									'id' => 'comment',
 									'label' => 'Comment',
 									'type' => 'text',
 									'fields' => array(
@@ -519,7 +558,8 @@ class GHierarchy {
 										array('type' => 'exif', 'key' => 'ImageDescription')
 									)
 								),
-								'tags' => array(
+								array(
+									'id' => 'tags',
 									'label' => 'Tags',
 									'type' => 'csv',
 									'fields' => array(
@@ -527,7 +567,8 @@ class GHierarchy {
 										array('type' => 'xmp', 'key' => 'Keywords')
 									)
 								),
-								'artist' => array(
+								array(
+									'id' => 'artist',
 									'label' => 'Artist',
 									'type' => 'text',
 									'fields' => array(
@@ -536,7 +577,8 @@ class GHierarchy {
 										array('type' => 'xmp', 'key' => 'Creator')
 									)
 								),
-								'copyright' => array(
+								array(
+									'id' => 'copyright',
 									'label' => 'Copyright',
 									'showLabel' => false,
 									'type' => 'text',
@@ -556,6 +598,16 @@ class GHierarchy {
 		foreach (array('album', 'thumb', 'image') as $p) {
 			$options['settings']['gHDisplay']['fields'][$p . '_metadata']['values']
 					= static::getMetadata();
+		}
+
+		// Add metadata fields to the 
+		if ($metadata = static::$settings->metadata_fields) {
+			foreach($metadata as &$l) {
+				if ($l['id'] == 'caption') {
+					continue;
+				}
+				static::$imageTableFields['fields'][$l['id']] = 'text';
+			}
 		}
 
 		// Create path to image Directory
@@ -667,11 +719,13 @@ class GHierarchy {
 			wp_enqueue_style('plupload',
 					plugins_url('/lib/css/jquery.plupload.queue.css', dirname(__FILE__)));
 		}
-		if (array_search($hook_suffix, array('toplevel_page_gHierarchy', 'media-upload-popup',
-				'post.php')) !== false) {
+		//if (array_search($hook_suffix, array('toplevel_page_gHierarchy', 'media-upload-popup',
+		//		'post.php', 'post-new.php')) !== false) {
 			wp_enqueue_script('jquery-hierarchy-select', 
 					plugins_url('/lib/js/folders.js', dirname(__FILE__)));
-		}
+			wp_enqueue_script('ghierarchy', 
+					plugins_url('/js/ghierarchy.js', dirname(__FILE__)), array('jquery'));
+		//}
 		if ($hook_suffix == 'gallery-hierarchy_page_gHOptions') {
 			wp_enqueue_style('wpsettings',
 					plugins_url('/lib/css/wpsettings.min.css', dirname(__FILE__)));
@@ -684,8 +738,6 @@ class GHierarchy {
 					includes_url('/js/tinymce/tiny_mce_popup.js'));
 		}
 		/// @todo @see http://codex.wordpress.org/I18n_for_WordPress_Developers
-		wp_enqueue_script('ghierarchy', 
-				plugins_url('/js/ghierarchy.js', dirname(__FILE__)), array('jquery'));
 		//wp_enqueue_style( 'dashicons' );
 		wp_enqueue_style('ghierarchy',
 				plugins_url('/css/ghierarchy.min.css', dirname(__FILE__)), array('dashicons'));
@@ -791,16 +843,21 @@ class GHierarchy {
 	static function adminPrintInit() {
 		$me = static::instance();
 
-		echo '<script type="text/javascript">'
-			. 'addLoadEvent(function() {'
-			. 'gH.init({'
-			. 'imageUrl: "' . $me->imageUrl . '",'
-			. 'cacheUrl: "' . $me->cacheUrl . '",'
-			. 'mediaUrl: "' . admin_url('media-upload.php') . '",'
-			// @todo . 'baseUrl: "' . admin_url('media-upload.php') . '",'
-			. '});'
-			. '});'
-			. '</script>';
+		echo '<!--sdfdsfds ' . $hook_suffix . '-->';
+		// @todo look at a way reenabling this, hooksuffix doesn't exist in this
+		//if (array_search($hook_suffix, array('toplevel_page_gHierarchy', 'media-upload-popup',
+		//		'post.php', 'post-new.php')) !== false) {
+			echo '<script type="text/javascript">'
+				. 'addLoadEvent(function() {'
+				. 'gH.init({'
+				. 'imageUrl: "' . $me->imageUrl . '",'
+				. 'cacheUrl: "' . $me->cacheUrl . '",'
+				. 'mediaUrl: "' . admin_url('media-upload.php') . '",'
+				// @todo . 'baseUrl: "' . admin_url('media-upload.php') . '",'
+				. '});'
+				. '});'
+				. '</script>';
+		//}
 	}
 
 	/**
@@ -1911,6 +1968,8 @@ class GHierarchy {
 		if (static::$settings->local_resize) {
 			$size = static::$settings->image_size;
 			/// @todo Fix problem with WPSettings storing size and [0] and [1]
+			echo 'dsfsdfsdafs';
+			print_r($size);
 			echo 'resize: {'
 					. 'width: ' . $size['width'] . ','
 					. 'height: ' . $size['height'] . ','
@@ -2029,9 +2088,9 @@ class GHierarchy {
 			// Go through the metadata fields and add them to the array
 			$metadata = static::$settings->metadata_fields;
 
-			foreach ($metadata as $m => &$meta) {
-				static::$metadata[$m] = (isset($meta['label']) && $meta['label']
-						? $meta['label'] : $m);
+			foreach ($metadata as &$meta) {
+				static::$metadata[$meta['id']] = (isset($meta['label']) && $meta['label']
+						? $meta['label'] : $meta['id']);
 			}
 		}
 
@@ -2138,6 +2197,24 @@ class GHierarchy {
 		}
 		
 		return $html;
+	}
+
+	/**
+	 * Finds the metadata for an image of teh given id.
+	 *
+	 * @param $imageId int Image id
+	 * @param $options array Array containing the shortcode options
+	 */
+	static function &imageMetadata($imageId, &$options) {
+		if ($options && isset($options['metadata'])) {
+			if (isset($options['metadata'][$imageId])) {
+				return $options['metadata'][$imageId];
+			} else if (isset($options['metadata'][null])) {
+				return $options['metadata'][null];
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -2578,6 +2655,33 @@ class GHierarchy {
 			}
 		} else {
 			$atts['link'] = array(null => 'popup');
+		}
+
+		// Make metadata option
+		// `metadata="[<id>[,<id>[,...]]:](none|(title|comment|...)+)[;...]"` - information
+		// (image metadata) to include when image is displayed. Possible options are
+		// `caption`, `title`, `comment`, `date`, `tags`, or any of the custom metadata
+		// fields. Mulitple information can be specified by using a comma `,`. A value
+		// of `none` will display no information.
+		if (! $atts['metadata'] ||
+				($atts['metadata'] = $me->parseOptionsString($atts['metadata']))
+				=== false) {
+				$atts['metadata'] = array();
+		}
+
+		// Add default
+		if (!isset($atts['metadata'][null])) {
+			switch($tag) {
+				case 'ghalbum':
+					$atts['metadata'][null] = static::$settings->album_metadata;
+					break;
+				case 'ghthumb':
+					$atts['metadata'][null] = static::$settings->thumb_metadata;
+					break;
+				case 'ghimage':
+					$atts['metadata'][null] = static::$settings->image_metadata;
+					break;
+			}
 		}
 
 		// Generate captions and links
@@ -3885,8 +3989,6 @@ class GHierarchy {
 		return $this->directories;
 	}
 
-
-
 	/**
 	 * Ensures that everything is set up for this plugin when it is activated
 	 * including the required tables in the database.
@@ -4035,6 +4137,9 @@ class GHierarchy {
 		
 		// Update to current version
 		static::$settings->db_version = static::$dbVersion;
+
+		// Sync the database
+		static::installDatabase();
 	}
 
 	static protected function getTableColumns($table) {
