@@ -98,7 +98,7 @@ class GHierarchy {
 	protected function  __construct() {
 		global $wpdb;
 
-		static::$lp = fopen('gallery-hierarchy.log', 'a');
+		//static::$lp = fopen('gallery-hierarchy.log', 'a');
 		if (static::$lp) fwrite(static::$lp, "GHierarchy initiated at " 
 				. time() . "\n"); // static::$lp
 		
@@ -518,6 +518,8 @@ class GHierarchy {
 									'required' => true,
 								),
 								//'type' => array(
+								//	'type' => 'internal',
+								//),
 								'fields' => array(
 									'type' => 'multiple',
 									'title' => __('Image Metadata Field', 'gallery_hierarchy'),
@@ -991,6 +993,7 @@ class GHierarchy {
 		global $wpdb;
 
 		$me = static::instance();
+		if (static::$lp) fwrite(static::$lp, "In ajaxGallery");
 
 		header('Content-Type: application/json');
 
@@ -1078,7 +1081,19 @@ class GHierarchy {
 			$parts[] = 'taken <= \'' . $_POST['end'] . '\'';
 		}
 
-		// File name
+		if ($textFields = static::$settings->metadata_fields) {
+			foreach($textFields as &$f) {
+				if ($f['id'] != 'tags'
+						&& (!isset($f['type']) || $f['type'] != 'text')) {
+					if (isset($_POST[$f['id']]) && $_POST[$f['id']]) {
+						if(($q = $me->parseLogic($_POST[$f['id']], $f['id'] . ' LIKE \'%%%s%%\''))) {
+							$parts[] = $q;
+						}
+					}
+				}
+			}
+		}
+		/*/ File name
 		if (isset($_POST['name']) && $_POST['name']) {
 			if(($q = $me->parseLogic($_POST['name'], 'file LIKE \'%%%s%%\''))) {
 				$parts[] = $q;
@@ -1097,7 +1112,7 @@ class GHierarchy {
 			if(($q = $me->parseLogic($_POST['comments'], 'comments LIKE \'%%%s%%\''))) {
 				$parts[] = $q;
 			}
-		}
+		}*/
 
 		// Tags
 		if (isset($_POST['tags']) && $_POST['tags']) {
@@ -1881,6 +1896,7 @@ class GHierarchy {
 		/// @todo Add admin_url('admin-ajax.php')
 		echo '<script>gH.gallery(\'' . $id . '\', ' . ($insert ? 1 : 0) . ',' 
 				. '{ albums: ' . json_encode(static::getAlbums()) . ','
+				. 'metadata: ' . json_encode(static::getMetadata(/*array('label', 'type')*/)) . ','
 				. 'folders: ' . json_encode(static::ajaxFolder(true, $full)) . ','
 				. ($insert ? ($shortcode ? 'update: true' : 'insert: true') : '')
 				. '}, ' . ($shortcode ? json_encode($shortcode) : 'false')
@@ -1968,8 +1984,6 @@ class GHierarchy {
 		if (static::$settings->local_resize) {
 			$size = static::$settings->image_size;
 			/// @todo Fix problem with WPSettings storing size and [0] and [1]
-			echo 'dsfsdfsdafs';
-			print_r($size);
 			echo 'resize: {'
 					. 'width: ' . $size['width'] . ','
 					. 'height: ' . $size['height'] . ','
@@ -3848,18 +3862,18 @@ class GHierarchy {
 		// Grab metadata according to settings
 		$fields = static::$settings->metadata_fields;
 
-		foreach ($fields as $f => &$keys) {
-			foreach ($keys as &$key) {
-				switch($key[0]) {
+		foreach ($fields as &$field) {
+			foreach ($field['fields'] as &$key) {
+				switch($key['type']) {
 					case 'exif':
-						if (isset($exif[$key[1]]) && $exif[$key[1]]) {
-							$data[$f] = $exif[$key[1]];
+						if (isset($exif[$key['key']]) && $exif[$key['key']]) {
+							$data[$field['id']] = $exif[$key['key']];
 							break 2;
 						}
 						break;
 					case 'xmp':
-						if (isset($xmp[$key[1]]) && $xmp[$key[1]]) {
-							$data[$f] = $xmp[$key[1]];
+						if (isset($xmp[$key['key']]) && $xmp[$key['key']]) {
+							$data[$field['id']] = $xmp[$key['key']];
 							break 2;
 						}
 						break;

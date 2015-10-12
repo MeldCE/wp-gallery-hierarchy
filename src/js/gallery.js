@@ -208,6 +208,10 @@
 					flat: true,
 					fields: album.options
 				};
+
+				//var oFields = 
+				// @todo Add visibility dependence to each field
+				//for (j in fields.options.fields
 			}
 		}
 		fields.type.description = descs.join('<br/>');
@@ -244,7 +248,7 @@
 				div.data('gHDrawn', false);
 				tinyMCEPopup.editor.nodeChanged();
 				tinyMCEPopup.close();
-
+				
 				// @todo Call to get updated html
 
 				return;
@@ -257,7 +261,7 @@
 		// from wp-admin/includes/media.php +239 media_send_to_editor()
 		var win = window.dialogArguments || opener || parent || top;
 		win.send_to_editor(compileShortcode.call(this));
-
+		
 		// Clear selection
 		this.browser.clearSelection();
 	}
@@ -272,7 +276,7 @@
 				tinyMCEPopup.close();
 
 				// @todo Call to get updated html
-
+				
 				return;
 			}
 		} catch(err) {
@@ -293,7 +297,7 @@
 			this.filterRetrieved = false;
 			this.filterButton.removeClass('disabled');
 		}
-
+		
 		// Redisplay the shortcode
 		redisplayShortcode.call(this);
 	}
@@ -351,7 +355,7 @@
 		}
 
 		// Advanced fields
-		var v, f, fields = ['title', 'comments', 'tags', 'name', 'time'];
+		var v, f, fields = Object.keys(this.filterFields.advanced.fields);
 		
 		for (f in fields) {
 			if ((v = filter.fields[fields[f]].valueOf())) {
@@ -383,9 +387,14 @@
 				+ 'folder=' + folders.join('|'));
 
 		// Text filters
-		options = ['title', 'comments', 'tags', 'name'];
+		options = Object.keys(this.filterFields.advanced.fields);
+
+
 
 		for (i in options) {
+			if (i == 'date') {
+				continue;
+			}
 			if (v = table.fields[options[i]].valueOf()) {
 				parts.push(options[i] + '=' + v);
 			}
@@ -616,7 +625,7 @@
 				hideLabel: 'Hide advanced filtering',
 				showLabel: 'Show advanced filtering',
 				fields: {
-					title: {
+					/*xxx title: {
 						label: 'Title contains: ',
 						type: 'text',
 					},
@@ -627,6 +636,10 @@
 					tags: {
 						label: 'Tags contain: ',
 						type: 'text'
+					},*/
+					name: {
+						label: 'Filename contains: ',
+						type: 'text'
 					},
 					time: {
 						label: 'Photos taken between: ',
@@ -635,13 +648,25 @@
 							type: 'datetimerange'
 						}
 					},
-					name: {
-						label: 'Filename contains: ',
-						type: 'text'
-					},
 				}
 			}
 		};
+
+		// Add the metadata to the fields
+		if (this.options.metadata) {
+			var m;
+			for (m in this.options.metadata) {
+				// @todo Add type etc to it
+				// skip caption
+				if (m == 'caption') {
+					continue;
+				}
+				this.filterFields.advanced.fields[m] = {
+					label: this.options.metadata[m] + ': ',
+					type: 'text'
+				}
+			}
+		}
 
 		// Merge in base options
 		mergeBaseOptions.call(this, this.filterFields);
@@ -725,7 +750,7 @@
 
 		// Load the filter if we have images
 		var filter;
-		if ((filter = compileFilter(this.browserFilter)) || (value && value.ids)) {
+		if ((filter = compileFilter.call(this, this.browserFilter)) || (value && value.ids)) {
 			this.filterButton.html('Loading...');
 			// Get images
 			$.post(ajaxurl + '?action=gh_gallery', (filter || {ids: value.ids}),
@@ -763,19 +788,6 @@
 		
 		redisplayShortcode.call(this);
 	}
-
-	/**
-	 * Create html to display an image into a given JQueryDOMObject
-	 *
-	 * @param obj JQueryDOMObject JQuery object to put the image into
-	 * @param file Object Object containing information on the file
-	 */
-	/*function displayImage(obj, file) {
-		obj.append($('<a href="' + imageUrl + '/' + file.path
-				+ '" target="_blank"><img src="'
-				+ thumbnail(file.path) + '"></a>')
-				.viewer(null, 'gHBrowser').data('imageData', file));
-	}*/
 	
 	function gallerySelect(ids, files) {
 		this.selectOrder = ids;
