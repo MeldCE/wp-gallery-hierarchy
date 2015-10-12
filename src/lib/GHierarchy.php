@@ -2399,6 +2399,8 @@ class GHierarchy {
 		$taken = array();
 		$query = array();
 
+		$textFields = static::$settings->metadata_fields;
+
 		foreach ($parts as $p => &$part) {
 			if (strpos($part, '=') !== false) {
 				$like = false;
@@ -2461,12 +2463,21 @@ class GHierarchy {
 							$query[$part[0]] = $me->parseLogic($part[1], $part[0]
 									. ' REGEXP \'(,|^)%s(,|$)\'', true);
 							break;
+						default:
+							foreach($textFields as &$f) {
+								if ($f['id'] != $part[0]
+										&& (!isset($f['type']) || $f['type'] != 'text')) {
+									$query[$part[0]] = $me->parseLogic($part[1], $part[0]
+											.' LIKE \'%%%s%%\'');
+									break;
+								}
+							}
+							continue;
 						case 'title':
 						case 'comment':
 							$query[$part[0]] = $me->parseLogic($part[1], $part[0]
 									. ' = \'%s\'');
 							break;
-						default:
 							// Ignore as not valid
 							continue;
 					}
