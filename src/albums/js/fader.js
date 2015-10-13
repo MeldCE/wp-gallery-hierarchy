@@ -146,16 +146,10 @@ if(jQuery) (function($){
 
 				// Update metadata boxes 
 				if (this.options.metadata) {
-					console.log('have metadata');
-					console.log(this.options.metadata);
 					this.metadata.html();
 
 					if (val = lookupValue(image.id, this.options.metadata)) {
-						console.log(image);
-						console.log('in');
-						console.log(val);
 						for (i in val) {
-							console.log('looking for ' + val[i]);
 							if (image[val[i]]) {
 								this.metadata.append('<div class="' + val[i] + '">' 
 										+ image[val[i]] + '</div>');

@@ -99,12 +99,9 @@ var Editor = (function() {
 			}
 	
 			// @todo Change to Table
-			console.log('checking for metadata');
-			console.log(this.options);
 			if (this.options.metadata) {
 				var f;
 				for (f in this.options.metadata) {
-					console.log('making ' + f);
 					switch(this.options.metadata[f].type) {
 						case 'longtext':
 							this.details.append(drawRow(this.options.metadata[f].label + ':', 
