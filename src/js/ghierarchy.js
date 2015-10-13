@@ -75,13 +75,17 @@ gH = (function ($) {
 				.viewer(null, 'gHBrowser').data('imageData', file));
 	}
 
+
+	var editorOptions = {
+		fullImage: true
+	};
+
 	/**
 	 * Used to diplay the image editor in the floater window
 	 */
 	function displayImageEditor(link, objects) {
-		var editor = new Editor(objects.div, link.data('imageData'), {
-			fullImage: true
-		});
+		var editor = new Editor(objects.div, link.data('imageData'),
+				editorOptions);
 
 		editor.img.load(function() {
 			//calculateImageHeight.call(this);
@@ -356,6 +360,9 @@ gH = (function ($) {
 		},
 
 		gallery: function(id, insertOnly, options, value) {
+			if (options.metadata) {
+				editorOptions.metadata = options.metadata;
+			}
 			new Gallery(id, options, value);
 		},
 

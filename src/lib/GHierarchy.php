@@ -98,7 +98,7 @@ class GHierarchy {
 	protected function  __construct() {
 		global $wpdb;
 
-		//static::$lp = fopen('gallery-hierarchy.log', 'a');
+		static::$lp = fopen('gallery-hierarchy.log', 'a');
 		if (static::$lp) fwrite(static::$lp, "GHierarchy initiated at " 
 				. time() . "\n"); // static::$lp
 		
@@ -517,9 +517,17 @@ class GHierarchy {
 											'gallery_hierarchy'),
 									'required' => true,
 								),
-								//'type' => array(
-								//	'type' => 'internal',
-								//),
+								'type' => array(
+									'type' => 'select',
+									'label' => __('Field Type', 'gallery_hierarchy'),
+									'values' => array(
+										'text' => __('Text', 'gallery_hierarchy'),
+										'longtext' => __('Long Text', 'gallery_hierarchy'),
+										'number' => __('Number', 'gallery_hierarchy'),
+										'boolean' => __('True/False', 'gallery_hierarchy'),
+										'csv' => __('Comma Separated Values', 'gallery_hierarchy')
+									)
+								),
 								'fields' => array(
 									'type' => 'multiple',
 									'title' => __('Image Metadata Field', 'gallery_hierarchy'),
@@ -1896,7 +1904,7 @@ class GHierarchy {
 		/// @todo Add admin_url('admin-ajax.php')
 		echo '<script>gH.gallery(\'' . $id . '\', ' . ($insert ? 1 : 0) . ',' 
 				. '{ albums: ' . json_encode(static::getAlbums()) . ','
-				. 'metadata: ' . json_encode(static::getMetadata(/*array('label', 'type')*/)) . ','
+				. 'metadata: ' . json_encode(static::getMetadata(array('label', 'type'))) . ','
 				. 'folders: ' . json_encode(static::ajaxFolder(true, $full)) . ','
 				. ($insert ? ($shortcode ? 'update: true' : 'insert: true') : '')
 				. '}, ' . ($shortcode ? json_encode($shortcode) : 'false')
@@ -2093,7 +2101,24 @@ class GHierarchy {
 	/**
 	 * Returns an array containing the possible metadata items for images.
 	 */
-	static function &getMetadata() {
+	static function &getMetadata($fields = null) {
+		if ($fields && is_array($fields)) {
+			$data = static::$settings->metadata_fields;
+			$metadata = array();
+			
+			foreach ($data as &$field) {
+				$metadata[$field['id']] = array();
+
+				foreach ($fields as &$f) {
+					if (isset($field[$f])) {
+						$metadata[$field['id']][$f] = $field[$f];
+					}
+				}
+			}
+
+			return $metadata;
+		}
+
 		if (!static::$metadata) {
 			static::$metadata = array(
 				'caption' => __('Caption', 'gallery_hierarchy')
@@ -2229,6 +2254,23 @@ class GHierarchy {
 		}
 
 		return false;
+	}
+
+	static function imageMetadataHtml(&$image, &$options) {
+		$html = '';
+		if ($metadata = static::imageMetadata($image->id, $options)) {
+			$html .= '<span class="metadata">';
+
+			foreach ($metadata as $m) {
+				if (property_exists($image, $m)) {
+					$html .= '<span class="' . $m . '">' . $image->$m . '</span>';
+				}
+			}
+
+			$html .= '</span>';
+		}
+
+		return $html;
 	}
 
 	/**
@@ -2688,10 +2730,12 @@ class GHierarchy {
 		// `caption`, `title`, `comment`, `date`, `tags`, or any of the custom metadata
 		// fields. Mulitple information can be specified by using a comma `,`. A value
 		// of `none` will display no information.
-		if (! $atts['metadata'] ||
-				($atts['metadata'] = $me->parseOptionsString($atts['metadata']))
-				=== false) {
-				$atts['metadata'] = array();
+		if ($atts['metadata'] && is_string($atts['metadata'])) {
+			$atts['metadata'] = $me->parseOptionString($atts['metadata']);
+		}
+
+		if (!is_array($atts['metadata'])) {
+			$atts['metadata'] = array();
 		}
 
 		// Add default
@@ -2911,6 +2955,8 @@ class GHierarchy {
 
 			$html .= ' class= "' . $options['class'] . '"><img src="' . GHierarchy::getCImageURL($image, $options['size'])
 				. '">';
+			
+			$html .= GHierarchy::imageMetadataHtml($image, $options);
 			
 			$html .= '<span>' . ($image->caption ? $image->caption : '&nbsp;')
 					. '</span>';
@@ -3878,13 +3924,17 @@ class GHierarchy {
 				switch($key['type']) {
 					case 'exif':
 						if (isset($exif[$key['key']]) && $exif[$key['key']]) {
-							$data[$field['id']] = $exif[$key['key']];
+							$data[$field['id']] = is_array($exif[$key['key']])
+									? $exif[$key['key']][0] : $exif[$key['key']];
+							if (static::$lp) fwrite(static::$lp, $field['id'] . ': ' . $data[$field['id']] . "\n");
 							break 2;
 						}
 						break;
 					case 'xmp':
 						if (isset($xmp[$key['key']]) && $xmp[$key['key']]) {
-							$data[$field['id']] = $xmp[$key['key']];
+							$data[$field['id']] = is_array($xmp[$key['key']])
+									? $xmp[$key['key']][0] : $xmp[$key['key']];
+							if (static::$lp) fwrite(static::$lp, $field['id'] . ': ' . $data[$field['id']] . "\n");
 							break 2;
 						}
 						break;
@@ -3914,13 +3964,6 @@ class GHierarchy {
 		}
 
 		// Build Tags
-		if (isset($exif['Keywords']) && $exif['Keywords']) {
-			$tags = $exif['Keywords'];
-		} else if (isset($xmp['Keywords']) && $xmp['Keywords']) {
-			$tags = $xmp['Keywords'];
-		} else {
-			$tags = array();
-		}
 		if (is_string($tags)) {
 			$tags = preg_split(' *, *', $tags);
 		}

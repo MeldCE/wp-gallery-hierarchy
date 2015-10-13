@@ -97,23 +97,38 @@ var Editor = (function() {
 				this.details.append(drawRow('Taken:', 
 						this.file.taken));
 			}
-			
-			// Image Title
-			this.details.append(drawRow('Title:', 
-					(this.title = $('<input type="text" value="'
-					+ (this.file.title ? this.file.title : '')
-					+ '">'))));
-			
-			// Image Comment
-			this.details.append(drawRow('Comment:',
-					(this.comment = $('<textarea>'
-					+ (this.file.comment ? this.file.comment : '') + '</textarea>'))));
-			
-			// Image Tags
-			this.details.append(drawRow('Tags (comma-separated):', 
-					(this.tags = $('<input type="text" value="'
-					+ (this.file.tags ? this.file.tags : '')
-					+ '">'))));
+	
+			// @todo Change to Table
+			console.log('checking for metadata');
+			console.log(this.options);
+			if (this.options.metadata) {
+				var f;
+				for (f in this.options.metadata) {
+					console.log('making ' + f);
+					switch(this.options.metadata[f].type) {
+						case 'longtext':
+							this.details.append(drawRow(this.options.metadata[f].label + ':', 
+									(this[f] = $('<textarea>'
+									+ (this.file[f] ? this.file[f] : '')
+									+ '</textarea>'))));
+							break;
+						case 'csv':
+							this.details.append(drawRow(this.options.metadata[f].label
+									+ ' (comma-separated):', 
+									(this[f] = $('<input type="text" value="'
+									+ (this.file[f] ? this.file[f] : '')
+									+ '">'))));
+							break;
+						case 'text':
+						default:
+							this.details.append(drawRow(this.options.metadata[f].label + ':', 
+									(this[f] = $('<input type="text" value="'
+									+ (this.file[f] ? this.file[f] : '')
+									+ '">'))));
+							break;
+					}
+				}
+			}
 			
 			// Image Gallery Exclusion
 			this.details.append(drawRow('Exclude by Default:', 
@@ -146,6 +161,22 @@ var Editor = (function() {
 				tags: this.tags.val().replace(/ *, */, ','),
 				exclude: (this.exclude.attr('checked') ? 1 : 0)
 			};
+
+			if (this.options.metadata) {
+				var f;
+				for (f in this.options.metadata) {
+					if (this[f]) {
+						switch(this.options.metadata[f].type) {
+							case 'csv':
+								data[this.file.id][f] = this[f].val().replace(/ *, */, ',');
+								break;
+							default:
+								data[this.file.id][f] = this[f].val();
+								break;
+						}
+					}
+				}
+			}
 
 			$.post(ajaxurl + '?action=gh_save', {a: 'save', data: data},
 					confirmAction.bind(this, false));

@@ -37,17 +37,7 @@ class GHThumbnails implements GHAlbum {
 				$html .= '><img src="' . GHierarchy::getCImageURL($image) . '">';
 
 				// Metadata
-				if ($metadata = GHierarchy::imageMetadata($image->id, $options)) {
-					$html .= '<span class="metadata">';
-
-					foreach ($metadata as $m) {
-						if (property_exists($image, $m)) {
-							$html .= '<span class="' . $m . '">' . $image->$m . '</span>';
-						}
-					}
-
-					$html .= '</span>';
-				}
+				$html .= GHierarchy::imageMetadataHtml($image, $options);
 
 				$html .= '<span>' . ($image->caption ? $image->caption : '&nbsp;')
 						. '</span>';

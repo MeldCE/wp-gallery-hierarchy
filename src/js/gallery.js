@@ -661,10 +661,12 @@
 				if (m == 'caption') {
 					continue;
 				}
-				this.filterFields.advanced.fields[m] = {
+				this.filterFields.advanced.fields[m] = this.options.metadata[m];
+				/*{
 					label: this.options.metadata[m] + ': ',
 					type: 'text'
-				}
+				}*/
+				this.filterFields.advanced.fields[m].type = 'text';
 			}
 		}
 

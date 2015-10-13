@@ -1,6 +1,15 @@
 if(jQuery) (function($){
 	if (!$.fn.jsfader) {
 		/**
+		 * Determine the correct
+		 */
+		function lookupValue(id, option) {
+			if (id && option[id]) return option[id];
+			if (option['']) return option[''];
+			return null;
+		}
+
+		/**
 		 * Prototype to create and managed a JSFader album
 		 *
 		 * @param obj {JQueryDOMObject} JQuery DOM object to use to display album
@@ -39,8 +48,13 @@ if(jQuery) (function($){
 			}
 
 			// Generate divs for comments, title etc
-			//if 
-			this.obj.append(this.comment = $('<div></div>'));
+			if (this.options.caption) {
+				this.obj.append(this.caption = $('<div class="caption"></div>'));
+			}
+
+			if (this.options.metadata) {
+				this.obj.append(this.metadata = $('<div class="metadata"></div>'));
+			}
 
 			// Create a div for the changing image
 			this.obj.append(this.transition = $('<div></div>').css({
@@ -106,7 +120,7 @@ if(jQuery) (function($){
 			},
 
 			scroll: function(index, step, animate) {
-				var val;
+				var val, i;
 				if (/*!isNaN(index) &&*/ step) {
 					index = this.current + step % (this.keys.length - 1);
 				/*} else if (!parseInt(index) && !step) {
@@ -119,19 +133,47 @@ if(jQuery) (function($){
 					index = index % (this.keys.length - 1);
 				}
 
+				var image = this.images[this.keys[index]];
+
 				// Update the comment boxes
-				this.comment.html(((val = this.images[this.keys[index]].comment) ? val : ''));
+				if (this.options.caption) {
+					if (val = lookupValue(image.id, this.options.caption)) {
+					} else {
+						val = image.caption ? val : '';
+					}
+					this.caption.html(val);
+				}
+
+				// Update metadata boxes 
+				if (this.options.metadata) {
+					console.log('have metadata');
+					console.log(this.options.metadata);
+					this.metadata.html();
+
+					if (val = lookupValue(image.id, this.options.metadata)) {
+						console.log(image);
+						console.log('in');
+						console.log(val);
+						for (i in val) {
+							console.log('looking for ' + val[i]);
+							if (image[val[i]]) {
+								this.metadata.append('<div class="' + val[i] + '">' 
+										+ image[val[i]] + '</div>');
+							}
+						}
+					}
+				}
 
 				if (animate) {
 					// Set the background to the current image
 					this.obj.css({
 						backgroundImage: 'url(\'' + gH.imageUrl + '/'
-								+ this.images[this.keys[this.current]].path + '\')'
+								+ image.path + '\')'
 					});
 
 					this.transition.css({
 						backgroundImage: 'url(\'' + gH.imageUrl + '/'
-								+ this.images[this.keys[index]].path + '\')',
+								+ image.path + '\')',
 						opacity: 0
 					});
 
@@ -142,7 +184,7 @@ if(jQuery) (function($){
 					// Change background to correct image
 					this.obj.css({
 						backgroundImage: 'url(\'' + gH.imageUrl + '/'
-								+ this.images[this.keys[index]].path + '\')'
+								+ image.path + '\')'
 					});
 
 					// Get rid of the transition

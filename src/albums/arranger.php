@@ -33,6 +33,7 @@ class GHArranger implements GHAlbum {
 
 	static function printAlbum(&$images, &$options, $inEditor = false) {
 		$html = '';
+		
 		if (isset($_GET['action']) && $_GET['action'] == 'gh_tiny') {
 			$html = array(
 				'func' => 'arranger',
@@ -45,7 +46,7 @@ class GHArranger implements GHAlbum {
 		} else if ($images) {
 			$id = uniqid();
 			$html .= '<div id="' . $id . '"'
-					. ($options['class'] ? ' class="' . $options['class'] . '"' : '')
+					. ' class="arranger ' . ($options['class'] ? $options['class'] : '') . '"'
 					. ($options['width'] ? ' style="width: ' . $options['width']
 					. 'px"' : '')
 					. '>';
@@ -70,7 +71,9 @@ class GHArranger implements GHAlbum {
 				$html .= GHierarchy::lightboxData($image, $options['group'], $image->popup_caption);
 
 				$html .= '>';
-				
+		
+				$html .= GHierarchy::imageMetadataHtml($image, $options);
+
 				$html .= '<span>' . ($image->caption ? $image->caption : '&nbsp;')
 						. '</span>';
 						
