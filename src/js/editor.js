@@ -28,7 +28,7 @@ var Editor = (function() {
 	/**
 	 * Confirms actions by receiving the POST response
 	 */
-	function confirmAction(del, data, textStatus, jqXHR) {
+	function confirmAction(del, action, data, textStatus, jqXHR) {
 		if (data instanceof Object) {
 			if (data.error) {
 				this.status.html(data.error);
@@ -37,6 +37,10 @@ var Editor = (function() {
 			}
 
 			var t = this;
+
+			if (action && action.call) {
+				action.call(this);
+			}
 
 			setTimeout(function() {
 				if (del) {
@@ -47,6 +51,24 @@ var Editor = (function() {
 					t.status.html('');
 				}
 			}, 3000);
+		}
+	}
+
+	function pushSave() {
+		if (this.options.metadata) {
+			var f;
+			for (f in this.options.metadata) {
+				if (this[f]) {
+					switch(this.options.metadata[f].type) {
+						case 'csv':
+							this.file[f] = this[f].val().replace(/ *, */, ',');
+							break;
+						default:
+							this.file[f] = this[f].val();
+							break;
+					}
+				}
+			}
 		}
 	}
 	
@@ -176,7 +198,7 @@ var Editor = (function() {
 			}
 
 			$.post(ajaxurl + '?action=gh_save', {a: 'save', data: data},
-					confirmAction.bind(this, false));
+					confirmAction.bind(this, false, pushSave));
 			this.status.html('Saving...');
 		},
 
@@ -187,7 +209,7 @@ var Editor = (function() {
 			if (confirm('Image will be removed from the gallery, but not deleted '
 					+ 'from the server. Continue?')) {
 				$.post(ajaxurl + '?action=gh_save', {a: 'remove', id: this.file.id},
-						confirmAction.bind(this, true));
+						confirmAction.bind(this, true, false));
 				this.status.html('Removing...');
 			}
 		},
@@ -199,7 +221,7 @@ var Editor = (function() {
 			if (confirm('Image will be removed from the gallery and deleted from '
 					+ 'the server. Continue?')) {
 				$.post(ajaxurl + '?action=gh_save', {a: 'delete', id: this.file.id},
-						confirmAction.bind(this, true));
+						confirmAction.bind(this, true, false));
 				this.status.html('Deleting...');
 			}
 		},

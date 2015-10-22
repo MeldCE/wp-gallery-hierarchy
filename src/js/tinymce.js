@@ -185,11 +185,13 @@
 		}
 
 		function replaceShortcodes( content ) {
-			return content.replace(/\[gh(album|thumb|image|arranger)( [^\]]*)?\]/g, function (shortcode) {
+			content = content.replace(/\[gh(album|thumb|image)( [^\]]*)?\]/g, function (shortcode) {
 				var encSC = window.encodeURIComponent(shortcode);
-				return '<!--gHStart--><div ' + dataTag + '="'
-						+ encSC + '">&nbsp;</div><!--gHEnd-->';
+				//return '<div class="mceNonEditable"><!--gHStart--><div ' + dataTag + '="'
+				return '<div><!--gHStart--><div ' + dataTag + '="'
+						+ encSC + '">&nbsp;</div><!--gHEnd--></div>';
 			});
+			return content;
 		}
 		
 		function drawShortcodes(ev) {
@@ -212,11 +214,11 @@
 		}
 
 		function restoreShortcodes( content ) {
-			return content.replace(
-					/*@todo Make it so the a|div isn't captured if you can? */
-					/<!--gHStart-->[^]*?<(a|div) .*?data-gh-code="(.*?)".*?>[^]*?[^]*?<!--gHEnd-->/mg, function(match, el, sc) {
+			content = content.replace(
+					/<div><!--gHStart-->[^]*?<[a-z]+ .*?data-gh-code="(.*?)".*?>[^]*?[^]*?<!--gHEnd--><\/div>/mg, function(match, sc) {
 				return window.decodeURIComponent(sc);
 			});
+			return content;
 		}
 
 		//replace from shortcode to an image placeholder

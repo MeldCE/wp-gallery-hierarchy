@@ -248,16 +248,13 @@
 				div.data('gHDrawn', false);
 				tinyMCEPopup.editor.nodeChanged();
 				tinyMCEPopup.close();
-				
-				// @todo Call to get updated html
-
-				return;
 			}
-		} catch(err) {
-			// Silently fail
+
 			return;
+		} catch(err) {
 		}
 
+		// Continue with insert
 		// from wp-admin/includes/media.php +239 media_send_to_editor()
 		var win = window.dialogArguments || opener || parent || top;
 		win.send_to_editor(compileShortcode.call(this));
@@ -542,6 +539,15 @@
 			alert(data.error);
 		} else {
 			// TODO Apply changes??
+			for (i in this.changed) {
+
+				if (this.images[i]) {
+					for (v in this.changed[i]) {
+						this.images[i][v] = this.changed[i][v]['new'];
+					}
+				}
+			}
+
 			this.changed = {};
 			alert(data.msg);
 		}
@@ -573,15 +579,16 @@
 			}
 			
 			// Remap data
-			var i, images = {};
+			var i;
+			this.images = {};
 			for (i in data) {
-				images[data[i].id] = data[i];
+				this.images[data[i].id] = data[i];
 			}
 
 			/// @todo Add localisation
 			this.filterButton.html('Filter');
 
-			this.browser.displayFiles(images);
+			this.browser.displayFiles(this.images);
 
 			this.imagesSelected = false;
 			this.filterRetrieved = true;
